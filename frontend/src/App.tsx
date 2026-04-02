@@ -11,7 +11,8 @@ import {
   Clock, 
   DollarSign,
   Menu,
-  X,
+  Moon,
+  Sun,
   ChevronRight,
   Trash2,
   Edit2,
@@ -38,7 +39,23 @@ import { ptBR } from 'date-fns/locale';
 import { cn, formatCurrency } from './lib/utils';
 import { Product, ServiceOrder, ServiceStatus, Transaction } from './types';
 
-// Mock Initial Data
+type ThemeMode = 'light' | 'dark';
+
+const THEME_STORAGE_KEY = 'theme';
+const panelClass = 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm';
+const inputClass = 'w-full p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl outline-none text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500';
+const secondaryButtonClass = 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-4 py-2 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors';
+
+const getInitialTheme = (): ThemeMode => {
+  const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+
+  if (savedTheme === 'light' || savedTheme === 'dark') {
+    return savedTheme;
+  }
+
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+};
+
 const INITIAL_PRODUCTS: Product[] = [
   { id: '1', name: 'Tela iPhone 11', category: 'Telas', costPrice: 150, salePrice: 450, stock: 5, minStock: 2 },
   { id: '2', name: 'Bateria Samsung S20', category: 'Baterias', costPrice: 80, salePrice: 220, stock: 3, minStock: 2 },
@@ -76,6 +93,7 @@ const INITIAL_SERVICES: ServiceOrder[] = [
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'inventory' | 'services' | 'profit'>('dashboard');
+  const [theme, setTheme] = useState<ThemeMode>(getInitialTheme);
   const [products, setProducts] = useState<Product[]>(() => {
     const saved = localStorage.getItem('products');
     return saved ? JSON.parse(saved) : INITIAL_PRODUCTS;
@@ -95,7 +113,12 @@ export default function App() {
     localStorage.setItem('services', JSON.stringify(services));
   }, [services]);
 
-  // Stats Calculations
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    document.documentElement.style.colorScheme = theme;
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
+  }, [theme]);
+
   const stats = useMemo(() => {
     const totalRevenue = services
       .filter(s => s.status === 'delivered')
@@ -123,13 +146,12 @@ export default function App() {
   ];
 
   return (
-    <div className="flex h-screen bg-slate-50 font-sans text-slate-900">
-      {/* Sidebar */}
+    <div className="flex h-screen bg-slate-50 font-sans text-slate-900 transition-colors dark:bg-slate-950 dark:text-slate-100">
       <aside className={cn(
-        "bg-white border-r border-slate-200 transition-all duration-300 flex flex-col",
+        "bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 transition-all duration-300 flex flex-col",
         isSidebarOpen ? "w-64" : "w-20"
       )}>
-        <div className="p-6 flex items-center gap-3 border-b border-slate-100">
+        <div className="p-6 flex items-center gap-3 border-b border-slate-100 dark:border-slate-800">
           <div className="bg-blue-600 p-2 rounded-lg text-white">
             <Smartphone size={24} />
           </div>
@@ -144,51 +166,60 @@ export default function App() {
               className={cn(
                 "w-full flex items-center gap-3 p-3 rounded-xl transition-all group",
                 activeTab === item.id 
-                  ? "bg-blue-50 text-blue-600 font-semibold shadow-sm" 
-                  : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                  ? "bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:text-blue-300 font-semibold shadow-sm" 
+                  : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100"
               )}
             >
               <item.icon size={20} className={cn(
                 "transition-colors",
-                activeTab === item.id ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600"
+                activeTab === item.id ? "text-blue-600 dark:text-blue-300" : "text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-200"
               )} />
               {isSidebarOpen && <span>{item.label}</span>}
             </button>
           ))}
         </nav>
 
-        <div className="p-4 border-t border-slate-100">
+        <div className="p-4 border-t border-slate-100 dark:border-slate-800">
           <button 
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="w-full flex items-center justify-center p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg"
+            aria-label={isSidebarOpen ? 'Recolher menu lateral' : 'Expandir menu lateral'}
+            className="w-full flex items-center justify-center p-2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors"
           >
-            {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
+            <Menu size={20} />
           </button>
         </div>
       </aside>
 
-      {/* Main Content */}
       <main className="flex-1 overflow-y-auto p-8">
         <header className="mb-8 flex justify-between items-center">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight text-slate-900">
+            <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
               {navItems.find(i => i.id === activeTab)?.label}
             </h2>
-            <p className="text-slate-500 mt-1">
+            <p className="text-slate-500 dark:text-slate-400 mt-1">
               Bem-vindo ao seu painel de controle.
             </p>
           </div>
           <div className="flex items-center gap-4">
-            <div className="bg-white border border-slate-200 rounded-full px-4 py-2 flex items-center gap-2 shadow-sm">
-              <Clock size={16} className="text-slate-400" />
-              <span className="text-sm font-medium text-slate-600">
+            <button
+              type="button"
+              onClick={() => setTheme(current => current === 'light' ? 'dark' : 'light')}
+              aria-label={theme === 'light' ? 'Ativar modo escuro' : 'Ativar modo claro'}
+              className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 shadow-sm transition-colors hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+            >
+              {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+              <span>{theme === 'light' ? 'Modo escuro' : 'Modo claro'}</span>
+            </button>
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full px-4 py-2 flex items-center gap-2 shadow-sm">
+              <Clock size={16} className="text-slate-400 dark:text-slate-500" />
+              <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
                 {format(new Date(), "eeee, d 'de' MMMM", { locale: ptBR })}
               </span>
             </div>
           </div>
         </header>
 
-        {activeTab === 'dashboard' && <DashboardView stats={stats} services={services} products={products} />}
+        {activeTab === 'dashboard' && <DashboardView stats={stats} services={services} products={products} theme={theme} />}
         {activeTab === 'inventory' && <InventoryView products={products} setProducts={setProducts} />}
         {activeTab === 'services' && <ServicesView services={services} setServices={setServices} products={products} setProducts={setProducts} />}
         {activeTab === 'profit' && <ProfitAnalysisView services={services} />}
@@ -199,9 +230,8 @@ export default function App() {
 
 // --- VIEW COMPONENTS ---
 
-function DashboardView({ stats, services, products }: { stats: any, services: ServiceOrder[], products: Product[] }) {
+function DashboardView({ stats, services, products, theme }: { stats: any, services: ServiceOrder[], products: Product[], theme: ThemeMode }) {
   const chartData = useMemo(() => {
-    // Last 7 days revenue
     return Array.from({ length: 7 }).map((_, i) => {
       const date = subDays(new Date(), 6 - i);
       const dayStr = format(date, 'dd/MM');
@@ -225,9 +255,36 @@ function DashboardView({ stats, services, products }: { stats: any, services: Se
     ].filter(d => d.value > 0);
   }, [services]);
 
+  const chartTheme = useMemo(() => {
+    return theme === 'dark'
+      ? {
+          grid: '#1e293b',
+          tick: '#94a3b8',
+          tooltipCursor: '#172033',
+          tooltipStyle: {
+            borderRadius: '12px',
+            border: '1px solid #1e293b',
+            backgroundColor: '#0f172a',
+            color: '#e2e8f0',
+            boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.35)'
+          }
+        }
+      : {
+          grid: '#f1f5f9',
+          tick: '#64748b',
+          tooltipCursor: '#f8fafc',
+          tooltipStyle: {
+            borderRadius: '12px',
+            border: 'none',
+            backgroundColor: '#ffffff',
+            color: '#0f172a',
+            boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'
+          }
+        };
+  }, [theme]);
+
   return (
     <div className="space-y-8">
-      {/* Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard 
           title="Receita Total" 
@@ -258,22 +315,21 @@ function DashboardView({ stats, services, products }: { stats: any, services: Se
         />
       </div>
 
-      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-          <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
+        <div className={cn("lg:col-span-2 p-6 rounded-2xl", panelClass)}>
+          <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-2">
             <TrendingUp size={20} className="text-blue-600" />
             Faturamento (Últimos 7 dias)
           </h3>
           <div className="h-80 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} tickFormatter={(v) => `R$${v}`} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartTheme.grid} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: chartTheme.tick, fontSize: 12 }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: chartTheme.tick, fontSize: 12 }} tickFormatter={(v) => `R$${v}`} />
                 <Tooltip 
-                  cursor={{ fill: '#f8fafc' }}
-                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                  cursor={{ fill: chartTheme.tooltipCursor }}
+                  contentStyle={chartTheme.tooltipStyle}
                 />
                 <Bar dataKey="revenue" fill="#3b82f6" radius={[6, 6, 0, 0]} barSize={40} />
               </BarChart>
@@ -281,8 +337,8 @@ function DashboardView({ stats, services, products }: { stats: any, services: Se
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-          <h3 className="text-lg font-bold mb-6">Status dos Serviços</h3>
+        <div className={cn("p-6 rounded-2xl", panelClass)}>
+          <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-6">Status dos Serviços</h3>
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -297,16 +353,16 @@ function DashboardView({ stats, services, products }: { stats: any, services: Se
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip contentStyle={chartTheme.tooltipStyle} />
               </PieChart>
             </ResponsiveContainer>
           </div>
           <div className="mt-4 space-y-2">
             {statusData.map((item) => (
-              <div key={item.name} className="flex items-center justify-between text-sm">
+              <div key={item.name} className="flex items-center justify-between text-sm text-slate-900 dark:text-slate-100">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
-                  <span className="text-slate-600">{item.name}</span>
+                  <span className="text-slate-600 dark:text-slate-300">{item.name}</span>
                 </div>
                 <span className="font-bold">{item.value}</span>
               </div>
@@ -378,11 +434,11 @@ function InventoryView({ products, setProducts }: { products: Product[], setProd
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div className="relative w-96">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" size={18} />
           <input 
             type="text" 
             placeholder="Buscar produtos..." 
-            className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none shadow-sm"
+            className={cn(inputClass, "pl-10 pr-4 py-2 shadow-sm")}
           />
         </div>
         <button 
@@ -394,37 +450,37 @@ function InventoryView({ products, setProducts }: { products: Product[], setProd
         </button>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className={cn("rounded-2xl overflow-hidden", panelClass)}>
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-slate-50 border-b border-slate-200">
-              <th className="p-4 font-semibold text-slate-600">Produto</th>
-              <th className="p-4 font-semibold text-slate-600">Categoria</th>
-              <th className="p-4 font-semibold text-slate-600">Preço Custo</th>
-              <th className="p-4 font-semibold text-slate-600">Preço Venda</th>
-              <th className="p-4 font-semibold text-slate-600">Estoque</th>
-              <th className="p-4 font-semibold text-slate-600 text-right">Ações</th>
+            <tr className="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800">
+              <th className="p-4 font-semibold text-slate-600 dark:text-slate-300">Produto</th>
+              <th className="p-4 font-semibold text-slate-600 dark:text-slate-300">Categoria</th>
+              <th className="p-4 font-semibold text-slate-600 dark:text-slate-300">Preço Custo</th>
+              <th className="p-4 font-semibold text-slate-600 dark:text-slate-300">Preço Venda</th>
+              <th className="p-4 font-semibold text-slate-600 dark:text-slate-300">Estoque</th>
+              <th className="p-4 font-semibold text-slate-600 dark:text-slate-300 text-right">Ações</th>
             </tr>
           </thead>
           <tbody>
             {products.map((product) => (
-              <tr key={product.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors group">
+              <tr key={product.id} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/70 transition-colors group">
                 <td className="p-4">
-                  <div className="font-bold text-slate-900">{product.name}</div>
-                  <div className="text-xs text-slate-400">ID: {product.id}</div>
+                  <div className="font-bold text-slate-900 dark:text-slate-100">{product.name}</div>
+                  <div className="text-xs text-slate-400 dark:text-slate-500">ID: {product.id}</div>
                 </td>
                 <td className="p-4">
-                  <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-xs font-medium">
+                  <span className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-3 py-1 rounded-full text-xs font-medium">
                     {product.category}
                   </span>
                 </td>
-                <td className="p-4 font-medium text-slate-600">{formatCurrency(product.costPrice)}</td>
+                <td className="p-4 font-medium text-slate-600 dark:text-slate-300">{formatCurrency(product.costPrice)}</td>
                 <td className="p-4 font-bold text-blue-600">{formatCurrency(product.salePrice)}</td>
                 <td className="p-4">
                   <div className="flex items-center gap-2">
                     <span className={cn(
                       "font-bold",
-                      product.stock <= product.minStock ? "text-rose-600" : "text-slate-900"
+                      product.stock <= product.minStock ? "text-rose-600" : "text-slate-900 dark:text-slate-100"
                     )}>
                       {product.stock}
                     </span>
@@ -435,10 +491,10 @@ function InventoryView({ products, setProducts }: { products: Product[], setProd
                 </td>
                 <td className="p-4 text-right">
                   <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => handleOpenModal(product)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg">
+                    <button onClick={() => handleOpenModal(product)} className="p-2 text-slate-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors">
                       <Edit2 size={18} />
                     </button>
-                    <button onClick={() => deleteProduct(product.id)} className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg">
+                    <button onClick={() => deleteProduct(product.id)} className="p-2 text-slate-400 dark:text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-colors">
                       <Trash2 size={18} />
                     </button>
                   </div>
@@ -449,64 +505,63 @@ function InventoryView({ products, setProducts }: { products: Product[], setProd
         </table>
       </div>
 
-      {/* Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-              <h3 className="text-xl font-bold">{editingProduct ? 'Editar Produto' : 'Novo Produto'}</h3>
-              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600"><X size={24} /></button>
+          <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-950">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">{editingProduct ? 'Editar Produto' : 'Novo Produto'}</h3>
+              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"><X size={24} /></button>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2 space-y-1">
-                  <label className="text-sm font-semibold text-slate-600">Nome do Produto</label>
+                  <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">Nome do Produto</label>
                   <input 
                     required
                     value={formData.name}
                     onChange={e => setFormData({...formData, name: e.target.value})}
-                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
+                    className={inputClass}
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm font-semibold text-slate-600">Categoria</label>
+                  <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">Categoria</label>
                   <input 
                     required
                     value={formData.category}
                     onChange={e => setFormData({...formData, category: e.target.value})}
-                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
+                    className={inputClass}
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm font-semibold text-slate-600">Estoque Atual</label>
+                  <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">Estoque Atual</label>
                   <input 
                     required
                     type="number"
                     value={formData.stock}
                     onChange={e => setFormData({...formData, stock: e.target.value})}
-                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
+                    className={inputClass}
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm font-semibold text-slate-600">Preço Custo (R$)</label>
+                  <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">Preço Custo (R$)</label>
                   <input 
                     required
                     type="number"
                     step="0.01"
                     value={formData.costPrice}
                     onChange={e => setFormData({...formData, costPrice: e.target.value})}
-                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
+                    className={inputClass}
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm font-semibold text-slate-600">Preço Venda (R$)</label>
+                  <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">Preço Venda (R$)</label>
                   <input 
                     required
                     type="number"
                     step="0.01"
                     value={formData.salePrice}
                     onChange={e => setFormData({...formData, salePrice: e.target.value})}
-                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
+                    className={inputClass}
                   />
                 </div>
               </div>
@@ -514,7 +569,7 @@ function InventoryView({ products, setProducts }: { products: Product[], setProd
                 <button 
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="flex-1 py-3 border border-slate-200 rounded-xl font-semibold text-slate-600 hover:bg-slate-50"
+                  className="flex-1 py-3 border border-slate-200 dark:border-slate-800 rounded-xl font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                 >
                   Cancelar
                 </button>
@@ -598,11 +653,11 @@ function ServicesView({ services, setServices, products, setProducts }: {
 
   const getStatusBadge = (status: ServiceStatus) => {
     switch (status) {
-      case 'pending': return <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-xs font-bold">Pendente</span>;
-      case 'in_progress': return <span className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-xs font-bold">Em Conserto</span>;
-      case 'ready': return <span className="bg-emerald-100 text-emerald-600 px-3 py-1 rounded-full text-xs font-bold">Pronto</span>;
-      case 'delivered': return <span className="bg-indigo-100 text-indigo-600 px-3 py-1 rounded-full text-xs font-bold">Entregue</span>;
-      case 'cancelled': return <span className="bg-rose-100 text-rose-600 px-3 py-1 rounded-full text-xs font-bold">Cancelado</span>;
+      case 'pending': return <span className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-3 py-1 rounded-full text-xs font-bold">Pendente</span>;
+      case 'in_progress': return <span className="bg-blue-100 dark:bg-blue-500/15 text-blue-600 dark:text-blue-300 px-3 py-1 rounded-full text-xs font-bold">Em Conserto</span>;
+      case 'ready': return <span className="bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 px-3 py-1 rounded-full text-xs font-bold">Pronto</span>;
+      case 'delivered': return <span className="bg-indigo-100 dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-300 px-3 py-1 rounded-full text-xs font-bold">Entregue</span>;
+      case 'cancelled': return <span className="bg-rose-100 dark:bg-rose-500/15 text-rose-600 dark:text-rose-300 px-3 py-1 rounded-full text-xs font-bold">Cancelado</span>;
     }
   };
 
@@ -610,9 +665,9 @@ function ServicesView({ services, setServices, products, setProducts }: {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div className="flex gap-4">
-          <button className="bg-white border border-slate-200 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-slate-50 transition-colors">Todos</button>
-          <button className="bg-white border border-slate-200 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-slate-50 transition-colors">Pendentes</button>
-          <button className="bg-white border border-slate-200 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-slate-50 transition-colors">Prontos</button>
+          <button className={secondaryButtonClass}>Todos</button>
+          <button className={secondaryButtonClass}>Pendentes</button>
+          <button className={secondaryButtonClass}>Prontos</button>
         </div>
         <button 
           onClick={() => setIsModalOpen(true)}
@@ -625,32 +680,32 @@ function ServicesView({ services, setServices, products, setProducts }: {
 
       <div className="grid grid-cols-1 gap-4">
         {services.map((service) => (
-          <div key={service.id} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:border-blue-200 transition-all group">
+          <div key={service.id} className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:border-blue-200 dark:hover:border-blue-500/30 transition-all group">
             <div className="flex justify-between items-start">
               <div className="flex gap-4">
-                <div className="bg-slate-50 p-4 rounded-2xl text-slate-400 group-hover:text-blue-500 transition-colors">
+                <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl text-slate-400 dark:text-slate-500 group-hover:text-blue-500 transition-colors">
                   <Smartphone size={32} />
                 </div>
                 <div>
                   <div className="flex items-center gap-3">
-                    <h4 className="text-lg font-bold text-slate-900">{service.deviceModel}</h4>
+                    <h4 className="text-lg font-bold text-slate-900 dark:text-slate-100">{service.deviceModel}</h4>
                     {getStatusBadge(service.status)}
                   </div>
-                  <p className="text-slate-500 text-sm mt-1">Cliente: <span className="font-semibold text-slate-700">{service.customerName}</span> • {service.customerPhone}</p>
-                  <div className="mt-3 flex items-center gap-4 text-xs text-slate-400">
+                  <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Cliente: <span className="font-semibold text-slate-700 dark:text-slate-200">{service.customerName}</span> • {service.customerPhone}</p>
+                  <div className="mt-3 flex items-center gap-4 text-xs text-slate-400 dark:text-slate-500">
                     <span className="flex items-center gap-1"><Clock size={14} /> {format(new Date(service.createdAt), 'dd/MM/yyyy HH:mm')}</span>
-                    <span className="font-mono font-bold text-slate-500">{service.id}</span>
+                    <span className="font-mono font-bold text-slate-500 dark:text-slate-400">{service.id}</span>
                   </div>
                 </div>
               </div>
 
               <div className="text-right">
-                <div className="text-2xl font-black text-slate-900">{formatCurrency(service.totalPrice)}</div>
+                <div className="text-2xl font-black text-slate-900 dark:text-slate-100">{formatCurrency(service.totalPrice)}</div>
                 <div className="mt-4 flex gap-2 justify-end">
                   {service.status === 'pending' && (
                     <button 
                       onClick={() => updateStatus(service.id, 'in_progress')}
-                      className="bg-blue-50 text-blue-600 px-4 py-2 rounded-xl text-xs font-bold hover:bg-blue-100"
+                      className="bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-300 px-4 py-2 rounded-xl text-xs font-bold hover:bg-blue-100 dark:hover:bg-blue-500/20 transition-colors"
                     >
                       Iniciar Conserto
                     </button>
@@ -658,7 +713,7 @@ function ServicesView({ services, setServices, products, setProducts }: {
                   {service.status === 'in_progress' && (
                     <button 
                       onClick={() => updateStatus(service.id, 'ready')}
-                      className="bg-emerald-50 text-emerald-600 px-4 py-2 rounded-xl text-xs font-bold hover:bg-emerald-100"
+                      className="bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 px-4 py-2 rounded-xl text-xs font-bold hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-colors"
                     >
                       Marcar como Pronto
                     </button>
@@ -671,15 +726,15 @@ function ServicesView({ services, setServices, products, setProducts }: {
                       Entregar ao Cliente
                     </button>
                   )}
-                  <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg">
+                  <button className="p-2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
                     <Edit2 size={18} />
                   </button>
                 </div>
               </div>
             </div>
             
-            <div className="mt-6 pt-6 border-t border-slate-50 flex justify-between items-center bg-slate-50/50 -mx-6 -mb-6 px-6 py-4 rounded-b-2xl">
-              <div className="text-sm text-slate-600 italic">"{service.issueDescription}"</div>
+            <div className="mt-6 pt-6 border-t border-slate-50 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-950/70 -mx-6 -mb-6 px-6 py-4 rounded-b-2xl">
+              <div className="text-sm text-slate-600 dark:text-slate-300 italic">"{service.issueDescription}"</div>
               <div className="flex gap-4">
                 {service.status === 'ready' && (
                   <div className="flex items-center gap-2 text-emerald-600 text-xs font-bold animate-pulse">
@@ -693,69 +748,68 @@ function ServicesView({ services, setServices, products, setProducts }: {
         ))}
       </div>
 
-      {/* Modal OS */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-              <h3 className="text-xl font-bold">Nova Ordem de Serviço</h3>
-              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600"><X size={24} /></button>
+          <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-950">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">Nova Ordem de Serviço</h3>
+              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"><X size={24} /></button>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-1">
-                  <label className="text-sm font-semibold text-slate-600">Nome do Cliente</label>
+                  <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">Nome do Cliente</label>
                   <input 
                     required
                     value={formData.customerName}
                     onChange={e => setFormData({...formData, customerName: e.target.value})}
-                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
+                    className={inputClass}
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm font-semibold text-slate-600">Telefone</label>
+                  <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">Telefone</label>
                   <input 
                     required
                     value={formData.customerPhone}
                     onChange={e => setFormData({...formData, customerPhone: e.target.value})}
-                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
+                    className={inputClass}
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm font-semibold text-slate-600">Modelo do Aparelho</label>
+                  <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">Modelo do Aparelho</label>
                   <input 
                     required
                     value={formData.deviceModel}
                     onChange={e => setFormData({...formData, deviceModel: e.target.value})}
-                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
+                    className={inputClass}
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm font-semibold text-slate-600">Mão de Obra (R$)</label>
+                  <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">Mão de Obra (R$)</label>
                   <input 
                     required
                     type="number"
                     value={formData.laborCost}
                     onChange={e => setFormData({...formData, laborCost: e.target.value})}
-                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
+                    className={inputClass}
                   />
                 </div>
                 <div className="col-span-2 space-y-1">
-                  <label className="text-sm font-semibold text-slate-600">Descrição do Problema</label>
+                  <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">Descrição do Problema</label>
                   <textarea 
                     required
                     rows={2}
                     value={formData.issueDescription}
                     onChange={e => setFormData({...formData, issueDescription: e.target.value})}
-                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
+                    className={inputClass}
                   />
                 </div>
                 <div className="col-span-2 space-y-1">
-                  <label className="text-sm font-semibold text-slate-600">Peça Utilizada (Opcional)</label>
+                  <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">Peça Utilizada (Opcional)</label>
                   <select 
                     value={formData.selectedPartId}
                     onChange={e => setFormData({...formData, selectedPartId: e.target.value})}
-                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
+                    className={inputClass}
                   >
                     <option value="">Nenhuma peça</option>
                     {products.map(p => (
@@ -768,7 +822,7 @@ function ServicesView({ services, setServices, products, setProducts }: {
                 <button 
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="flex-1 py-3 border border-slate-200 rounded-xl font-semibold text-slate-600 hover:bg-slate-50"
+                  className="flex-1 py-3 border border-slate-200 dark:border-slate-800 rounded-xl font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                 >
                   Cancelar
                 </button>
@@ -799,25 +853,25 @@ function ProfitAnalysisView({ services }: { services: ServiceOrder[] }) {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className={cn("rounded-2xl overflow-hidden", panelClass)}>
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-slate-50 border-b border-slate-200">
-              <th className="p-4 font-semibold text-slate-600">Serviço / OS</th>
-              <th className="p-4 font-semibold text-slate-600">Valor Cobrado</th>
-              <th className="p-4 font-semibold text-slate-600">Custo Peças</th>
-              <th className="p-4 font-semibold text-slate-600">Lucro Bruto</th>
-              <th className="p-4 font-semibold text-slate-600">Margem</th>
+            <tr className="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800">
+              <th className="p-4 font-semibold text-slate-600 dark:text-slate-300">Serviço / OS</th>
+              <th className="p-4 font-semibold text-slate-600 dark:text-slate-300">Valor Cobrado</th>
+              <th className="p-4 font-semibold text-slate-600 dark:text-slate-300">Custo Peças</th>
+              <th className="p-4 font-semibold text-slate-600 dark:text-slate-300">Lucro Bruto</th>
+              <th className="p-4 font-semibold text-slate-600 dark:text-slate-300">Margem</th>
             </tr>
           </thead>
           <tbody>
             {profitData.map((item) => (
-              <tr key={item.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+              <tr key={item.id} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/70 transition-colors">
                 <td className="p-4">
-                  <div className="font-bold text-slate-900">{item.deviceModel}</div>
-                  <div className="text-xs text-slate-400">{item.id} • {item.customerName}</div>
+                  <div className="font-bold text-slate-900 dark:text-slate-100">{item.deviceModel}</div>
+                  <div className="text-xs text-slate-400 dark:text-slate-500">{item.id} • {item.customerName}</div>
                 </td>
-                <td className="p-4 font-bold text-slate-900">{formatCurrency(item.totalPrice)}</td>
+                <td className="p-4 font-bold text-slate-900 dark:text-slate-100">{formatCurrency(item.totalPrice)}</td>
                 <td className="p-4 text-rose-600 font-medium">-{formatCurrency(item.partsCost)}</td>
                 <td className="p-4">
                   <div className="flex items-center gap-2 text-emerald-600 font-black">
@@ -826,13 +880,13 @@ function ProfitAnalysisView({ services }: { services: ServiceOrder[] }) {
                   </div>
                 </td>
                 <td className="p-4">
-                  <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden max-w-[100px]">
+                  <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden max-w-[100px]">
                     <div 
                       className="bg-emerald-500 h-full rounded-full" 
                       style={{ width: `${Math.min(item.margin, 100)}%` }}
                     />
                   </div>
-                  <span className="text-[10px] font-bold text-slate-500 mt-1 block">{item.margin.toFixed(1)}% de margem</span>
+                  <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-1 block">{item.margin.toFixed(1)}% de margem</span>
                 </td>
               </tr>
             ))}
@@ -847,29 +901,29 @@ function ProfitAnalysisView({ services }: { services: ServiceOrder[] }) {
 
 function StatCard({ title, value, icon: Icon, color, trend, isWarning }: any) {
   const colors: any = {
-    blue: "bg-blue-50 text-blue-600 border-blue-100",
-    emerald: "bg-emerald-50 text-emerald-600 border-emerald-100",
-    amber: "bg-amber-50 text-amber-600 border-amber-100",
-    rose: "bg-rose-50 text-rose-600 border-rose-100",
+    blue: "bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-300 border-blue-100 dark:border-blue-500/20",
+    emerald: "bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 border-emerald-100 dark:border-emerald-500/20",
+    amber: "bg-amber-50 dark:bg-amber-500/15 text-amber-600 dark:text-amber-300 border-amber-100 dark:border-amber-500/20",
+    rose: "bg-rose-50 dark:bg-rose-500/15 text-rose-600 dark:text-rose-300 border-rose-100 dark:border-rose-500/20",
   };
 
   return (
     <div className={cn(
-      "bg-white p-6 rounded-2xl border border-slate-200 shadow-sm transition-all hover:shadow-md",
-      isWarning && "border-rose-200 bg-rose-50/30"
+      "bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:shadow-md",
+      isWarning && "border-rose-200 dark:border-rose-500/30 bg-rose-50/30 dark:bg-rose-500/10"
     )}>
       <div className="flex justify-between items-start mb-4">
         <div className={cn("p-3 rounded-xl border", colors[color])}>
           <Icon size={24} />
         </div>
         {trend && (
-          <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">
+          <span className="text-xs font-bold text-emerald-600 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/15 px-2 py-1 rounded-lg">
             {trend}
           </span>
         )}
       </div>
-      <h4 className="text-slate-500 text-sm font-medium">{title}</h4>
-      <div className="text-2xl font-black text-slate-900 mt-1">{value}</div>
+      <h4 className="text-slate-500 dark:text-slate-400 text-sm font-medium">{title}</h4>
+      <div className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1">{value}</div>
     </div>
   );
 }
