@@ -1,0 +1,65 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: loja-celulares-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app_network
+
+  backend:
+    image: node:22-alpine
+    container_name: loja-celulares-backend
+    working_dir: /app
+    command: sh -c "sleep infinity"
+    env_file:
+      - .env
+    ports:
+      - "${BACKEND_PORT}:3001"
+    volumes:
+      - ./backend:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles:
+      - scaffold
+    networks:
+      - app_network
+
+  frontend:
+    image: node:22-alpine
+    container_name: loja-celulares-frontend
+    working_dir: /app
+    command: sh -c "sleep infinity"
+    env_file:
+      - .env
+    ports:
+      - "${FRONTEND_PORT}:3000"
+    volumes:
+      - ./frontend:/app
+    depends_on:
+      - backend
+    profiles:
+      - scaffold
+    networks:
+      - app_network
+
+volumes:
+  postgres_data:
+
+networks:
+  app_network:
+    driver: bridge
