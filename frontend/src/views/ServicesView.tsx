@@ -163,7 +163,7 @@ export const ServicesView = ({
         <button
           type="button"
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-2 font-semibold text-white shadow-lg shadow-blue-100 transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-2 font-semibold text-white shadow-lg shadow-blue-100 transition-colors hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 dark:shadow-blue-950/40 disabled:cursor-not-allowed disabled:opacity-60"
           disabled={isBusy}
         >
           <Plus size={20} />
