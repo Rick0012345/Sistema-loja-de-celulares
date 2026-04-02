@@ -1,0 +1,312 @@
+import { Activity, ArrowRight, CheckCircle2, CircleDollarSign, Search } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { cn, formatCurrency } from '../lib/utils';
+import {
+  getNextServiceAction,
+  serviceStatusBadgeClass,
+  serviceStatusLabel,
+  serviceStatusPanelClass,
+  workflowColumns,
+} from '../lib/serviceStatus';
+import { ServiceOrder, ServiceStatus } from '../types';
+
+type WorkflowViewProps = {
+  services: ServiceOrder[];
+  isBusy: boolean;
+  onUpdateServiceStatus: (serviceId: string, status: ServiceStatus) => Promise<void>;
+};
+
+const metricCardClass =
+  'rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900';
+
+export const WorkflowView = ({
+  services,
+  isBusy,
+  onUpdateServiceStatus,
+}: WorkflowViewProps) => {
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const normalizedSearch = searchTerm.trim().toLowerCase();
+
+  const visibleServices = useMemo(
+    () =>
+      services.filter((service) => {
+        if (normalizedSearch.length === 0) return true;
+
+        return [
+          service.id,
+          service.customerName,
+          service.customerPhone,
+          service.deviceBrand,
+          service.deviceModel,
+          service.issueDescription,
+        ].some((value) => value.toLowerCase().includes(normalizedSearch));
+      }),
+    [normalizedSearch, services],
+  );
+
+  const servicesByStatus = useMemo(
+    () =>
+      workflowColumns.reduce(
+        (accumulator, column) => ({
+          ...accumulator,
+          [column.id]: visibleServices
+            .filter((service) => service.status === column.id)
+            .sort(
+              (first, second) =>
+                new Date(second.updatedAt).getTime() - new Date(first.updatedAt).getTime(),
+            ),
+        }),
+        {} as Record<ServiceStatus, ServiceOrder[]>,
+      ),
+    [visibleServices],
+  );
+
+  const metrics = useMemo(() => {
+    const openOrders = visibleServices.filter(
+      (service) => service.status !== 'delivered' && service.status !== 'cancelled',
+    );
+    const readyOrders = visibleServices.filter((service) => service.status === 'ready');
+    const inProgressOrders = visibleServices.filter(
+      (service) => service.status === 'in_progress',
+    );
+    const deliveredRevenue = visibleServices
+      .filter((service) => service.status === 'delivered')
+      .reduce((total, service) => total + service.totalPrice, 0);
+
+    return {
+      openOrders: openOrders.length,
+      readyOrders: readyOrders.length,
+      inProgressOrders: inProgressOrders.length,
+      deliveredRevenue,
+    };
+  }, [visibleServices]);
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className={metricCardClass}>
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
+              OS em aberto
+            </span>
+            <Activity size={18} className="text-blue-500" />
+          </div>
+          <div className="mt-3 text-3xl font-black text-slate-900 dark:text-slate-100">
+            {metrics.openOrders}
+          </div>
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+            Tudo que ainda precisa de acao da equipe.
+          </p>
+        </div>
+
+        <div className={metricCardClass}>
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
+              Na bancada
+            </span>
+            <ArrowRight size={18} className="text-amber-500" />
+          </div>
+          <div className="mt-3 text-3xl font-black text-slate-900 dark:text-slate-100">
+            {metrics.inProgressOrders}
+          </div>
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+            Aparelhos em diagnostico ou conserto.
+          </p>
+        </div>
+
+        <div className={metricCardClass}>
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
+              Aguardando retirada
+            </span>
+            <CheckCircle2 size={18} className="text-emerald-500" />
+          </div>
+          <div className="mt-3 text-3xl font-black text-slate-900 dark:text-slate-100">
+            {metrics.readyOrders}
+          </div>
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+            Servicos concluidos prontos para entregar.
+          </p>
+        </div>
+
+        <div className={metricCardClass}>
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
+              Faturado nas entregas
+            </span>
+            <CircleDollarSign size={18} className="text-indigo-500" />
+          </div>
+          <div className="mt-3 text-3xl font-black text-slate-900 dark:text-slate-100">
+            {formatCurrency(metrics.deliveredRevenue)}
+          </div>
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+            Total das OS filtradas que ja foram entregues.
+          </p>
+        </div>
+      </div>
+
+      <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+              Fluxo das Ordens de Servico
+            </h3>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+              Visual rapido para saber o que entrou, o que esta em conserto e o que ja saiu.
+            </p>
+          </div>
+
+          <label className="relative block w-full max-w-md">
+            <Search
+              size={16}
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500"
+            />
+            <input
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Buscar cliente, aparelho, defeito ou numero da OS"
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm text-slate-700 outline-none transition-colors placeholder:text-slate-400 focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500"
+            />
+          </label>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-5 2xl:grid-cols-5 xl:grid-cols-3">
+        {workflowColumns.map((column) => {
+          const columnServices = servicesByStatus[column.id] ?? [];
+          const Icon = column.icon;
+
+          return (
+            <section
+              key={column.id}
+              className="flex min-h-[360px] flex-col rounded-3xl border border-slate-200 bg-gradient-to-b from-white to-slate-50/80 p-4 shadow-sm dark:border-slate-800 dark:from-slate-900 dark:to-slate-950"
+            >
+              <div className="mb-4 flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <div className="rounded-2xl bg-slate-100 p-3 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                    <Icon size={20} />
+                  </div>
+                  <div>
+                    <h4 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                      {column.title}
+                    </h4>
+                    <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
+                      {column.description}
+                    </p>
+                  </div>
+                </div>
+
+                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-200">
+                  {columnServices.length}
+                </span>
+              </div>
+
+              <div className="flex flex-1 flex-col gap-3">
+                {columnServices.length === 0 && (
+                  <div className="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50/80 p-5 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400">
+                    Nenhuma OS nesta etapa.
+                  </div>
+                )}
+
+                {columnServices.map((service) => {
+                  const nextAction = getNextServiceAction(service.status);
+
+                  return (
+                    <article
+                      key={service.id}
+                      className={cn(
+                        'rounded-2xl border p-4 shadow-sm transition-all',
+                        'hover:-translate-y-0.5 hover:shadow-md',
+                        serviceStatusPanelClass[service.status],
+                      )}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <h5 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                            {service.customerName}
+                          </h5>
+                          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                            {service.deviceBrand} {service.deviceModel}
+                          </p>
+                        </div>
+                        <span
+                          className={cn(
+                            'rounded-full px-2.5 py-1 text-[11px] font-bold',
+                            serviceStatusBadgeClass[service.status],
+                          )}
+                        >
+                          {serviceStatusLabel[service.status]}
+                        </span>
+                      </div>
+
+                      <p className="mt-3 line-clamp-3 text-sm text-slate-600 dark:text-slate-300">
+                        {service.issueDescription}
+                      </p>
+
+                      <div className="mt-4 grid grid-cols-2 gap-3 text-xs text-slate-500 dark:text-slate-400">
+                        <div className="rounded-xl bg-white/70 px-3 py-2 dark:bg-slate-950/70">
+                          <div className="font-semibold text-slate-700 dark:text-slate-200">
+                            OS
+                          </div>
+                          <div className="mt-1 font-mono">{service.id}</div>
+                        </div>
+                        <div className="rounded-xl bg-white/70 px-3 py-2 dark:bg-slate-950/70">
+                          <div className="font-semibold text-slate-700 dark:text-slate-200">
+                            Valor
+                          </div>
+                          <div className="mt-1">{formatCurrency(service.totalPrice)}</div>
+                        </div>
+                        <div className="rounded-xl bg-white/70 px-3 py-2 dark:bg-slate-950/70">
+                          <div className="font-semibold text-slate-700 dark:text-slate-200">
+                            Atualizada
+                          </div>
+                          <div className="mt-1">
+                            {new Date(service.updatedAt).toLocaleString('pt-BR')}
+                          </div>
+                        </div>
+                        <div className="rounded-xl bg-white/70 px-3 py-2 dark:bg-slate-950/70">
+                          <div className="font-semibold text-slate-700 dark:text-slate-200">
+                            Telefone
+                          </div>
+                          <div className="mt-1">{service.customerPhone || 'Nao informado'}</div>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 flex flex-col gap-2">
+                        {nextAction && (
+                          <button
+                            type="button"
+                            disabled={isBusy}
+                            onClick={() =>
+                              void onUpdateServiceStatus(service.id, nextAction.nextStatus)
+                            }
+                            className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
+                          >
+                            {nextAction.label}
+                            <ArrowRight size={16} />
+                          </button>
+                        )}
+
+                        {service.status !== 'delivered' && service.status !== 'cancelled' && (
+                          <button
+                            type="button"
+                            disabled={isBusy}
+                            onClick={() => void onUpdateServiceStatus(service.id, 'cancelled')}
+                            className="w-full rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-600 transition-colors hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300 dark:hover:bg-rose-500/20"
+                          >
+                            Cancelar OS
+                          </button>
+                        )}
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            </section>
+          );
+        })}
+      </div>
+    </div>
+  );
+};

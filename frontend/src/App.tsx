@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  BriefcaseBusiness,
   Clock,
   LayoutDashboard,
   Menu,
@@ -18,6 +19,7 @@ import { DashboardView } from './views/DashboardView';
 import { InventoryView } from './views/InventoryView';
 import { ProfitAnalysisView } from './views/ProfitAnalysisView';
 import { ServicesView } from './views/ServicesView';
+import { WorkflowView } from './views/WorkflowView';
 import {
   Customer,
   DashboardSummary,
@@ -35,6 +37,7 @@ const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'inventory', label: 'Estoque', icon: Package },
   { id: 'services', label: 'Servicos', icon: Wrench },
+  { id: 'workflow', label: 'Fluxo de Trabalho', icon: BriefcaseBusiness },
   { id: 'profit', label: 'Analise de Lucro', icon: TrendingUp },
 ] as const;
 
@@ -346,6 +349,13 @@ export default function App() {
                 services={services}
                 isBusy={isMutating}
                 onCreateService={handleCreateService}
+                onUpdateServiceStatus={handleUpdateServiceStatus}
+              />
+            )}
+            {activeTab === 'workflow' && (
+              <WorkflowView
+                services={services}
+                isBusy={isMutating}
                 onUpdateServiceStatus={handleUpdateServiceStatus}
               />
             )}

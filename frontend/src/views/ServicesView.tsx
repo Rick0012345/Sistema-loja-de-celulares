@@ -1,6 +1,11 @@
 import { type FormEvent, useMemo, useState } from 'react';
 import { CheckCircle, Clock, Plus, Search, Smartphone, X } from 'lucide-react';
 import { cn, formatCurrency } from '../lib/utils';
+import {
+  getNextServiceAction,
+  serviceStatusBadgeClass,
+  serviceStatusLabel,
+} from '../lib/serviceStatus';
 import { Product, ServiceFormValues, ServiceOrder, ServiceStatus } from '../types';
 
 const inputClass =
@@ -17,22 +22,6 @@ const EMPTY_SERVICE_FORM: ServiceFormValues = {
   laborCost: '',
   selectedPartId: '',
   partQuantity: '1',
-};
-
-const statusBadgeClass: Record<ServiceStatus, string> = {
-  pending: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300',
-  in_progress: 'bg-blue-100 dark:bg-blue-500/15 text-blue-600 dark:text-blue-300',
-  ready: 'bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-300',
-  delivered: 'bg-indigo-100 dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-300',
-  cancelled: 'bg-rose-100 dark:bg-rose-500/15 text-rose-600 dark:text-rose-300',
-};
-
-const statusLabel: Record<ServiceStatus, string> = {
-  pending: 'Pendente',
-  in_progress: 'Em Conserto',
-  ready: 'Pronto',
-  delivered: 'Entregue',
-  cancelled: 'Cancelado',
 };
 
 type ServicesViewProps = {
@@ -99,22 +88,6 @@ export const ServicesView = ({
     setIsModalOpen(false);
   };
 
-  const getNextAction = (status: ServiceStatus) => {
-    if (status === 'pending') {
-      return { label: 'Iniciar Conserto', nextStatus: 'in_progress' as const };
-    }
-
-    if (status === 'in_progress') {
-      return { label: 'Marcar como Pronto', nextStatus: 'ready' as const };
-    }
-
-    if (status === 'ready') {
-      return { label: 'Entregar ao Cliente', nextStatus: 'delivered' as const };
-    }
-
-    return null;
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -179,7 +152,7 @@ export const ServicesView = ({
         )}
 
         {filteredServices.map((service) => {
-          const nextAction = getNextAction(service.status);
+          const nextAction = getNextServiceAction(service.status);
 
           return (
             <div key={service.id} className="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:border-blue-200 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-blue-500/30">
@@ -193,8 +166,8 @@ export const ServicesView = ({
                       <h4 className="text-lg font-bold text-slate-900 dark:text-slate-100">
                         {service.deviceBrand} {service.deviceModel}
                       </h4>
-                      <span className={cn('rounded-full px-3 py-1 text-xs font-bold', statusBadgeClass[service.status])}>
-                        {statusLabel[service.status]}
+                      <span className={cn('rounded-full px-3 py-1 text-xs font-bold', serviceStatusBadgeClass[service.status])}>
+                        {serviceStatusLabel[service.status]}
                       </span>
                     </div>
                     <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
@@ -215,6 +188,15 @@ export const ServicesView = ({
                     {formatCurrency(service.totalPrice)}
                   </div>
                   <div className="mt-4 flex justify-end gap-2">
+                    {service.status !== 'delivered' && service.status !== 'cancelled' && (
+                      <button
+                        type="button"
+                        onClick={() => void onUpdateServiceStatus(service.id, 'cancelled')}
+                        className="rounded-xl bg-rose-50 px-4 py-2 text-xs font-bold text-rose-600 transition-colors hover:bg-rose-100 dark:bg-rose-500/15 dark:text-rose-300 dark:hover:bg-rose-500/20"
+                      >
+                        Cancelar OS
+                      </button>
+                    )}
                     {nextAction && (
                       <button
                         type="button"
