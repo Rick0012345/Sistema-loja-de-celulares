@@ -15,8 +15,12 @@ describe('AppController', () => {
   });
 
   describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+    it('should return API status', () => {
+      expect(appController.getStatus()).toMatchObject({
+        nome: 'Sistema de Gestão para Loja de Celulares',
+        status: 'online',
+        versao: '0.1.0',
+      });
     });
   });
 });

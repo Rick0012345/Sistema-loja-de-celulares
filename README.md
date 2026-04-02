@@ -32,6 +32,14 @@ Sistema web para controle de estoque, ordens de serviço, financeiro e lucrativi
 - Financeiro
 - Dashboard
 
+## Primeira Entrega Implementada
+
+- API NestJS com Prisma conectada ao PostgreSQL
+- Endpoints para autenticação inicial, clientes, estoque, ordens de serviço e dashboard
+- Swagger disponível em `http://localhost:3001/docs`
+- Painel Next.js com indicadores e formulários para cadastro rápido
+- Docker Compose configurado para subir banco, backend e frontend
+
 ## Estrutura Inicial Recomendada
 
 ```text
@@ -54,5 +62,27 @@ Sistema web para controle de estoque, ordens de serviço, financeiro e lucrativi
 O projeto passa a adotar Docker Compose como padrão de ambiente local.
 
 - PostgreSQL já está configurado para subir por padrão
-- frontend e backend já estão previstos no compose com perfil `scaffold`
-- a estrutura está pronta para receber a implementação sem refazer a base
+- frontend e backend já sobem com o perfil `scaffold`
+- o backend fica disponível em `http://localhost:3001`
+- o frontend fica disponível em `http://localhost:3000`
+
+## Como subir
+
+Execute na raiz do projeto:
+
+```bash
+docker compose --profile scaffold up -d
+```
+
+## Endpoints iniciais
+
+- `GET /` status da API
+- `GET /auth/status` verifica se já existe usuário
+- `POST /auth/bootstrap-admin` cria o primeiro administrador
+- `POST /auth/login` autentica usuário
+- `GET/POST/PATCH/DELETE /clientes`
+- `GET/POST/PATCH /estoque/produtos`
+- `POST /estoque/produtos/:id/movimentacoes`
+- `GET/POST /ordens-servico`
+- `PATCH /ordens-servico/:id/status`
+- `GET /dashboard/resumo`

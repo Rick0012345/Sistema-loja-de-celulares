@@ -1,0 +1,261 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model categorias_produto {
+  id             String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nome           String           @unique @db.VarChar(100)
+  created_at     DateTime         @default(now()) @db.Timestamptz(6)
+  produtos_pecas produtos_pecas[]
+}
+
+model clientes {
+  id                 String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nome               String               @db.VarChar(150)
+  telefone           String               @db.VarChar(20)
+  email              String?              @db.VarChar(180)
+  cpf                String?              @db.VarChar(14)
+  created_at         DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime             @default(now()) @db.Timestamptz(6)
+  contas_financeiras contas_financeiras[]
+  ordens_servico     ordens_servico[]
+
+  @@index([telefone], map: "idx_clientes_telefone")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model contas_financeiras {
+  id               String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tipo             tipo_conta_financeira
+  descricao        String                @db.VarChar(180)
+  cliente_id       String?               @db.Uuid
+  fornecedor_id    String?               @db.Uuid
+  ordem_servico_id String?               @db.Uuid
+  valor            Decimal               @db.Decimal(12, 2)
+  vencimento       DateTime?             @db.Date
+  status           status_pagamento      @default(pendente)
+  pago_em          DateTime?             @db.Timestamptz(6)
+  created_at       DateTime              @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime              @default(now()) @db.Timestamptz(6)
+  clientes         clientes?             @relation(fields: [cliente_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  fornecedores     fornecedores?         @relation(fields: [fornecedor_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  ordens_servico   ordens_servico?       @relation(fields: [ordem_servico_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([tipo, status], map: "idx_contas_financeiras_tipo_status")
+}
+
+model fornecedores {
+  id                 String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nome               String               @db.VarChar(150)
+  telefone           String?              @db.VarChar(20)
+  email              String?              @db.VarChar(180)
+  documento          String?              @db.VarChar(20)
+  contato            String?              @db.VarChar(120)
+  ativo              Boolean              @default(true)
+  created_at         DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime             @default(now()) @db.Timestamptz(6)
+  contas_financeiras contas_financeiras[]
+  produtos_pecas     produtos_pecas[]
+}
+
+model historico_status_os {
+  id               String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ordem_servico_id String                @db.Uuid
+  status_anterior  status_ordem_servico?
+  status_novo      status_ordem_servico
+  alterado_por     String?               @db.Uuid
+  observacao       String?
+  created_at       DateTime              @default(now()) @db.Timestamptz(6)
+  usuarios         usuarios?             @relation(fields: [alterado_por], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  ordens_servico   ordens_servico        @relation(fields: [ordem_servico_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([ordem_servico_id], map: "idx_historico_status_os_ordem_servico")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model itens_os {
+  id               String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ordem_servico_id String          @db.Uuid
+  produto_id       String?         @db.Uuid
+  descricao_item   String          @db.VarChar(180)
+  quantidade       Int
+  custo_unitario   Decimal         @db.Decimal(12, 2)
+  venda_unitaria   Decimal         @db.Decimal(12, 2)
+  subtotal         Decimal         @db.Decimal(12, 2)
+  created_at       DateTime        @default(now()) @db.Timestamptz(6)
+  ordens_servico   ordens_servico  @relation(fields: [ordem_servico_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  produtos_pecas   produtos_pecas? @relation(fields: [produto_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([ordem_servico_id], map: "idx_itens_os_ordem_servico")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model movimentacoes_estoque {
+  id             String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  produto_id     String                      @db.Uuid
+  tipo           tipo_movimentacao_estoque
+  origem         origem_movimentacao_estoque
+  origem_id      String?                     @db.Uuid
+  quantidade     Int
+  custo_unitario Decimal?                    @db.Decimal(12, 2)
+  observacao     String?
+  created_at     DateTime                    @default(now()) @db.Timestamptz(6)
+  produtos_pecas produtos_pecas              @relation(fields: [produto_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([produto_id], map: "idx_movimentacoes_estoque_produto")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model ordens_servico {
+  id                                             String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cliente_id                                     String                @db.Uuid
+  atendente_id                                   String?               @db.Uuid
+  tecnico_id                                     String?               @db.Uuid
+  aparelho_marca                                 String                @db.VarChar(80)
+  aparelho_modelo                                String                @db.VarChar(120)
+  aparelho_cor                                   String?               @db.VarChar(50)
+  imei                                           String?               @db.VarChar(30)
+  defeito_relatado                               String
+  observacoes                                    String?
+  senha_desbloqueio                              String?               @db.VarChar(120)
+  termo_responsabilidade_aceito                  Boolean               @default(false)
+  valor_mao_de_obra                              Decimal               @default(0) @db.Decimal(12, 2)
+  desconto                                       Decimal               @default(0) @db.Decimal(12, 2)
+  valor_total                                    Decimal               @default(0) @db.Decimal(12, 2)
+  lucro_estimado                                 Decimal               @default(0) @db.Decimal(12, 2)
+  status                                         status_ordem_servico  @default(aguardando_orcamento)
+  data_entrada                                   DateTime              @default(now()) @db.Timestamptz(6)
+  data_saida                                     DateTime?             @db.Timestamptz(6)
+  created_at                                     DateTime              @default(now()) @db.Timestamptz(6)
+  updated_at                                     DateTime              @default(now()) @db.Timestamptz(6)
+  contas_financeiras                             contas_financeiras[]
+  historico_status_os                            historico_status_os[]
+  itens_os                                       itens_os[]
+  usuarios_ordens_servico_atendente_idTousuarios usuarios?             @relation("ordens_servico_atendente_idTousuarios", fields: [atendente_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  clientes                                       clientes              @relation(fields: [cliente_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  usuarios_ordens_servico_tecnico_idTousuarios   usuarios?             @relation("ordens_servico_tecnico_idTousuarios", fields: [tecnico_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  pagamentos_os                                  pagamentos_os[]
+
+  @@index([cliente_id], map: "idx_ordens_servico_cliente")
+  @@index([data_entrada], map: "idx_ordens_servico_data_entrada")
+  @@index([status], map: "idx_ordens_servico_status")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model pagamentos_os {
+  id               String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ordem_servico_id String           @db.Uuid
+  valor            Decimal          @db.Decimal(12, 2)
+  meio             meio_pagamento
+  status           status_pagamento @default(pago)
+  pago_em          DateTime?        @db.Timestamptz(6)
+  observacao       String?
+  created_at       DateTime         @default(now()) @db.Timestamptz(6)
+  ordens_servico   ordens_servico   @relation(fields: [ordem_servico_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([ordem_servico_id], map: "idx_pagamentos_os_ordem_servico")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model produtos_pecas {
+  id                    String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nome                  String                  @db.VarChar(180)
+  marca                 String?                 @db.VarChar(80)
+  modelo_compatavel     String?                 @db.VarChar(120)
+  categoria_id          String?                 @db.Uuid
+  fornecedor_id         String?                 @db.Uuid
+  sku                   String?                 @unique @db.VarChar(80)
+  quantidade_estoque    Int                     @default(0)
+  estoque_minimo        Int                     @default(0)
+  preco_custo           Decimal                 @db.Decimal(12, 2)
+  preco_venda           Decimal                 @db.Decimal(12, 2)
+  ativo                 Boolean                 @default(true)
+  created_at            DateTime                @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime                @default(now()) @db.Timestamptz(6)
+  itens_os              itens_os[]
+  movimentacoes_estoque movimentacoes_estoque[]
+  categorias_produto    categorias_produto?     @relation(fields: [categoria_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  fornecedores          fornecedores?           @relation(fields: [fornecedor_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([nome], map: "idx_produtos_pecas_nome")
+  @@index([quantidade_estoque], map: "idx_produtos_pecas_quantidade")
+}
+
+model usuarios {
+  id                                                   String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nome                                                 String                @db.VarChar(150)
+  email                                                String                @unique @db.VarChar(180)
+  senha_hash                                           String
+  perfil                                               perfil_usuario
+  ativo                                                Boolean               @default(true)
+  created_at                                           DateTime              @default(now()) @db.Timestamptz(6)
+  updated_at                                           DateTime              @default(now()) @db.Timestamptz(6)
+  historico_status_os                                  historico_status_os[]
+  ordens_servico_ordens_servico_atendente_idTousuarios ordens_servico[]      @relation("ordens_servico_atendente_idTousuarios")
+  ordens_servico_ordens_servico_tecnico_idTousuarios   ordens_servico[]      @relation("ordens_servico_tecnico_idTousuarios")
+}
+
+model webhook_eventos {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  evento        String   @db.VarChar(100)
+  referencia_id String   @db.Uuid
+  payload       Json
+  sucesso       Boolean  @default(false)
+  resposta      String?
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([evento], map: "idx_webhook_eventos_evento")
+}
+
+enum meio_pagamento {
+  dinheiro
+  pix
+  cartao_credito
+  cartao_debito
+  transferencia
+}
+
+enum origem_movimentacao_estoque {
+  compra
+  ordem_servico
+  ajuste_manual
+}
+
+enum perfil_usuario {
+  administrador
+  atendente
+  tecnico
+  financeiro
+}
+
+enum status_ordem_servico {
+  aguardando_orcamento
+  aguardando_aprovacao
+  aguardando_peca
+  em_conserto
+  pronto_para_retirada
+  entregue
+  cancelada
+}
+
+enum status_pagamento {
+  pendente
+  pago
+  cancelado
+}
+
+enum tipo_conta_financeira {
+  pagar
+  receber
+}
+
+enum tipo_movimentacao_estoque {
+  entrada
+  saida
+  ajuste
+}
