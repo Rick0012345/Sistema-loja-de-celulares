@@ -46,7 +46,12 @@ export class CreateProdutoDto {
   quantidade_inicial?: number;
 }
 
-export class UpdateProdutoDto extends PartialType(CreateProdutoDto) {}
+export class UpdateProdutoDto extends PartialType(CreateProdutoDto) {
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  quantidade_estoque?: number;
+}
 
 export class RegistrarMovimentacaoDto {
   @IsEnum(tipo_movimentacao_estoque)

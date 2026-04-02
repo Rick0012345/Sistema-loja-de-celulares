@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -35,6 +36,11 @@ export class EstoqueController {
   @Patch('produtos/:id')
   update(@Param('id') id: string, @Body() dto: UpdateProdutoDto) {
     return this.estoqueService.update(id, dto);
+  }
+
+  @Delete('produtos/:id')
+  remove(@Param('id') id: string) {
+    return this.estoqueService.remove(id);
   }
 
   @Post('produtos/:id/movimentacoes')

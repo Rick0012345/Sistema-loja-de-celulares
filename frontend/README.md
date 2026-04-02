@@ -1,20 +1,18 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Frontend
 
-# Run and deploy your AI Studio app
+Painel em React + Vite para o sistema de loja e assistencia tecnica.
 
-This contains everything you need to run your app locally.
+## Desenvolvimento
 
-View your app in AI Studio: https://ai.studio/apps/2e090068-92b5-4b62-98fa-c429320a28eb
+1. Instale as dependencias com `npm install`
+2. Copie `.env.example` para `.env`
+3. Ajuste `VITE_API_URL` para a URL do backend
+4. Rode `npm run dev`
 
-## Run Locally
+O frontend agora consome os endpoints de:
 
-**Prerequisites:**  Node.js
-
-
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+- `GET/POST/PATCH/DELETE /estoque/produtos`
+- `GET/POST /clientes`
+- `GET/POST /ordens-servico`
+- `PATCH /ordens-servico/:id/status`
+- `GET /dashboard/resumo`

@@ -1,34 +1,109 @@
+export type ThemeMode = 'light' | 'dark';
+
 export type Product = {
   id: string;
   name: string;
-  category: string;
+  brand: string;
+  compatibleModel: string;
+  sku: string;
   costPrice: number;
   salePrice: number;
   stock: number;
   minStock: number;
+  isLowStock: boolean;
 };
 
-export type ServiceStatus = 'pending' | 'in_progress' | 'ready' | 'delivered' | 'cancelled';
+export type ServiceStatus =
+  | 'pending'
+  | 'in_progress'
+  | 'ready'
+  | 'delivered'
+  | 'cancelled';
+
+export type ServicePart = {
+  id: string;
+  productId: string | null;
+  description: string;
+  quantity: number;
+  costPrice: number;
+  salePrice: number;
+  subtotal: number;
+};
 
 export type ServiceOrder = {
   id: string;
+  customerId: string;
   customerName: string;
   customerPhone: string;
+  deviceBrand: string;
   deviceModel: string;
   issueDescription: string;
   status: ServiceStatus;
-  partsUsed: { productId: string; quantity: number; costPrice: number }[];
+  partsUsed: ServicePart[];
   laborCost: number;
   totalPrice: number;
+  estimatedProfit: number;
   createdAt: string;
   updatedAt: string;
 };
 
-export type Transaction = {
+export type Customer = {
   id: string;
-  type: 'income' | 'expense';
-  amount: number;
-  description: string;
-  date: string;
-  category: string;
+  name: string;
+  phone: string;
+  email: string | null;
+  cpf: string | null;
+};
+
+export type DashboardIndicators = {
+  totalClientes: number;
+  totalProdutos: number;
+  totalOrdensAbertas: number;
+  totalProdutosBaixoEstoque: number;
+  faturamentoMes: number;
+  lucroMes: number;
+};
+
+export type DashboardOrder = {
+  id: string;
+  customerName: string;
+  deviceLabel: string;
+  statusLabel: string;
+  totalPrice: number;
+  createdAt: string;
+};
+
+export type DashboardLowStockProduct = {
+  id: string;
+  name: string;
+  stock: number;
+  minStock: number;
+};
+
+export type DashboardSummary = {
+  indicators: DashboardIndicators;
+  recentOrders: DashboardOrder[];
+  lowStockProducts: DashboardLowStockProduct[];
+};
+
+export type ProductFormValues = {
+  name: string;
+  brand: string;
+  compatibleModel: string;
+  sku: string;
+  costPrice: string;
+  salePrice: string;
+  stock: string;
+  minStock: string;
+};
+
+export type ServiceFormValues = {
+  customerName: string;
+  customerPhone: string;
+  deviceBrand: string;
+  deviceModel: string;
+  issueDescription: string;
+  laborCost: string;
+  selectedPartId: string;
+  partQuantity: string;
 };

@@ -17,6 +17,7 @@ export class EstoqueService {
 
   async list() {
     const produtos = await this.prisma.produtos_pecas.findMany({
+      where: { ativo: true },
       orderBy: { created_at: 'desc' },
       include: {
         categorias_produto: true,
@@ -97,26 +98,70 @@ export class EstoqueService {
   }
 
   async update(id: string, dto: UpdateProdutoDto) {
-    await this.ensureExists(id);
+    return this.prisma.$transaction(async (tx) => {
+      const atual = await tx.produtos_pecas.findUnique({
+        where: { id },
+      });
 
-    const produto = await this.prisma.produtos_pecas.update({
+      if (!atual || !atual.ativo) {
+        throw new NotFoundException('Produto nÃ£o encontrado.');
+      }
+
+      const quantidadeEstoque =
+        dto.quantidade_estoque ?? atual.quantidade_estoque;
+      const deltaEstoque = quantidadeEstoque - atual.quantidade_estoque;
+
+      const produto = await tx.produtos_pecas.update({
+        where: { id },
+        data: {
+          nome: dto.nome,
+          marca: dto.marca,
+          modelo_compatavel: dto.modelo_compatavel,
+          sku: dto.sku,
+          estoque_minimo: dto.estoque_minimo,
+          preco_custo: dto.preco_custo,
+          preco_venda: dto.preco_venda,
+          quantidade_estoque: quantidadeEstoque,
+        },
+      });
+
+      if (deltaEstoque !== 0) {
+        await tx.movimentacoes_estoque.create({
+          data: {
+            produto_id: produto.id,
+            tipo: tipo_movimentacao_estoque.ajuste,
+            origem: origem_movimentacao_estoque.ajuste_manual,
+            quantidade: deltaEstoque,
+            custo_unitario: dto.preco_custo ?? atual.preco_custo,
+            observacao: 'Ajuste automÃ¡tico de estoque via ediÃ§Ã£o de produto.',
+          },
+        });
+      }
+
+      return {
+        ...produto,
+        preco_custo: toNumber(produto.preco_custo),
+        preco_venda: toNumber(produto.preco_venda),
+      };
+    });
+  }
+
+  async remove(id: string) {
+    const produto = await this.prisma.produtos_pecas.findUnique({
       where: { id },
-      data: {
-        nome: dto.nome,
-        marca: dto.marca,
-        modelo_compatavel: dto.modelo_compatavel,
-        sku: dto.sku,
-        estoque_minimo: dto.estoque_minimo,
-        preco_custo: dto.preco_custo,
-        preco_venda: dto.preco_venda,
-      },
+      select: { id: true, ativo: true },
     });
 
-    return {
-      ...produto,
-      preco_custo: toNumber(produto.preco_custo),
-      preco_venda: toNumber(produto.preco_venda),
-    };
+    if (!produto || !produto.ativo) {
+      throw new NotFoundException('Produto nÃ£o encontrado.');
+    }
+
+    await this.prisma.produtos_pecas.update({
+      where: { id },
+      data: { ativo: false },
+    });
+
+    return { deleted: true };
   }
 
   async registrarMovimentacao(id: string, dto: RegistrarMovimentacaoDto) {
@@ -183,10 +228,10 @@ export class EstoqueService {
   private async ensureExists(id: string) {
     const produto = await this.prisma.produtos_pecas.findUnique({
       where: { id },
-      select: { id: true },
+      select: { id: true, ativo: true },
     });
 
-    if (!produto) {
+    if (!produto || !produto.ativo) {
       throw new NotFoundException('Produto não encontrado.');
     }
   }
