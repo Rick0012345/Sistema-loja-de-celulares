@@ -100,7 +100,7 @@ export const InventoryView = ({
         <button
           type="button"
           onClick={() => openModal()}
-          className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-blue-100 transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-blue-100 transition-colors hover:bg-blue-700 dark:bg-blue-500 dark:shadow-blue-950/40 dark:hover:bg-blue-400 disabled:cursor-not-allowed disabled:opacity-60"
           disabled={isBusy}
         >
           <Plus size={20} />
