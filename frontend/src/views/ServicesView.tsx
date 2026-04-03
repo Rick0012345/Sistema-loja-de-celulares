@@ -9,9 +9,9 @@ import {
 import { Product, ServiceFormValues, ServiceOrder, ServiceStatus } from '../types';
 
 const inputClass =
-  'w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500';
+  'w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500';
 const secondaryButtonClass =
-  'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-4 py-2 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors';
+  'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3.5 py-2 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors';
 
 const EMPTY_SERVICE_FORM: ServiceFormValues = {
   customerName: '',
@@ -89,7 +89,7 @@ export const ServicesView = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-wrap gap-3">
           {filterOptions.map((filter) => (
@@ -136,7 +136,7 @@ export const ServicesView = ({
         <button
           type="button"
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-2 font-semibold text-white shadow-lg shadow-blue-100 transition-colors hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 dark:shadow-blue-950/40 disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-100 transition-colors hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 dark:shadow-blue-950/40 disabled:cursor-not-allowed disabled:opacity-60"
           disabled={isBusy}
         >
           <Plus size={20} />
@@ -146,7 +146,7 @@ export const ServicesView = ({
 
       <div className="grid grid-cols-1 gap-4">
         {filteredServices.length === 0 && (
-          <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-center text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
             Nenhuma ordem de servico encontrada com os filtros atuais.
           </div>
         )}
@@ -155,15 +155,15 @@ export const ServicesView = ({
           const nextAction = getNextServiceAction(service.status);
 
           return (
-            <div key={service.id} className="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:border-blue-200 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-blue-500/30">
+            <div key={service.id} className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-blue-200 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-blue-500/30">
               <div className="flex justify-between gap-4">
                 <div className="flex gap-4">
-                  <div className="rounded-2xl bg-slate-50 p-4 text-slate-400 transition-colors group-hover:text-blue-500 dark:bg-slate-950 dark:text-slate-500">
-                    <Smartphone size={32} />
+                  <div className="rounded-2xl bg-slate-50 p-3 text-slate-400 transition-colors group-hover:text-blue-500 dark:bg-slate-950 dark:text-slate-500">
+                    <Smartphone size={28} />
                   </div>
                   <div>
                     <div className="flex items-center gap-3">
-                      <h4 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                      <h4 className="text-base font-bold text-slate-900 dark:text-slate-100">
                         {service.deviceBrand} {service.deviceModel}
                       </h4>
                       <span className={cn('rounded-full px-3 py-1 text-xs font-bold', serviceStatusBadgeClass[service.status])}>
@@ -184,7 +184,7 @@ export const ServicesView = ({
                 </div>
 
                 <div className="text-right">
-                  <div className="text-2xl font-black text-slate-900 dark:text-slate-100">
+                  <div className="text-xl font-black text-slate-900 dark:text-slate-100">
                     {formatCurrency(service.totalPrice)}
                   </div>
                   <div className="mt-4 flex justify-end gap-2">
@@ -218,7 +218,7 @@ export const ServicesView = ({
                 </div>
               </div>
 
-              <div className="mt-6 -mx-6 -mb-6 flex items-center justify-between rounded-b-2xl border-t border-slate-50 bg-slate-50/50 px-6 py-4 dark:border-slate-800 dark:bg-slate-950/70">
+              <div className="mt-5 -mx-5 -mb-5 flex items-center justify-between rounded-b-2xl border-t border-slate-50 bg-slate-50/50 px-5 py-3.5 dark:border-slate-800 dark:bg-slate-950/70">
                 <div className="text-sm italic text-slate-600 dark:text-slate-300">
                   "{service.issueDescription}"
                 </div>
@@ -236,9 +236,9 @@ export const ServicesView = ({
 
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-2xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900">
-            <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50 p-6 dark:border-slate-800 dark:bg-slate-950">
-              <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">Nova Ordem de Servico</h3>
+          <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-5 py-4 dark:border-slate-800 dark:bg-slate-950">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">Nova Ordem de Servico</h3>
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
@@ -247,8 +247,8 @@ export const ServicesView = ({
                 <X size={24} />
               </button>
             </div>
-            <form onSubmit={(event) => void handleSubmit(event)} className="space-y-6 p-6">
-              <div className="grid grid-cols-2 gap-6">
+            <form onSubmit={(event) => void handleSubmit(event)} className="space-y-5 overflow-y-auto p-5">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-1">
                   <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">Nome do Cliente</label>
                   <input required value={formData.customerName} onChange={(event) => setFormData((current) => ({ ...current, customerName: event.target.value }))} className={inputClass} />
@@ -273,11 +273,11 @@ export const ServicesView = ({
                   <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">Quantidade da Peca</label>
                   <input type="number" min="1" value={formData.partQuantity} onChange={(event) => setFormData((current) => ({ ...current, partQuantity: event.target.value }))} className={inputClass} />
                 </div>
-                <div className="col-span-2 space-y-1">
+                <div className="space-y-1 sm:col-span-2">
                   <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">Descricao do Problema</label>
                   <textarea required rows={2} value={formData.issueDescription} onChange={(event) => setFormData((current) => ({ ...current, issueDescription: event.target.value }))} className={inputClass} />
                 </div>
-                <div className="col-span-2 space-y-1">
+                <div className="space-y-1 sm:col-span-2">
                   <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">Peca Utilizada (Opcional)</label>
                   <select value={formData.selectedPartId} onChange={(event) => setFormData((current) => ({ ...current, selectedPartId: event.target.value }))} className={inputClass}>
                     <option value="">Nenhuma peca</option>
@@ -289,11 +289,11 @@ export const ServicesView = ({
                   </select>
                 </div>
               </div>
-              <div className="flex gap-3 pt-4">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 rounded-xl border border-slate-200 py-3 font-semibold text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800">
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800">
                   Cancelar
                 </button>
-                <button type="submit" className="flex-1 rounded-xl bg-blue-600 py-3 font-semibold text-white shadow-lg shadow-blue-100 transition-colors hover:bg-blue-700">
+                <button type="submit" className="flex-1 rounded-xl bg-blue-600 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-100 transition-colors hover:bg-blue-700">
                   Gerar OS
                 </button>
               </div>

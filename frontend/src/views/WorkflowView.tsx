@@ -17,7 +17,7 @@ type WorkflowViewProps = {
 };
 
 const metricCardClass =
-  'rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900';
+  'rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900';
 
 export const WorkflowView = ({
   services,
@@ -83,7 +83,7 @@ export const WorkflowView = ({
   }, [visibleServices]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className={metricCardClass}>
           <div className="flex items-center justify-between">
@@ -92,7 +92,7 @@ export const WorkflowView = ({
             </span>
             <Activity size={18} className="text-blue-500" />
           </div>
-          <div className="mt-3 text-3xl font-black text-slate-900 dark:text-slate-100">
+          <div className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">
             {metrics.openOrders}
           </div>
           <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
@@ -107,7 +107,7 @@ export const WorkflowView = ({
             </span>
             <ArrowRight size={18} className="text-amber-500" />
           </div>
-          <div className="mt-3 text-3xl font-black text-slate-900 dark:text-slate-100">
+          <div className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">
             {metrics.inProgressOrders}
           </div>
           <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
@@ -122,7 +122,7 @@ export const WorkflowView = ({
             </span>
             <CheckCircle2 size={18} className="text-emerald-500" />
           </div>
-          <div className="mt-3 text-3xl font-black text-slate-900 dark:text-slate-100">
+          <div className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">
             {metrics.readyOrders}
           </div>
           <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
@@ -137,7 +137,7 @@ export const WorkflowView = ({
             </span>
             <CircleDollarSign size={18} className="text-indigo-500" />
           </div>
-          <div className="mt-3 text-3xl font-black text-slate-900 dark:text-slate-100">
+          <div className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">
             {formatCurrency(metrics.deliveredRevenue)}
           </div>
           <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
@@ -149,7 +149,7 @@ export const WorkflowView = ({
       <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
               Fluxo das Ordens de Servico
             </h3>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
@@ -166,13 +166,13 @@ export const WorkflowView = ({
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
               placeholder="Buscar cliente, aparelho, defeito ou numero da OS"
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm text-slate-700 outline-none transition-colors placeholder:text-slate-400 focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500"
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-sm text-slate-700 outline-none transition-colors placeholder:text-slate-400 focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500"
             />
           </label>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 2xl:grid-cols-5 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 2xl:grid-cols-5 xl:grid-cols-3">
         {workflowColumns.map((column) => {
           const columnServices = servicesByStatus[column.id] ?? [];
           const Icon = column.icon;
@@ -180,11 +180,11 @@ export const WorkflowView = ({
           return (
             <section
               key={column.id}
-              className="flex min-h-[360px] flex-col rounded-3xl border border-slate-200 bg-gradient-to-b from-white to-slate-50/80 p-4 shadow-sm dark:border-slate-800 dark:from-slate-900 dark:to-slate-950"
+              className="flex min-h-[320px] flex-col rounded-3xl border border-slate-200 bg-gradient-to-b from-white to-slate-50/80 p-3.5 shadow-sm dark:border-slate-800 dark:from-slate-900 dark:to-slate-950"
             >
               <div className="mb-4 flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3">
-                  <div className="rounded-2xl bg-slate-100 p-3 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                  <div className="rounded-2xl bg-slate-100 p-2.5 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
                     <Icon size={20} />
                   </div>
                   <div>
@@ -216,7 +216,7 @@ export const WorkflowView = ({
                     <article
                       key={service.id}
                       className={cn(
-                        'rounded-2xl border p-4 shadow-sm transition-all',
+                        'rounded-2xl border p-3.5 shadow-sm transition-all',
                         'hover:-translate-y-0.5 hover:shadow-md',
                         serviceStatusPanelClass[service.status],
                       )}
@@ -281,7 +281,7 @@ export const WorkflowView = ({
                             onClick={() =>
                               void onUpdateServiceStatus(service.id, nextAction.nextStatus)
                             }
-                            className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
+                            className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
                           >
                             {nextAction.label}
                             <ArrowRight size={16} />
@@ -293,7 +293,7 @@ export const WorkflowView = ({
                             type="button"
                             disabled={isBusy}
                             onClick={() => void onUpdateServiceStatus(service.id, 'cancelled')}
-                            className="w-full rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-600 transition-colors hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300 dark:hover:bg-rose-500/20"
+                            className="w-full rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-semibold text-rose-600 transition-colors hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300 dark:hover:bg-rose-500/20"
                           >
                             Cancelar OS
                           </button>

@@ -101,8 +101,8 @@ export const DashboardView = ({
         };
 
   return (
-    <div className="space-y-8">
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Receita Total"
           value={formatCurrency(stats.totalRevenue)}
@@ -130,13 +130,13 @@ export const DashboardView = ({
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-        <div className={cn('rounded-2xl p-6 lg:col-span-2', panelClass)}>
-          <h3 className="mb-6 flex items-center gap-2 text-lg font-bold">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className={cn('rounded-2xl p-5 lg:col-span-2', panelClass)}>
+          <h3 className="mb-4 flex items-center gap-2 text-base font-bold">
             <TrendingUp size={20} className="text-blue-600" />
             Faturamento dos ultimos 7 dias
           </h3>
-          <div className="h-80 w-full">
+          <div className="h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartTheme.grid} />
@@ -149,9 +149,9 @@ export const DashboardView = ({
           </div>
         </div>
 
-        <div className={cn('rounded-2xl p-6', panelClass)}>
-          <h3 className="mb-6 text-lg font-bold">Status dos Servicos</h3>
-          <div className="h-64 w-full">
+        <div className={cn('rounded-2xl p-5', panelClass)}>
+          <h3 className="mb-4 text-base font-bold">Status dos Servicos</h3>
+          <div className="h-60 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie data={statusData} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
@@ -178,17 +178,17 @@ export const DashboardView = ({
       </div>
 
       {summary && (
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-          <div className={cn('rounded-2xl p-6', panelClass)}>
-            <h3 className="mb-5 text-lg font-bold">Ordens Recentes</h3>
-            <div className="space-y-4">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div className={cn('rounded-2xl p-5', panelClass)}>
+            <h3 className="mb-4 text-base font-bold">Ordens Recentes</h3>
+            <div className="space-y-3">
               {summary.recentOrders.length === 0 && (
                 <p className="text-sm text-slate-500 dark:text-slate-400">
                   Ainda nao existem ordens recentes no backend.
                 </p>
               )}
               {summary.recentOrders.map((order) => (
-                <div key={order.id} className="flex items-center justify-between gap-4 rounded-xl border border-slate-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
+                <div key={order.id} className="flex items-center justify-between gap-4 rounded-xl border border-slate-100 bg-slate-50 p-3.5 dark:border-slate-800 dark:bg-slate-950">
                   <div>
                     <p className="font-semibold">{order.deviceLabel}</p>
                     <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -206,16 +206,16 @@ export const DashboardView = ({
             </div>
           </div>
 
-          <div className={cn('rounded-2xl p-6', panelClass)}>
-            <h3 className="mb-5 text-lg font-bold">Produtos com Estoque Baixo</h3>
-            <div className="space-y-4">
+          <div className={cn('rounded-2xl p-5', panelClass)}>
+            <h3 className="mb-4 text-base font-bold">Produtos com Estoque Baixo</h3>
+            <div className="space-y-3">
               {summary.lowStockProducts.length === 0 && (
                 <p className="text-sm text-slate-500 dark:text-slate-400">
                   Nenhum produto em nivel critico no backend.
                 </p>
               )}
               {summary.lowStockProducts.map((product) => (
-                <div key={product.id} className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
+                <div key={product.id} className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 p-3.5 dark:border-slate-800 dark:bg-slate-950">
                   <div>
                     <p className="font-semibold">{product.name}</p>
                     <p className="text-sm text-slate-500 dark:text-slate-400">

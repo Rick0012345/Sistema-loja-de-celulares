@@ -18,7 +18,7 @@
   }
 
   body {
-    @apply antialiased bg-transparent text-inherit transition-colors duration-300;
+    @apply bg-transparent text-[15px] leading-6 text-inherit antialiased transition-colors duration-300;
   }
 
   ::-webkit-scrollbar {
