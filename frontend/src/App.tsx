@@ -3,6 +3,7 @@ import {
   BriefcaseBusiness,
   Clock,
   LayoutDashboard,
+  LogOut,
   Menu,
   Moon,
   Package,
@@ -13,14 +14,17 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { api } from './lib/api';
+import { api, UnauthorizedError } from './lib/api';
 import { cn } from './lib/utils';
+import { AuthScreen } from './components/AuthScreen';
 import { DashboardView } from './views/DashboardView';
 import { InventoryView } from './views/InventoryView';
 import { ProfitAnalysisView } from './views/ProfitAnalysisView';
 import { ServicesView } from './views/ServicesView';
 import { WorkflowView } from './views/WorkflowView';
 import {
+  AuthStatus,
+  AuthenticatedUser,
   Customer,
   DashboardSummary,
   Product,
@@ -73,42 +77,120 @@ const parseDecimal = (value: string) => {
 export default function App() {
   const [activeTab, setActiveTab] = useState<NavItemId>('dashboard');
   const [theme, setTheme] = useState<ThemeMode>(getInitialTheme);
+  const [session, setSession] = useState<AuthenticatedUser | null>(() => api.getStoredUser());
+  const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [services, setServices] = useState<ServiceOrder[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [dashboardSummary, setDashboardSummary] = useState<DashboardSummary | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [isMutating, setIsMutating] = useState(false);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const loadAppData = useCallback(async (showLoader = true) => {
-    if (showLoader) setIsLoading(true);
-
-    try {
-      const [nextProducts, nextServices, nextCustomers, nextDashboardSummary] =
-        await Promise.all([
-          api.listProducts(),
-          api.listServices(),
-          api.listCustomers(),
-          api.getDashboardSummary(),
-        ]);
-
-      setProducts(nextProducts);
-      setServices(nextServices);
-      setCustomers(nextCustomers);
-      setDashboardSummary(nextDashboardSummary);
-      setErrorMessage(null);
-    } catch (error) {
-      setErrorMessage(getErrorMessage(error));
-    } finally {
-      if (showLoader) setIsLoading(false);
-    }
+  const clearBusinessState = useCallback(() => {
+    setProducts([]);
+    setServices([]);
+    setCustomers([]);
+    setDashboardSummary(null);
+    setIsLoading(false);
   }, []);
 
+  const refreshAuthStatus = useCallback(async () => {
+    const nextStatus = await api.getAuthStatus();
+    setAuthStatus(nextStatus);
+    return nextStatus;
+  }, []);
+
+  const logout = useCallback(
+    async (message?: string) => {
+      api.clearAuthToken();
+      setSession(null);
+      setActiveTab('dashboard');
+      clearBusinessState();
+
+      try {
+        await refreshAuthStatus();
+      } catch {
+        setAuthStatus(null);
+      }
+
+      if (message) {
+        setErrorMessage(message);
+      }
+    },
+    [clearBusinessState, refreshAuthStatus],
+  );
+
+  const loadAppData = useCallback(
+    async (showLoader = true) => {
+      if (showLoader) {
+        setIsLoading(true);
+      }
+
+      try {
+        const [nextProducts, nextServices, nextCustomers, nextDashboardSummary] =
+          await Promise.all([
+            api.listProducts(),
+            api.listServices(),
+            api.listCustomers(),
+            api.getDashboardSummary(),
+          ]);
+
+        setProducts(nextProducts);
+        setServices(nextServices);
+        setCustomers(nextCustomers);
+        setDashboardSummary(nextDashboardSummary);
+        setErrorMessage(null);
+      } catch (error) {
+        if (error instanceof UnauthorizedError) {
+          await logout(error.message);
+          return;
+        }
+
+        setErrorMessage(getErrorMessage(error));
+      } finally {
+        if (showLoader) {
+          setIsLoading(false);
+        }
+      }
+    },
+    [logout],
+  );
+
+  const initializeApp = useCallback(async () => {
+    setIsCheckingAuth(true);
+
+    try {
+      const nextStatus = await refreshAuthStatus();
+      const token = api.getAuthToken();
+      const storedUser = api.getStoredUser();
+
+      if (token && storedUser) {
+        setSession(storedUser);
+        await loadAppData();
+      } else {
+        setSession(null);
+        clearBusinessState();
+      }
+
+      if (!nextStatus.possuiUsuarios) {
+        api.clearAuthToken();
+        setSession(null);
+      }
+    } catch (error) {
+      setErrorMessage(getErrorMessage(error));
+      clearBusinessState();
+    } finally {
+      setIsCheckingAuth(false);
+    }
+  }, [clearBusinessState, loadAppData, refreshAuthStatus]);
+
   useEffect(() => {
-    void loadAppData();
-  }, [loadAppData]);
+    void initializeApp();
+  }, [initializeApp]);
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
@@ -125,12 +207,59 @@ export default function App() {
         await action();
         await loadAppData(false);
       } catch (error) {
+        if (error instanceof UnauthorizedError) {
+          await logout(error.message);
+          return;
+        }
+
         setErrorMessage(getErrorMessage(error));
       } finally {
         setIsMutating(false);
       }
     },
-    [loadAppData],
+    [loadAppData, logout],
+  );
+
+  const handleLogin = useCallback(
+    async (payload: { email: string; senha: string }) => {
+      setIsAuthenticating(true);
+      setErrorMessage(null);
+
+      try {
+        const response = await api.login(payload);
+        setSession(response.usuario);
+        await refreshAuthStatus();
+        await loadAppData();
+      } catch (error) {
+        setErrorMessage(getErrorMessage(error));
+      } finally {
+        setIsAuthenticating(false);
+      }
+    },
+    [loadAppData, refreshAuthStatus],
+  );
+
+  const handleBootstrap = useCallback(
+    async (payload: { nome: string; email: string; senha: string }) => {
+      setIsAuthenticating(true);
+      setErrorMessage(null);
+
+      try {
+        await api.bootstrapAdmin(payload);
+        const response = await api.login({
+          email: payload.email,
+          senha: payload.senha,
+        });
+        setSession(response.usuario);
+        await refreshAuthStatus();
+        await loadAppData();
+      } catch (error) {
+        setErrorMessage(getErrorMessage(error));
+      } finally {
+        setIsAuthenticating(false);
+      }
+    },
+    [loadAppData, refreshAuthStatus],
   );
 
   const handleSaveProduct = useCallback(
@@ -189,10 +318,6 @@ export default function App() {
         const selectedPart = products.find((product) => product.id === values.selectedPartId);
         const partQuantity = Math.max(parseInteger(values.partQuantity), 1);
 
-        if (selectedPart && partQuantity > selectedPart.stock) {
-          throw new Error(`Estoque insuficiente para ${selectedPart.name}.`);
-        }
-
         await api.createService({
           cliente_id: customer.id,
           aparelho_marca: values.deviceBrand.trim(),
@@ -244,6 +369,28 @@ export default function App() {
 
   const currentLabel = navItems.find((item) => item.id === activeTab)?.label;
 
+  if (isCheckingAuth) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 text-slate-500 dark:bg-slate-950 dark:text-slate-400">
+        Carregando...
+      </div>
+    );
+  }
+
+  if (!session || !authStatus?.possuiUsuarios) {
+    return (
+      <AuthScreen
+        canBootstrap={!authStatus?.possuiUsuarios}
+        errorMessage={errorMessage}
+        isBusy={isAuthenticating}
+        theme={theme}
+        onBootstrap={handleBootstrap}
+        onLogin={handleLogin}
+        onToggleTheme={() => setTheme((current) => (current === 'light' ? 'dark' : 'light'))}
+      />
+    );
+  }
+
   return (
     <div className="flex h-screen bg-slate-50 font-sans text-slate-900 transition-colors dark:bg-slate-950 dark:text-slate-100">
       <aside
@@ -293,14 +440,12 @@ export default function App() {
         <header className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h2 className="text-2xl font-bold tracking-tight">{currentLabel}</h2>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              Frontend limpo e conectado ao backend principal.
-            </p>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{session.nome}</p>
           </div>
           <div className="flex flex-wrap items-center gap-4">
             {isMutating && (
               <div className="rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-medium text-blue-600 dark:border-blue-500/30 dark:bg-blue-500/15 dark:text-blue-300">
-                Sincronizando alteracoes...
+                Salvando...
               </div>
             )}
             <button
@@ -317,6 +462,14 @@ export default function App() {
                 {format(new Date(), "eeee, d 'de' MMMM", { locale: ptBR })}
               </span>
             </div>
+            <button
+              type="button"
+              onClick={() => void logout()}
+              className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-600 shadow-sm transition-colors hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+            >
+              <LogOut size={16} />
+              <span>Sair</span>
+            </button>
           </div>
         </header>
 
@@ -333,7 +486,12 @@ export default function App() {
         ) : (
           <>
             {activeTab === 'dashboard' && (
-              <DashboardView stats={stats} services={services} theme={theme} summary={dashboardSummary} />
+              <DashboardView
+                stats={stats}
+                services={services}
+                theme={theme}
+                summary={dashboardSummary}
+              />
             )}
             {activeTab === 'inventory' && (
               <InventoryView

@@ -5,9 +5,24 @@ import {
   mapServiceFromApi,
   serviceStatusToApi,
 } from './adapters';
-import { Customer, DashboardSummary, Product, ServiceOrder, ServiceStatus } from '../types';
+import {
+  AuthStatus,
+  AuthenticatedUser,
+  Customer,
+  DashboardSummary,
+  Product,
+  ServiceOrder,
+  ServiceStatus,
+} from '../types';
 
-const API_URL = import.meta.env.VITE_API_URL?.trim() || 'http://localhost:3001';
+const API_URL =
+  import.meta.env.VITE_API_URL?.trim() ||
+  import.meta.env.NEXT_PUBLIC_API_URL?.trim() ||
+  'http://localhost:3001';
+const AUTH_TOKEN_STORAGE_KEY = 'consertasmart.auth.token';
+const AUTH_USER_STORAGE_KEY = 'consertasmart.auth.user';
+
+export class UnauthorizedError extends Error {}
 
 type RequestOptions = Omit<RequestInit, 'body'> & {
   body?: BodyInit | Record<string, unknown> | null;
@@ -29,16 +44,23 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     requestBody = body as BodyInit;
   }
 
+  const authToken = api.getAuthToken();
   const response = await fetch(`${API_URL}${path}`, {
     ...rest,
     headers: {
       ...(isJsonBody ? { 'Content-Type': 'application/json' } : {}),
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
       ...headers,
     },
     body: requestBody,
   });
 
   if (!response.ok) {
+    if (response.status === 401) {
+      api.clearAuthToken();
+      throw new UnauthorizedError('Sua sessao expirou. Entre novamente.');
+    }
+
     const payload = await response
       .json()
       .catch(() => ({ message: 'Não foi possível processar a resposta da API.' }));
@@ -56,6 +78,69 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 }
 
 export const api = {
+  getAuthToken() {
+    return window.sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY);
+  },
+
+  setAuthToken(token: string) {
+    window.sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
+  },
+
+  getStoredUser(): AuthenticatedUser | null {
+    const rawUser = window.sessionStorage.getItem(AUTH_USER_STORAGE_KEY);
+
+    if (!rawUser) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(rawUser) as AuthenticatedUser;
+    } catch {
+      window.sessionStorage.removeItem(AUTH_USER_STORAGE_KEY);
+      return null;
+    }
+  },
+
+  setStoredUser(user: AuthenticatedUser) {
+    window.sessionStorage.setItem(AUTH_USER_STORAGE_KEY, JSON.stringify(user));
+  },
+
+  clearAuthToken() {
+    window.sessionStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+    window.sessionStorage.removeItem(AUTH_USER_STORAGE_KEY);
+  },
+
+  async getAuthStatus(): Promise<AuthStatus> {
+    return request<AuthStatus>('/auth/status');
+  },
+
+  async bootstrapAdmin(payload: {
+    nome: string;
+    email: string;
+    senha: string;
+  }): Promise<AuthenticatedUser> {
+    return request<AuthenticatedUser>('/auth/bootstrap-admin', {
+      method: 'POST',
+      body: payload,
+    });
+  },
+
+  async login(payload: {
+    email: string;
+    senha: string;
+  }): Promise<{ accessToken: string; usuario: AuthenticatedUser }> {
+    const response = await request<{ accessToken: string; usuario: AuthenticatedUser }>(
+      '/auth/login',
+      {
+        method: 'POST',
+        body: payload,
+      },
+    );
+    api.setAuthToken(response.accessToken);
+    api.setStoredUser(response.usuario);
+    return response;
+  },
+
   async listProducts(): Promise<Product[]> {
     const response = await request<any[]>('/estoque/produtos');
     return response.map(mapProductFromApi);

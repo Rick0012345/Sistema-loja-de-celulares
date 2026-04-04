@@ -1,4 +1,6 @@
 import {
+  AuthStatus,
+  AuthenticatedUser,
   Customer,
   DashboardSummary,
   Product,
@@ -79,6 +81,10 @@ type ApiDashboardSummary = {
     estoque_minimo: number;
   }>;
 };
+
+export const mapAuthenticatedUserFromApi = (user: AuthenticatedUser): AuthenticatedUser => user;
+
+export const mapAuthStatusFromApi = (status: AuthStatus): AuthStatus => status;
 
 const STATUS_FROM_API: Record<string, ServiceStatus> = {
   aguardando_orcamento: 'pending',

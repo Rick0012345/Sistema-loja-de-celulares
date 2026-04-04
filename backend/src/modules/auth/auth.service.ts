@@ -32,7 +32,7 @@ export class AuthService {
         nome: dto.nome,
         email: dto.email.toLowerCase(),
         senha_hash,
-        perfil: dto.perfil ?? perfil_usuario.administrador,
+        perfil: perfil_usuario.administrador,
       },
     });
 

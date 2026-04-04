@@ -1,5 +1,19 @@
 export type ThemeMode = 'light' | 'dark';
 
+export type UserProfile = 'administrador' | 'atendente' | 'tecnico' | 'financeiro';
+
+export type AuthenticatedUser = {
+  id: string;
+  nome: string;
+  email: string;
+  perfil: UserProfile;
+};
+
+export type AuthStatus = {
+  possuiUsuarios: boolean;
+  totalUsuarios: number;
+};
+
 export type Product = {
   id: string;
   name: string;
