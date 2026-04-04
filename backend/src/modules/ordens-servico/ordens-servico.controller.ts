@@ -39,7 +39,11 @@ export class OrdensServicoController {
   }
 
   @Patch(':id/status')
-  @Roles(perfil_usuario.administrador, perfil_usuario.atendente, perfil_usuario.tecnico)
+  @Roles(
+    perfil_usuario.administrador,
+    perfil_usuario.atendente,
+    perfil_usuario.tecnico,
+  )
   updateStatus(
     @Param('id') id: string,
     @Body() dto: UpdateStatusOrdemServicoDto,

@@ -95,9 +95,6 @@ export const WorkflowView = ({
           <div className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">
             {metrics.openOrders}
           </div>
-          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-            Tudo que ainda precisa de acao da equipe.
-          </p>
         </div>
 
         <div className={metricCardClass}>
@@ -110,9 +107,6 @@ export const WorkflowView = ({
           <div className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">
             {metrics.inProgressOrders}
           </div>
-          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-            Aparelhos em diagnostico ou conserto.
-          </p>
         </div>
 
         <div className={metricCardClass}>
@@ -125,9 +119,6 @@ export const WorkflowView = ({
           <div className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">
             {metrics.readyOrders}
           </div>
-          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-            Servicos concluidos prontos para entregar.
-          </p>
         </div>
 
         <div className={metricCardClass}>
@@ -140,9 +131,6 @@ export const WorkflowView = ({
           <div className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">
             {formatCurrency(metrics.deliveredRevenue)}
           </div>
-          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-            Total das OS filtradas que ja foram entregues.
-          </p>
         </div>
       </div>
 
@@ -152,9 +140,6 @@ export const WorkflowView = ({
             <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
               Fluxo das Ordens de Servico
             </h3>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              Visual rapido para saber o que entrou, o que esta em conserto e o que ja saiu.
-            </p>
           </div>
 
           <label className="relative block w-full max-w-md">
@@ -191,9 +176,6 @@ export const WorkflowView = ({
                     <h4 className="text-base font-bold text-slate-900 dark:text-slate-100">
                       {column.title}
                     </h4>
-                    <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
-                      {column.description}
-                    </p>
                   </div>
                 </div>
 

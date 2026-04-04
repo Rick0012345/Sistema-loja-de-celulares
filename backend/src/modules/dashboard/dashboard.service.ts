@@ -27,7 +27,10 @@ export class DashboardService {
       this.prisma.ordens_servico.count({
         where: {
           status: {
-            notIn: [status_ordem_servico.entregue, status_ordem_servico.cancelada],
+            notIn: [
+              status_ordem_servico.entregue,
+              status_ordem_servico.cancelada,
+            ],
           },
         },
       }),

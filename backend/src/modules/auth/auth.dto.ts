@@ -1,5 +1,11 @@
 import { perfil_usuario } from '@prisma/client';
-import { IsEmail, IsEnum, IsNotEmpty, IsString, MinLength } from 'class-validator';
+import {
+  IsEmail,
+  IsEnum,
+  IsNotEmpty,
+  IsString,
+  MinLength,
+} from 'class-validator';
 
 export class BootstrapAdminDto {
   @IsString()

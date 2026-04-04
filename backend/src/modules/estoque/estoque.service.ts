@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   origem_movimentacao_estoque,
   tipo_movimentacao_estoque,
@@ -133,7 +137,8 @@ export class EstoqueService {
             origem: origem_movimentacao_estoque.ajuste_manual,
             quantidade: deltaEstoque,
             custo_unitario: dto.preco_custo ?? atual.preco_custo,
-            observacao: 'Ajuste automÃ¡tico de estoque via ediÃ§Ã£o de produto.',
+            observacao:
+              'Ajuste automÃ¡tico de estoque via ediÃ§Ã£o de produto.',
           },
         });
       }
@@ -178,7 +183,9 @@ export class EstoqueService {
       const novoEstoque = produto.quantidade_estoque + estoqueDelta;
 
       if (novoEstoque < 0) {
-        throw new BadRequestException('Estoque insuficiente para a movimentação.');
+        throw new BadRequestException(
+          'Estoque insuficiente para a movimentação.',
+        );
       }
 
       const movimentacao = await tx.movimentacoes_estoque.create({
@@ -186,9 +193,10 @@ export class EstoqueService {
           produto_id: produto.id,
           tipo: dto.tipo,
           origem: dto.origem,
-          quantidade: dto.tipo === tipo_movimentacao_estoque.ajuste
-            ? dto.quantidade
-            : Math.abs(dto.quantidade),
+          quantidade:
+            dto.tipo === tipo_movimentacao_estoque.ajuste
+              ? dto.quantidade
+              : Math.abs(dto.quantidade),
           custo_unitario: dto.custo_unitario,
           observacao: dto.observacao,
         },

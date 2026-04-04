@@ -1,5 +1,13 @@
-import { FormEvent, useMemo, useState } from 'react';
-import { LockKeyhole, Moon, ShieldCheck, Sun, UserCog } from 'lucide-react';
+import { FormEvent, useState } from 'react';
+import {
+  Banknote,
+  LockKeyhole,
+  Moon,
+  ShieldCheck,
+  Sun,
+  UserCog,
+  Wrench,
+} from 'lucide-react';
 import { ThemeMode } from '../types';
 
 type AuthScreenProps = {
@@ -14,6 +22,24 @@ type AuthScreenProps = {
 
 const inputClass =
   'w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500';
+
+const highlights = [
+  {
+    title: 'Ordens organizadas',
+    description: 'Acompanhe entrada, execucao e entrega em um so lugar.',
+    icon: Wrench,
+  },
+  {
+    title: 'Estoque sob controle',
+    description: 'Visualize pecas, reposicao e itens com baixa rapidamente.',
+    icon: ShieldCheck,
+  },
+  {
+    title: 'Financeiro mais claro',
+    description: 'Veja valores, faturamento e margem com menos improviso.',
+    icon: Banknote,
+  },
+] as const;
 
 export const AuthScreen = ({
   canBootstrap,
@@ -33,12 +59,6 @@ export const AuthScreen = ({
     email: '',
     senha: '',
   });
-
-  const helperText = useMemo(
-    () =>
-      canBootstrap ? 'Cadastre o primeiro usuario.' : '',
-    [canBootstrap],
-  );
 
   const handleBootstrap = async (event: FormEvent) => {
     event.preventDefault();
@@ -65,11 +85,45 @@ export const AuthScreen = ({
           </div>
         </div>
 
-        <div className="max-w-lg">
-          <p className="text-4xl font-black leading-tight">ConsertaSmart</p>
+        <div className="max-w-2xl space-y-8">
+          <div className="space-y-4">
+            <p className="max-w-xl text-5xl font-black leading-[1.05]">
+              Sua assistencia mais organizada do atendimento a entrega.
+            </p>
+            <p className="max-w-lg text-base leading-7 text-slate-300">
+              Centralize ordens de servico, estoque e resultados em uma rotina mais simples para a equipe.
+            </p>
+          </div>
+
+          <div className="grid max-w-3xl grid-cols-1 gap-4 xl:grid-cols-3">
+            {highlights.map((item) => {
+              const Icon = item.icon;
+
+              return (
+                <div
+                  key={item.title}
+                  className="rounded-3xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm"
+                >
+                  <div className="mb-4 inline-flex rounded-2xl bg-white/10 p-3 text-blue-100">
+                    <Icon size={20} />
+                  </div>
+                  <h3 className="text-lg font-bold">{item.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-300">
+                    {item.description}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
-        <div />
+        <div className="flex items-center gap-6 text-sm text-slate-300">
+          <span>Painel para assistencias tecnicas</span>
+          <span className="h-1 w-1 rounded-full bg-slate-500" />
+          <span>Rotina mais visual</span>
+          <span className="h-1 w-1 rounded-full bg-slate-500" />
+          <span>Equipe mais alinhada</span>
+        </div>
       </div>
 
       <div className="flex w-full items-center justify-center p-6 lg:w-[520px]">
@@ -82,11 +136,6 @@ export const AuthScreen = ({
               <h2 className="mt-2 text-3xl font-black">
                 {canBootstrap ? 'Criar usuario' : 'Entrar'}
               </h2>
-              {helperText && (
-                <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
-                  {helperText}
-                </p>
-              )}
             </div>
             <button
               type="button"

@@ -33,37 +33,31 @@ export const serviceStatusPanelClass: Record<ServiceStatus, string> = {
 export const workflowColumns: Array<{
   id: ServiceStatus;
   title: string;
-  description: string;
   icon: typeof Clock3;
 }> = [
   {
     id: 'pending',
     title: 'Fila de Entrada',
-    description: 'Aguardando inicio, aprovacao ou peca.',
     icon: Clock3,
   },
   {
     id: 'in_progress',
     title: 'Bancada',
-    description: 'Aparelhos em analise ou conserto ativo.',
     icon: Wrench,
   },
   {
     id: 'ready',
     title: 'Pronto para Retirada',
-    description: 'Consertos finalizados aguardando cliente.',
     icon: PackageCheck,
   },
   {
     id: 'delivered',
     title: 'Entregues',
-    description: 'Ordens concluidas e entregues.',
     icon: CheckCircle2,
   },
   {
     id: 'cancelled',
     title: 'Canceladas',
-    description: 'Ordens encerradas sem entrega.',
     icon: AlertTriangle,
   },
 ];

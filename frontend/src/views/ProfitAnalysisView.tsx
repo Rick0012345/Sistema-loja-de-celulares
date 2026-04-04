@@ -42,7 +42,7 @@ export const ProfitAnalysisView = ({ services }: ProfitAnalysisViewProps) => {
             {profitData.length === 0 && (
               <tr>
                 <td colSpan={5} className="p-5 text-center text-slate-500 dark:text-slate-400">
-                  Ainda nao existem ordens de servico suficientes para analise.
+                  Nenhuma ordem de servico encontrada.
                 </td>
               </tr>
             )}

@@ -183,9 +183,7 @@ export const DashboardView = ({
             <h3 className="mb-4 text-base font-bold">Ordens Recentes</h3>
             <div className="space-y-3">
               {summary.recentOrders.length === 0 && (
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                  Ainda nao existem ordens recentes no backend.
-                </p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Nenhuma OS recente.</p>
               )}
               {summary.recentOrders.map((order) => (
                 <div key={order.id} className="flex items-center justify-between gap-4 rounded-xl border border-slate-100 bg-slate-50 p-3.5 dark:border-slate-800 dark:bg-slate-950">
@@ -210,9 +208,7 @@ export const DashboardView = ({
             <h3 className="mb-4 text-base font-bold">Produtos com Estoque Baixo</h3>
             <div className="space-y-3">
               {summary.lowStockProducts.length === 0 && (
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                  Nenhum produto em nivel critico no backend.
-                </p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Nenhum item com estoque baixo.</p>
               )}
               {summary.lowStockProducts.map((product) => (
                 <div key={product.id} className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 p-3.5 dark:border-slate-800 dark:bg-slate-950">
