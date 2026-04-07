@@ -6,7 +6,6 @@ import {
   serviceStatusToApi,
 } from './adapters';
 import {
-  AuthStatus,
   AuthenticatedUser,
   Customer,
   DashboardSummary,
@@ -108,17 +107,6 @@ export const api = {
   clearAuthToken() {
     window.sessionStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
     window.sessionStorage.removeItem(AUTH_USER_STORAGE_KEY);
-  },
-
-  async getAuthStatus(): Promise<AuthStatus> {
-    return request<AuthStatus>('/auth/status');
-  },
-
-  async bootstrapAdmin(payload: { nome: string; email: string }): Promise<AuthenticatedUser> {
-    return request<AuthenticatedUser>('/auth/bootstrap-admin', {
-      method: 'POST',
-      body: payload,
-    });
   },
 
   async login(payload: {

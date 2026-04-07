@@ -10,7 +10,7 @@ FROM deps AS dev
 ENV NODE_ENV=development
 COPY . .
 EXPOSE 3001
-CMD ["npm", "run", "start:dev"]
+CMD ["sh", "-c", "npm run prisma:generate && npm run start:dev"]
 
 FROM deps AS build
 COPY . .

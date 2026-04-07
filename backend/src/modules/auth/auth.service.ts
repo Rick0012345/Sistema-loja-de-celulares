@@ -1,6 +1,6 @@
 import {
-  BadRequestException,
   Injectable,
+  OnModuleInit,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -8,54 +8,87 @@ import { ConfigService } from '@nestjs/config';
 import { perfil_usuario } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { BootstrapAdminDto, LoginDto } from './auth.dto';
+import { LoginDto } from './auth.dto';
 
 @Injectable()
-export class AuthService {
+export class AuthService implements OnModuleInit {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly config: ConfigService,
   ) {}
 
-  async bootstrapAdmin(dto: BootstrapAdminDto) {
-    const totalUsuarios = await this.prisma.usuarios.count();
+  async onModuleInit() {
+    await this.syncAdminFromEnv();
+  }
 
-    if (totalUsuarios > 0) {
-      throw new BadRequestException(
-        'O usuário administrador inicial já foi configurado.',
-      );
+  private getAdminConfig() {
+    const adminEmail = this.config
+      .get<string>('ADMIN_EMAIL')
+      ?.trim()
+      .toLowerCase();
+    const adminPassword = this.config.get<string>('ADMIN_PASSWORD');
+    const adminName =
+      this.config.get<string>('ADMIN_NAME')?.trim() || 'Administrador';
+
+    if (!adminEmail) {
+      throw new Error('ADMIN_EMAIL não configurado.');
     }
 
-    const adminPassword = this.config.get<string>('ADMIN_BOOTSTRAP_PASSWORD');
     if (!adminPassword || adminPassword.length < 6) {
-      throw new BadRequestException(
-        'Senha do administrador não configurada em ADMIN_BOOTSTRAP_PASSWORD.',
+      throw new Error(
+        'ADMIN_PASSWORD não configurado ou com menos de 6 caracteres.',
       );
     }
-    const senha_hash = await bcrypt.hash(adminPassword, 10);
-
-    const usuario = await this.prisma.usuarios.create({
-      data: {
-        nome: dto.nome,
-        email: dto.email.toLowerCase(),
-        senha_hash,
-        perfil: perfil_usuario.administrador,
-      },
-    });
 
     return {
-      id: usuario.id,
-      nome: usuario.nome,
-      email: usuario.email,
-      perfil: usuario.perfil,
-      ativo: usuario.ativo,
+      adminEmail,
+      adminPassword,
+      adminName,
     };
   }
 
+  private async syncAdminFromEnv() {
+    const { adminEmail, adminPassword, adminName } = this.getAdminConfig();
+    const senha_hash = await bcrypt.hash(adminPassword, 10);
+    const adminExistente = await this.prisma.usuarios.findUnique({
+      where: { email: adminEmail },
+    });
+
+    if (adminExistente) {
+      await this.prisma.usuarios.update({
+        where: { id: adminExistente.id },
+        data: {
+          nome: adminName,
+          senha_hash,
+          perfil: perfil_usuario.administrador,
+          ativo: true,
+        },
+      });
+      return;
+    }
+
+    await this.prisma.usuarios.create({
+      data: {
+        nome: adminName,
+        email: adminEmail,
+        senha_hash,
+        perfil: perfil_usuario.administrador,
+        ativo: true,
+      },
+    });
+  }
+
   async login(dto: LoginDto) {
+    const { adminEmail } = this.getAdminConfig();
+    const loginEmail = dto.email.toLowerCase().trim();
+
+    if (loginEmail !== adminEmail) {
+      throw new UnauthorizedException('Credenciais inválidas.');
+    }
+
     const usuario = await this.prisma.usuarios.findUnique({
-      where: { email: dto.email.toLowerCase() },
+      where: { email: adminEmail },
     });
 
     if (!usuario || !usuario.ativo) {
@@ -87,7 +120,10 @@ export class AuthService {
   }
 
   async status() {
-    const totalUsuarios = await this.prisma.usuarios.count();
+    const { adminEmail } = this.getAdminConfig();
+    const totalUsuarios = await this.prisma.usuarios.count({
+      where: { email: adminEmail, ativo: true },
+    });
 
     return {
       possuiUsuarios: totalUsuarios > 0,

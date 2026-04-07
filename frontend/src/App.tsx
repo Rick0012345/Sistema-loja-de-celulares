@@ -42,14 +42,12 @@ export default function App() {
     );
   }
 
-  if (!auth.session || !auth.authStatus?.possuiUsuarios) {
+  if (!auth.session) {
     return (
       <AuthScreen
-        canBootstrap={!auth.authStatus?.possuiUsuarios}
         errorMessage={errorMessage}
         isBusy={auth.isAuthenticating}
         theme={theme}
-        onBootstrap={auth.bootstrap}
         onLogin={auth.login}
         onToggleTheme={toggleTheme}
       />
