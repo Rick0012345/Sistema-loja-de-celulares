@@ -168,6 +168,8 @@ export const AuthScreen = ({
 
               <input
                 required
+                name="nome"
+                autoComplete="name"
                 placeholder="Nome"
                 value={bootstrapForm.nome}
                 onChange={(event) =>
@@ -178,6 +180,8 @@ export const AuthScreen = ({
               <input
                 required
                 type="email"
+                name="email"
+                autoComplete="email"
                 placeholder="Email"
                 value={bootstrapForm.email}
                 onChange={(event) =>
@@ -188,6 +192,8 @@ export const AuthScreen = ({
               <input
                 required
                 type="password"
+                name="senha"
+                autoComplete="new-password"
                 minLength={6}
                 placeholder="Senha"
                 value={bootstrapForm.senha}
@@ -222,6 +228,8 @@ export const AuthScreen = ({
               <input
                 required
                 type="email"
+                name="email"
+                autoComplete="username"
                 placeholder="Email"
                 value={loginForm.email}
                 onChange={(event) =>
@@ -232,6 +240,8 @@ export const AuthScreen = ({
               <input
                 required
                 type="password"
+                name="senha"
+                autoComplete="current-password"
                 minLength={6}
                 placeholder="Senha"
                 value={loginForm.senha}

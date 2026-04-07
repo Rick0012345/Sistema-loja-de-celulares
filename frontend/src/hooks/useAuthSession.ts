@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '../lib/api';
 import { AuthStatus, AuthenticatedUser } from '../types';
 
@@ -28,6 +28,13 @@ export const useAuthSession = ({
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const onAuthenticatedRef = useRef(onAuthenticated);
+  const onResetDataRef = useRef(onResetData);
+
+  useEffect(() => {
+    onAuthenticatedRef.current = onAuthenticated;
+    onResetDataRef.current = onResetData;
+  }, [onAuthenticated, onResetData]);
 
   const refreshAuthStatus = useCallback(async () => {
     const nextStatus = await api.getAuthStatus();
@@ -39,7 +46,7 @@ export const useAuthSession = ({
     async (message?: string) => {
       api.clearAuthToken();
       setSession(null);
-      onResetData();
+      onResetDataRef.current();
 
       try {
         await refreshAuthStatus();
@@ -49,7 +56,7 @@ export const useAuthSession = ({
 
       setErrorMessage(message ?? null);
     },
-    [onResetData, refreshAuthStatus],
+    [refreshAuthStatus],
   );
 
   const handleLogin = useCallback(
@@ -61,14 +68,14 @@ export const useAuthSession = ({
         const response = await api.login(payload);
         setSession(response.usuario);
         await refreshAuthStatus();
-        await onAuthenticated();
+        await onAuthenticatedRef.current();
       } catch (error) {
         setErrorMessage(getErrorMessage(error));
       } finally {
         setIsAuthenticating(false);
       }
     },
-    [onAuthenticated, refreshAuthStatus],
+    [refreshAuthStatus],
   );
 
   const handleBootstrap = useCallback(
@@ -84,14 +91,14 @@ export const useAuthSession = ({
         });
         setSession(response.usuario);
         await refreshAuthStatus();
-        await onAuthenticated();
+        await onAuthenticatedRef.current();
       } catch (error) {
         setErrorMessage(getErrorMessage(error));
       } finally {
         setIsAuthenticating(false);
       }
     },
-    [onAuthenticated, refreshAuthStatus],
+    [refreshAuthStatus],
   );
 
   useEffect(() => {
@@ -105,10 +112,10 @@ export const useAuthSession = ({
 
         if (token && storedUser) {
           setSession(storedUser);
-          await onAuthenticated();
+          await onAuthenticatedRef.current();
         } else {
           setSession(null);
-          onResetData();
+          onResetDataRef.current();
         }
 
         if (!nextStatus.possuiUsuarios) {
@@ -117,14 +124,14 @@ export const useAuthSession = ({
         }
       } catch (error) {
         setErrorMessage(getErrorMessage(error));
-        onResetData();
+        onResetDataRef.current();
       } finally {
         setIsCheckingAuth(false);
       }
     };
 
     void initialize();
-  }, [onAuthenticated, onResetData, refreshAuthStatus]);
+  }, [refreshAuthStatus]);
 
   return {
     session,
