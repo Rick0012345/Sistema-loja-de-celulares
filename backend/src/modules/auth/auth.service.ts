@@ -29,7 +29,9 @@ export class AuthService {
 
     const adminPassword = this.config.get<string>('ADMIN_BOOTSTRAP_PASSWORD');
     if (!adminPassword || adminPassword.length < 6) {
-      throw new BadRequestException('Senha do administrador não configurada em ADMIN_BOOTSTRAP_PASSWORD.');
+      throw new BadRequestException(
+        'Senha do administrador não configurada em ADMIN_BOOTSTRAP_PASSWORD.',
+      );
     }
     const senha_hash = await bcrypt.hash(adminPassword, 10);
 
