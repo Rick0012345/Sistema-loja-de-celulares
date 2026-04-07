@@ -15,7 +15,7 @@ type AuthScreenProps = {
   errorMessage: string | null;
   isBusy: boolean;
   theme: ThemeMode;
-  onBootstrap: (payload: { nome: string; email: string; senha: string }) => Promise<void>;
+  onBootstrap: (payload: { nome: string; email: string }) => Promise<void>;
   onLogin: (payload: { email: string; senha: string }) => Promise<void>;
   onToggleTheme: () => void;
 };
@@ -53,7 +53,6 @@ export const AuthScreen = ({
   const [bootstrapForm, setBootstrapForm] = useState({
     nome: '',
     email: '',
-    senha: '',
   });
   const [loginForm, setLoginForm] = useState({
     email: '',
@@ -189,19 +188,7 @@ export const AuthScreen = ({
                 }
                 className={inputClass}
               />
-              <input
-                required
-                type="password"
-                name="senha"
-                autoComplete="new-password"
-                minLength={6}
-                placeholder="Senha"
-                value={bootstrapForm.senha}
-                onChange={(event) =>
-                  setBootstrapForm((current) => ({ ...current, senha: event.target.value }))
-                }
-                className={inputClass}
-              />
+
 
               <button
                 type="submit"

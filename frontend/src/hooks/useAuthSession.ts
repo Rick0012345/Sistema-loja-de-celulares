@@ -10,8 +10,9 @@ type Credentials = {
   senha: string;
 };
 
-type BootstrapPayload = Credentials & {
+type BootstrapPayload = {
   nome: string;
+  email: string;
 };
 
 type UseAuthSessionOptions = {
@@ -85,13 +86,7 @@ export const useAuthSession = ({
 
       try {
         await api.bootstrapAdmin(payload);
-        const response = await api.login({
-          email: payload.email,
-          senha: payload.senha,
-        });
-        setSession(response.usuario);
         await refreshAuthStatus();
-        await onAuthenticatedRef.current();
       } catch (error) {
         setErrorMessage(getErrorMessage(error));
       } finally {

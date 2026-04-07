@@ -4,6 +4,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { perfil_usuario } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -14,6 +15,7 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly config: ConfigService,
   ) {}
 
   async bootstrapAdmin(dto: BootstrapAdminDto) {
@@ -25,7 +27,11 @@ export class AuthService {
       );
     }
 
-    const senha_hash = await bcrypt.hash(dto.senha, 10);
+    const adminPassword = this.config.get<string>('ADMIN_BOOTSTRAP_PASSWORD');
+    if (!adminPassword || adminPassword.length < 6) {
+      throw new BadRequestException('Senha do administrador não configurada em ADMIN_BOOTSTRAP_PASSWORD.');
+    }
+    const senha_hash = await bcrypt.hash(adminPassword, 10);
 
     const usuario = await this.prisma.usuarios.create({
       data: {

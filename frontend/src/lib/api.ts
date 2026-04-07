@@ -114,11 +114,7 @@ export const api = {
     return request<AuthStatus>('/auth/status');
   },
 
-  async bootstrapAdmin(payload: {
-    nome: string;
-    email: string;
-    senha: string;
-  }): Promise<AuthenticatedUser> {
+  async bootstrapAdmin(payload: { nome: string; email: string }): Promise<AuthenticatedUser> {
     return request<AuthenticatedUser>('/auth/bootstrap-admin', {
       method: 'POST',
       body: payload,

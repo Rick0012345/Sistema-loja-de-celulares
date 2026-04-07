@@ -15,9 +15,6 @@ export class BootstrapAdminDto {
   @IsEmail()
   email: string;
 
-  @IsString()
-  @MinLength(6)
-  senha: string;
 
   @IsEnum(perfil_usuario)
   perfil: perfil_usuario = perfil_usuario.administrador;
