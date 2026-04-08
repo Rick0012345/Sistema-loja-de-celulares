@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { AuthScreen } from './components/AuthScreen';
-import { AppShell, NavItemId } from './components/AppShell';
+import { AppMode, AppShell, NavItemId } from './components/AppShell';
 import { DashboardView } from './views/DashboardView';
 import { InventoryView } from './views/InventoryView';
 import { ProfitAnalysisView } from './views/ProfitAnalysisView';
@@ -12,11 +12,26 @@ import { useThemeMode } from './hooks/useThemeMode';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<NavItemId>('dashboard');
+  const [appMode, setAppMode] = useState<AppMode>('repair');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const { theme, toggleTheme } = useThemeMode();
 
+  const repairTabs: NavItemId[] = ['dashboard', 'inventory', 'services', 'workflow'];
+  const salesTabs: NavItemId[] = ['inventory', 'profit'];
+
+  const handleSwitchMode = (mode: AppMode) => {
+    setAppMode(mode);
+    if (mode === 'repair' && !repairTabs.includes(activeTab)) {
+      setActiveTab('dashboard');
+    }
+    if (mode === 'sales' && !salesTabs.includes(activeTab)) {
+      setActiveTab('inventory');
+    }
+  };
+
   const backoffice = useBackofficeData({
     onUnauthorized: async (message) => {
+      setAppMode('repair');
       setActiveTab('dashboard');
       await auth.logout(message);
     },
@@ -27,6 +42,7 @@ export default function App() {
       await backoffice.loadAppData();
     },
     onResetData: () => {
+      setAppMode('repair');
       setActiveTab('dashboard');
       backoffice.resetData();
     },
@@ -57,12 +73,14 @@ export default function App() {
   return (
     <AppShell
       activeTab={activeTab}
+      appMode={appMode}
       currentUserName={auth.session.nome}
       errorMessage={errorMessage}
       isMutating={backoffice.isMutating}
       isSidebarOpen={isSidebarOpen}
       onLogout={auth.logout}
       onSelectTab={setActiveTab}
+      onSwitchMode={handleSwitchMode}
       onToggleSidebar={() => setIsSidebarOpen((current) => !current)}
       onToggleTheme={toggleTheme}
       theme={theme}
@@ -73,7 +91,7 @@ export default function App() {
         </div>
       ) : (
         <>
-          {activeTab === 'dashboard' && (
+          {appMode === 'repair' && activeTab === 'dashboard' && (
             <DashboardView
               stats={backoffice.stats}
               services={backoffice.services}
@@ -89,7 +107,7 @@ export default function App() {
               onSaveProduct={backoffice.saveProduct}
             />
           )}
-          {activeTab === 'services' && (
+          {appMode === 'repair' && activeTab === 'services' && (
             <ServicesView
               products={backoffice.products}
               services={backoffice.services}
@@ -98,14 +116,14 @@ export default function App() {
               onUpdateServiceStatus={backoffice.updateServiceStatus}
             />
           )}
-          {activeTab === 'workflow' && (
+          {appMode === 'repair' && activeTab === 'workflow' && (
             <WorkflowView
               services={backoffice.services}
               isBusy={backoffice.isMutating}
               onUpdateServiceStatus={backoffice.updateServiceStatus}
             />
           )}
-          {activeTab === 'profit' && (
+          {appMode === 'sales' && activeTab === 'profit' && (
             <ProfitAnalysisView services={backoffice.services} />
           )}
         </>

@@ -8,6 +8,7 @@ import {
   Moon,
   Package,
   Smartphone,
+  Store,
   Sun,
   TrendingUp,
   Wrench,
@@ -17,18 +18,24 @@ import { ptBR } from 'date-fns/locale';
 import { cn } from '../lib/utils';
 import { ThemeMode } from '../types';
 
-const navItems = [
+const repairNavItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'inventory', label: 'Estoque', icon: Package },
-  { id: 'services', label: 'Servicos', icon: Wrench },
+  { id: 'inventory', label: 'Estoque de Manutenção', icon: Package },
+  { id: 'services', label: 'Ordens de Serviço', icon: Wrench },
   { id: 'workflow', label: 'Fluxo de Trabalho', icon: BriefcaseBusiness },
-  { id: 'profit', label: 'Analise de Lucro', icon: TrendingUp },
 ] as const;
 
-export type NavItemId = (typeof navItems)[number]['id'];
+const salesNavItems = [
+  { id: 'inventory', label: 'Produtos para Venda', icon: Store },
+  { id: 'profit', label: 'Análise de Vendas', icon: TrendingUp },
+] as const;
+
+export type AppMode = 'repair' | 'sales';
+export type NavItemId = 'dashboard' | 'inventory' | 'services' | 'workflow' | 'profit';
 
 type AppShellProps = {
   activeTab: NavItemId;
+  appMode: AppMode;
   children: ReactNode;
   currentUserName: string;
   errorMessage: string | null;
@@ -36,6 +43,7 @@ type AppShellProps = {
   isSidebarOpen: boolean;
   onLogout: () => void | Promise<void>;
   onSelectTab: (tab: NavItemId) => void;
+  onSwitchMode: (mode: AppMode) => void;
   onToggleSidebar: () => void;
   onToggleTheme: () => void;
   theme: ThemeMode;
@@ -43,6 +51,7 @@ type AppShellProps = {
 
 export const AppShell = ({
   activeTab,
+  appMode,
   children,
   currentUserName,
   errorMessage,
@@ -50,10 +59,12 @@ export const AppShell = ({
   isSidebarOpen,
   onLogout,
   onSelectTab,
+  onSwitchMode,
   onToggleSidebar,
   onToggleTheme,
   theme,
 }: AppShellProps) => {
+  const navItems = appMode === 'repair' ? repairNavItems : salesNavItems;
   const currentLabel = navItems.find((item) => item.id === activeTab)?.label;
 
   return (
@@ -108,6 +119,32 @@ export const AppShell = ({
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{currentUserName}</p>
           </div>
           <div className="flex flex-wrap items-center gap-4">
+            <div className="inline-flex rounded-full border border-slate-200 bg-white p-1 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <button
+                type="button"
+                onClick={() => onSwitchMode('repair')}
+                className={cn(
+                  'rounded-full px-4 py-1.5 text-sm font-medium transition-colors',
+                  appMode === 'repair'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800',
+                )}
+              >
+                Conserto
+              </button>
+              <button
+                type="button"
+                onClick={() => onSwitchMode('sales')}
+                className={cn(
+                  'rounded-full px-4 py-1.5 text-sm font-medium transition-colors',
+                  appMode === 'sales'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800',
+                )}
+              >
+                Vendas
+              </button>
+            </div>
             {isMutating && (
               <div className="rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-medium text-blue-600 dark:border-blue-500/30 dark:bg-blue-500/15 dark:text-blue-300">
                 Salvando...
