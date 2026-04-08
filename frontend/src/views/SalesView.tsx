@@ -55,6 +55,8 @@ export const SalesView = ({
 }: SalesViewProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState<SaleFormValues>(EMPTY_FORM);
+  const [productSearchTerm, setProductSearchTerm] = useState('');
+  const [productSelectionError, setProductSelectionError] = useState('');
 
   const selectedProduct = useMemo(
     () => products.find((product) => product.id === formData.selectedProductId),
@@ -69,6 +71,22 @@ export const SalesView = ({
     const normalizedQuantity = Number.isFinite(quantity) ? Math.max(quantity, 1) : 1;
     return selectedProduct.salePrice * normalizedQuantity;
   }, [formData.quantity, selectedProduct]);
+
+  const filteredProducts = useMemo(() => {
+    const search = productSearchTerm.trim().toLowerCase();
+    const availableProducts = products.filter((product) => product.stock > 0);
+
+    if (!search) {
+      return availableProducts;
+    }
+
+    return availableProducts.filter((product) =>
+      [product.name, product.brand, product.compatibleModel, product.sku]
+        .join(' ')
+        .toLowerCase()
+        .includes(search),
+    );
+  }, [productSearchTerm, products]);
 
   const salesDashboard = useMemo(() => {
     const now = new Date();
@@ -188,8 +206,14 @@ export const SalesView = ({
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
+    if (!formData.selectedProductId) {
+      setProductSelectionError('Selecione um produto para continuar.');
+      return;
+    }
     await onCreateSale(formData);
     setFormData(EMPTY_FORM);
+    setProductSearchTerm('');
+    setProductSelectionError('');
     setIsModalOpen(false);
   };
 
@@ -457,21 +481,29 @@ export const SalesView = ({
 
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex h-[min(92vh,780px)] w-full max-w-xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900">
             <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-5 py-4 dark:border-slate-800 dark:bg-slate-950">
               <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
                 Registrar Venda
               </h3>
               <button
                 type="button"
-                onClick={() => setIsModalOpen(false)}
+                onClick={() => {
+                  setProductSearchTerm('');
+                  setProductSelectionError('');
+                  setIsModalOpen(false);
+                }}
                 className="text-slate-400 transition-colors hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-200"
               >
                 <X size={24} />
               </button>
             </div>
-            <form onSubmit={(event) => void handleSubmit(event)} className="space-y-5 p-5">
-              <div className="space-y-1">
+            <form
+              onSubmit={(event) => void handleSubmit(event)}
+              className="flex min-h-0 flex-1 flex-col"
+            >
+              <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-5">
+                <div className="space-y-1">
                 <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">
                   Nome do Cliente
                 </label>
@@ -490,29 +522,65 @@ export const SalesView = ({
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-1 sm:col-span-2">
                   <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">
+                    Buscar Produto
+                  </label>
+                  <input
+                    value={productSearchTerm}
+                    onChange={(event) => setProductSearchTerm(event.target.value)}
+                    placeholder="Nome, marca, modelo ou SKU"
+                    className={inputClass}
+                  />
+                </div>
+                <div className="space-y-1 sm:col-span-2">
+                  <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">
                     Produto
                   </label>
-                  <select
-                    required
-                    value={formData.selectedProductId}
-                    onChange={(event) =>
-                      setFormData((current) => ({
-                        ...current,
-                        selectedProductId: event.target.value,
-                      }))
-                    }
-                    className={inputClass}
-                  >
-                    <option value="">Selecione um produto</option>
-                    {products
-                      .filter((product) => product.stock > 0)
-                      .map((product) => (
-                        <option key={product.id} value={product.id}>
-                          {product.name} - {formatCurrency(product.salePrice)} (Estoque:{' '}
-                          {product.stock})
-                        </option>
-                      ))}
-                  </select>
+                  <div className="max-h-52 space-y-2 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-2.5 dark:border-slate-800 dark:bg-slate-950">
+                    {filteredProducts.length === 0 && (
+                      <p className="px-2 py-3 text-sm text-slate-500 dark:text-slate-400">
+                        Nenhum produto encontrado.
+                      </p>
+                    )}
+                    {filteredProducts.map((product) => {
+                      const isSelected = formData.selectedProductId === product.id;
+                      return (
+                        <button
+                          key={product.id}
+                          type="button"
+                          onClick={() => {
+                            setFormData((current) => ({
+                              ...current,
+                              selectedProductId: product.id,
+                            }));
+                            setProductSelectionError('');
+                          }}
+                          className={`w-full rounded-lg border px-3 py-2 text-left transition-colors ${
+                            isSelected
+                              ? 'border-blue-500 bg-blue-50 text-blue-800 dark:bg-blue-500/20 dark:text-blue-200'
+                              : 'border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-blue-50/40 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-blue-500/40 dark:hover:bg-blue-500/10'
+                          }`}
+                        >
+                          <p className="text-sm font-semibold">{product.name}</p>
+                          <p className="text-xs opacity-80">
+                            {formatCurrency(product.salePrice)} • Estoque: {product.stock}
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {formData.selectedProductId && (
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Selecionado:{' '}
+                      <span className="font-semibold">
+                        {products.find((product) => product.id === formData.selectedProductId)?.name}
+                      </span>
+                    </p>
+                  )}
+                  {productSelectionError && (
+                    <p className="text-xs font-medium text-rose-600 dark:text-rose-400">
+                      {productSelectionError}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-1">
                   <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">
@@ -566,7 +634,11 @@ export const SalesView = ({
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={() => {
+                    setProductSearchTerm('');
+                    setProductSelectionError('');
+                    setIsModalOpen(false);
+                  }}
                   className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800"
                 >
                   Cancelar
@@ -578,6 +650,7 @@ export const SalesView = ({
                 >
                   Confirmar Venda
                 </button>
+              </div>
               </div>
             </form>
           </div>
