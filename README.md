@@ -41,6 +41,14 @@ Sistema web para controle de estoque, ordens de serviço, financeiro e lucrativi
 - Painel React/Vite com indicadores e formulários para cadastro rápido
 - Docker Compose configurado para subir banco, backend e frontend
 
+## Regras de Negócio Atuais
+
+- a OS usa status detalhados: aguardando orçamento, aprovação, peça, conserto, pronta para retirada, entregue e cancelada
+- uma OS pode ter múltiplos itens, inclusive itens manuais
+- ao entregar uma OS com saldo pendente, a forma de pagamento é obrigatória e o backend registra o pagamento automaticamente
+- vendas de balcão baixam estoque com origem `venda` e entram no consolidado financeiro do dashboard
+- o frontend revalida a sessão do usuário em `GET /auth/me`
+
 ## Estrutura Inicial Recomendada
 
 ```text

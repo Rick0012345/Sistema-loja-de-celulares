@@ -1,6 +1,5 @@
 import { Activity, ArrowRight, CheckCircle2, CircleDollarSign, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { promptForPaymentMethod } from '../lib/paymentMethods';
 import { cn, formatCurrency } from '../lib/utils';
 import {
   getNextServiceAction,
@@ -15,6 +14,15 @@ import { ServiceOrder, ServiceStatus } from '../types';
 type WorkflowViewProps = {
   services: ServiceOrder[];
   isBusy: boolean;
+  onRequestPaymentMethod: (input: {
+    title: string;
+    description: string;
+    amount?: number | null;
+    defaultValue?: 'dinheiro' | 'pix' | 'cartao_credito' | 'cartao_debito' | 'transferencia';
+    confirmLabel?: string;
+  }) => Promise<
+    'dinheiro' | 'pix' | 'cartao_credito' | 'cartao_debito' | 'transferencia' | null
+  >;
   onUpdateServiceStatus: (inputId: string, input: {
     status: ServiceStatus;
     paymentMethod?: 'dinheiro' | 'pix' | 'cartao_credito' | 'cartao_debito' | 'transferencia';
@@ -27,6 +35,7 @@ const metricCardClass =
 export const WorkflowView = ({
   services,
   isBusy,
+  onRequestPaymentMethod,
   onUpdateServiceStatus,
 }: WorkflowViewProps) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -93,9 +102,15 @@ export const WorkflowView = ({
     }
 
     if (status === 'entregue') {
-      const paymentMethod = promptForPaymentMethod();
+      const paymentMethod = await onRequestPaymentMethod({
+        title: 'Receber antes da entrega',
+        description: `${service.customerName} • ${service.deviceBrand} ${service.deviceModel}`,
+        amount: service.totalPrice,
+        defaultValue: 'pix',
+        confirmLabel: 'Receber e marcar como entregue',
+      });
+
       if (!paymentMethod) {
-        window.alert('Informe uma forma de pagamento válida para concluir a entrega.');
         return;
       }
 

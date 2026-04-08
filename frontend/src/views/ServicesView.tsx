@@ -1,6 +1,5 @@
 import { type FormEvent, useMemo, useState } from 'react';
 import { CheckCircle, Clock, Pencil, Plus, Search, Smartphone, Trash2, X } from 'lucide-react';
-import { promptForPaymentMethod } from '../lib/paymentMethods';
 import {
   getNextServiceAction,
   serviceStatusBadgeClass,
@@ -32,6 +31,15 @@ type ServicesViewProps = {
   isBusy: boolean;
   onCreateService: (values: ServiceFormValues) => Promise<void>;
   onUpdateService: (serviceId: string, values: ServiceFormValues) => Promise<void>;
+  onRequestPaymentMethod: (input: {
+    title: string;
+    description: string;
+    amount?: number | null;
+    defaultValue?: 'dinheiro' | 'pix' | 'cartao_credito' | 'cartao_debito' | 'transferencia';
+    confirmLabel?: string;
+  }) => Promise<
+    'dinheiro' | 'pix' | 'cartao_credito' | 'cartao_debito' | 'transferencia' | null
+  >;
   onUpdateServiceStatus: (inputId: string, input: {
     status: ServiceStatus;
     paymentMethod?: 'dinheiro' | 'pix' | 'cartao_credito' | 'cartao_debito' | 'transferencia';
@@ -43,6 +51,7 @@ export const ServicesView = ({
   services,
   isBusy,
   onCreateService,
+  onRequestPaymentMethod,
   onUpdateService,
   onUpdateServiceStatus,
 }: ServicesViewProps) => {
@@ -150,9 +159,15 @@ export const ServicesView = ({
     }
 
     if (status === 'entregue') {
-      const paymentMethod = promptForPaymentMethod();
+      const paymentMethod = await onRequestPaymentMethod({
+        title: 'Concluir entrega da OS',
+        description: `${service.customerName} • ${service.deviceBrand} ${service.deviceModel}`,
+        amount: service.totalPrice,
+        defaultValue: 'pix',
+        confirmLabel: 'Receber e concluir entrega',
+      });
+
       if (!paymentMethod) {
-        window.alert('Informe uma forma de pagamento válida para concluir a entrega.');
         return;
       }
 

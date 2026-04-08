@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { AuthScreen } from './components/AuthScreen';
 import { AppMode, AppShell, NavItemId } from './components/AppShell';
+import { PaymentMethodModal } from './components/PaymentMethodModal';
 import { DashboardView } from './views/DashboardView';
 import { InventoryView } from './views/InventoryView';
 import { ProfitAnalysisView } from './views/ProfitAnalysisView';
@@ -11,11 +12,26 @@ import { WorkflowView } from './views/WorkflowView';
 import { useAuthSession } from './hooks/useAuthSession';
 import { useBackofficeData } from './hooks/useBackofficeData';
 import { useThemeMode } from './hooks/useThemeMode';
+import { PaymentMethod } from './types';
+
+type PaymentMethodRequestState = {
+  title: string;
+  description: string;
+  amount?: number | null;
+  defaultValue?: PaymentMethod;
+  confirmLabel?: string;
+};
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<NavItemId>('dashboard');
   const [appMode, setAppMode] = useState<AppMode>('repair');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [paymentRequest, setPaymentRequest] = useState<PaymentMethodRequestState | null>(
+    null,
+  );
+  const paymentResolverRef = useRef<((value: PaymentMethod | null) => void) | null>(
+    null,
+  );
   const { theme, toggleTheme } = useThemeMode();
 
   const repairTabs: NavItemId[] = ['dashboard', 'inventory', 'services', 'workflow', 'settings'];
@@ -30,6 +46,21 @@ export default function App() {
       setActiveTab('sales');
     }
   };
+
+  const requestPaymentMethod = useCallback(
+    (input: PaymentMethodRequestState) =>
+      new Promise<PaymentMethod | null>((resolve) => {
+        paymentResolverRef.current = resolve;
+        setPaymentRequest(input);
+      }),
+    [],
+  );
+
+  const closePaymentMethodModal = useCallback((value: PaymentMethod | null) => {
+    paymentResolverRef.current?.(value);
+    paymentResolverRef.current = null;
+    setPaymentRequest(null);
+  }, []);
 
   const backoffice = useBackofficeData({
     onUnauthorized: async (message) => {
@@ -125,6 +156,7 @@ export default function App() {
               onCreateService={backoffice.createService}
               onUpdateService={backoffice.updateService}
               onUpdateServiceStatus={backoffice.updateServiceStatus}
+              onRequestPaymentMethod={requestPaymentMethod}
             />
           )}
           {appMode === 'repair' && activeTab === 'workflow' && (
@@ -132,6 +164,7 @@ export default function App() {
               services={backoffice.services}
               isBusy={backoffice.isMutating}
               onUpdateServiceStatus={backoffice.updateServiceStatus}
+              onRequestPaymentMethod={requestPaymentMethod}
             />
           )}
           {appMode === 'sales' && activeTab === 'profit' && (
@@ -140,6 +173,17 @@ export default function App() {
           {activeTab === 'settings' && <SettingsView currentUser={auth.session} />}
         </>
       )}
+      <PaymentMethodModal
+        isOpen={Boolean(paymentRequest)}
+        title={paymentRequest?.title ?? 'Registrar pagamento'}
+        description={paymentRequest?.description ?? 'Selecione a forma de pagamento.'}
+        amount={paymentRequest?.amount}
+        defaultValue={paymentRequest?.defaultValue}
+        confirmLabel={paymentRequest?.confirmLabel}
+        isBusy={backoffice.isMutating}
+        onClose={() => closePaymentMethodModal(null)}
+        onConfirm={(value) => closePaymentMethodModal(value)}
+      />
     </AppShell>
   );
 }

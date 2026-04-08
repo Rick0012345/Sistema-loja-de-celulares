@@ -10,18 +10,15 @@ Estruturar um sistema web para assistência técnica e loja de celulares com foc
 - contas a pagar e a receber
 - dashboard operacional e financeiro
 
-## Stack Final
+## Stack Atual
 
 ### Frontend
 
-- Next.js
+- React 19
+- Vite
 - TypeScript
 - Tailwind CSS
-- shadcn/ui
-- React Hook Form
-- Zod
-- TanStack Query
-- TanStack Table
+- SPA com views por contexto operacional
 
 ### Backend
 
@@ -44,6 +41,7 @@ Estruturar um sistema web para assistência técnica e loja de celulares com foc
 - banco relacional centralizado
 - sem Redis e sem filas na fase inicial
 - suporte futuro a webhook sem acoplamento forte
+- Docker Compose como ambiente padrão local
 
 ## Módulos de Negócio
 
@@ -57,6 +55,12 @@ Perfis iniciais sugeridos:
 - atendente
 - técnico
 - financeiro
+
+Regras atuais:
+
+- login emite access token JWT
+- a sessão do frontend é revalidada em `GET /auth/me`
+- o administrador principal é sincronizado via variáveis de ambiente
 
 ### 2. Clientes
 
@@ -76,8 +80,9 @@ Responsável por catálogo de peças, custo, preço de venda, quantidade e alert
 Regras principais:
 
 - cada peça possui preço de custo e preço de venda
-- a quantidade é atualizada por movimentação de estoque
+- a quantidade é preferencialmente auditada por movimentação de estoque
 - itens usados em OS geram saída de estoque
+- vendas de balcão geram saída com origem `venda`
 
 ### 4. Fornecedores
 
@@ -96,6 +101,12 @@ Status sugeridos:
 - pronto_para_retirada
 - entregue
 - cancelada
+
+Regras atuais:
+
+- o frontend trabalha com os mesmos status detalhados do backend
+- a OS pode conter múltiplos itens
+- cada item pode vir de produto do estoque ou ser manual
 
 ### 6. Itens da OS
 
@@ -120,6 +131,12 @@ Responsável por:
 - lucro por serviço
 - visão mensal de faturamento
 
+Regras atuais:
+
+- ao concluir uma OS com saldo pendente, a forma de pagamento é obrigatória
+- a entrega registra automaticamente um pagamento em `pagamentos_os`
+- vendas de balcão geram `contas_financeiras` já pagas
+
 ### 9. Dashboard
 
 Responsável por indicadores como:
@@ -130,7 +147,12 @@ Responsável por indicadores como:
 - serviços mais lucrativos
 - estoque baixo
 
-## Estrutura de Pastas Recomendada
+Regras atuais:
+
+- o dashboard financeiro consolida pagamentos de OS com vendas de balcão pagas
+- lucro mensal considera lucro estimado de OS e margem apurada das vendas
+
+## Estrutura Atual do Projeto
 
 ```text
 .
@@ -140,11 +162,9 @@ Responsável por indicadores como:
 │   │   │   ├── auth/
 │   │   │   ├── clientes/
 │   │   │   ├── estoque/
-│   │   │   ├── fornecedores/
 │   │   │   ├── ordens-servico/
-│   │   │   ├── financeiro/
 │   │   │   ├── dashboard/
-│   │   │   └── webhooks/
+│   │   │   └── vendas/
 │   │   ├── common/
 │   │   └── main.ts
 │   ├── prisma/
@@ -155,11 +175,12 @@ Responsável por indicadores como:
 │   └── arquitetura-mvp.md
 ├── frontend/
 │   ├── src/
-│   │   ├── app/
 │   │   ├── components/
-│   │   ├── features/
+│   │   ├── hooks/
 │   │   ├── lib/
-│   │   └── services/
+│   │   ├── views/
+│   │   ├── App.tsx
+│   │   └── types.ts
 │   └── package.json
 ├── .env.example
 └── docker-compose.yml
@@ -172,6 +193,7 @@ Responsável por indicadores como:
 - cadastrar ou localizar cliente
 - informar aparelho e defeito
 - registrar senha e termo de responsabilidade
+- incluir zero, um ou vários itens
 - criar OS em aguardando_orcamento
 
 ### Fluxo 2. Orçamento
@@ -180,29 +202,41 @@ Responsável por indicadores como:
 - adicionar mão de obra
 - calcular total exibido ao cliente
 - calcular lucro interno
-- mudar status conforme aprovação
+- mudar status para aguardando_aprovacao
+- se necessário, mudar para aguardando_peca
 
 ### Fluxo 3. Execução do Conserto
 
 - separar item do estoque
-- registrar saída
+- ao entrar em em_conserto, pronto_para_retirada ou entregue, o backend garante a baixa pendente das peças vinculadas
+- registrar saída com origem de ordem de serviço
 - atualizar status para em_conserto
 - concluir e mudar para pronto_para_retirada
 
 ### Fluxo 4. Entrega e Fechamento
 
-- registrar pagamento
-- atualizar contas a receber
+- selecionar forma de pagamento
+- registrar pagamento da OS
 - marcar como entregue
 - manter histórico para consulta futura
+
+### Fluxo 5. Venda de Balcão
+
+- selecionar produto e quantidade
+- registrar forma de pagamento
+- gerar saída de estoque com origem `venda`
+- gerar conta financeira recebida
+- considerar a venda no dashboard financeiro
 
 ## Regras de Negócio Importantes
 
 - preço de custo nunca substitui o preço histórico do item da OS
 - preço de venda do produto é referência, mas o item da OS guarda snapshot
 - lucro da OS considera mão de obra e venda das peças menos custo das peças
-- estoque deve ser controlado por movimentações, não apenas por edição direta da quantidade
+- vendas e consumo de OS precisam deixar trilha de movimentação de estoque compatível com a origem do evento
 - mudança de status deve gerar histórico
+- entrega de OS com saldo pendente exige forma de pagamento
+- dashboard deve usar dados consolidados do backend, não recálculos locais divergentes
 
 ## Preparação para Integrações Futuras
 
@@ -231,13 +265,12 @@ Sem fila, o comportamento inicial deve ser simples:
 
 ### Etapa 2
 
-- financeiro
-- dashboard
 - fornecedores
-- pagamentos
+- webhook de pronto para retirada
+- relatórios avançados
 
 ### Etapa 3
 
-- webhook de pronto para retirada
-- relatórios avançados
 - anexos e documentos
+- contas a pagar completas
+- automações externas opcionais
