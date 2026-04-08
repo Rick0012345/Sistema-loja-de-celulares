@@ -1,5 +1,7 @@
 import {
+  BadRequestException,
   Injectable,
+  NotFoundException,
   OnModuleInit,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -8,7 +10,7 @@ import { ConfigService } from '@nestjs/config';
 import { perfil_usuario } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { LoginDto } from './auth.dto';
+import { CreateUserDto, LoginDto, UpdateUserDto } from './auth.dto';
 
 @Injectable()
 export class AuthService implements OnModuleInit {
@@ -80,15 +82,9 @@ export class AuthService implements OnModuleInit {
   }
 
   async login(dto: LoginDto) {
-    const { adminEmail } = this.getAdminConfig();
     const loginEmail = dto.email.toLowerCase().trim();
-
-    if (loginEmail !== adminEmail) {
-      throw new UnauthorizedException('Credenciais inválidas.');
-    }
-
     const usuario = await this.prisma.usuarios.findUnique({
-      where: { email: adminEmail },
+      where: { email: loginEmail },
     });
 
     if (!usuario || !usuario.ativo) {
@@ -120,14 +116,157 @@ export class AuthService implements OnModuleInit {
   }
 
   async status() {
-    const { adminEmail } = this.getAdminConfig();
     const totalUsuarios = await this.prisma.usuarios.count({
-      where: { email: adminEmail, ativo: true },
+      where: { ativo: true },
     });
 
     return {
       possuiUsuarios: totalUsuarios > 0,
       totalUsuarios,
     };
+  }
+
+  listUsers() {
+    return this.prisma.usuarios.findMany({
+      orderBy: { created_at: 'desc' },
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+        perfil: true,
+        ativo: true,
+        created_at: true,
+        updated_at: true,
+      },
+    });
+  }
+
+  async createUser(dto: CreateUserDto) {
+    const normalizedEmail = dto.email.trim().toLowerCase();
+    await this.ensureEmailIsAvailable(normalizedEmail);
+
+    const senha_hash = await bcrypt.hash(dto.senha, 10);
+    return this.prisma.usuarios.create({
+      data: {
+        nome: dto.nome.trim(),
+        email: normalizedEmail,
+        senha_hash,
+        perfil: dto.perfil,
+        ativo: true,
+      },
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+        perfil: true,
+        ativo: true,
+        created_at: true,
+        updated_at: true,
+      },
+    });
+  }
+
+  async updateUser(id: string, dto: UpdateUserDto) {
+    const { adminEmail } = this.getAdminConfig();
+    const usuarioAtual = await this.prisma.usuarios.findUnique({
+      where: { id },
+      select: { id: true, email: true, perfil: true },
+    });
+
+    if (!usuarioAtual) {
+      throw new NotFoundException('Usuário não encontrado.');
+    }
+
+    if (usuarioAtual.email === adminEmail) {
+      if (dto.email !== undefined) {
+        throw new BadRequestException('Não é permitido alterar o e-mail do administrador.');
+      }
+      if (dto.perfil !== undefined) {
+        throw new BadRequestException('Não é permitido alterar o perfil do administrador.');
+      }
+      if (dto.ativo !== undefined && dto.ativo === false) {
+        throw new BadRequestException('Não é permitido desativar o administrador.');
+      }
+    }
+
+    const data: {
+      nome?: string;
+      email?: string;
+      senha_hash?: string;
+      perfil?: perfil_usuario;
+      ativo?: boolean;
+    } = {};
+
+    if (dto.nome !== undefined) {
+      data.nome = dto.nome.trim();
+    }
+
+    if (dto.email !== undefined) {
+      const normalizedEmail = dto.email.trim().toLowerCase();
+      if (normalizedEmail !== usuarioAtual.email) {
+        await this.ensureEmailIsAvailable(normalizedEmail);
+      }
+      data.email = normalizedEmail;
+    }
+
+    if (dto.senha !== undefined) {
+      data.senha_hash = await bcrypt.hash(dto.senha, 10);
+    }
+
+    if (dto.perfil !== undefined) {
+      data.perfil = dto.perfil;
+    }
+
+    if (dto.ativo !== undefined) {
+      data.ativo = dto.ativo;
+    }
+
+    return this.prisma.usuarios.update({
+      where: { id },
+      data,
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+        perfil: true,
+        ativo: true,
+        created_at: true,
+        updated_at: true,
+      },
+    });
+  }
+
+  async disableUser(id: string) {
+    const { adminEmail } = this.getAdminConfig();
+    const usuario = await this.prisma.usuarios.findUnique({
+      where: { id },
+      select: { id: true, email: true },
+    });
+
+    if (!usuario) {
+      throw new NotFoundException('Usuário não encontrado.');
+    }
+
+    if (usuario.email === adminEmail) {
+      throw new BadRequestException('Não é permitido desativar o administrador.');
+    }
+
+    await this.prisma.usuarios.update({
+      where: { id },
+      data: { ativo: false },
+    });
+
+    return { disabled: true };
+  }
+
+  private async ensureEmailIsAvailable(email: string) {
+    const usuario = await this.prisma.usuarios.findUnique({
+      where: { email },
+      select: { id: true },
+    });
+
+    if (usuario) {
+      throw new BadRequestException('Já existe um usuário com este e-mail.');
+    }
   }
 }

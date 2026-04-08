@@ -10,6 +10,7 @@ import {
   AuthenticatedUser,
   Customer,
   DashboardSummary,
+  ManagedUser,
   PaymentMethod,
   Product,
   Sale,
@@ -126,6 +127,44 @@ export const api = {
     api.setAuthToken(response.accessToken);
     api.setStoredUser(response.usuario);
     return response;
+  },
+
+  async listUsers(): Promise<ManagedUser[]> {
+    return request<ManagedUser[]>('/auth/users');
+  },
+
+  async createUser(payload: {
+    nome: string;
+    email: string;
+    senha: string;
+    perfil: AuthenticatedUser['perfil'];
+  }): Promise<ManagedUser> {
+    return request<ManagedUser>('/auth/users', {
+      method: 'POST',
+      body: payload,
+    });
+  },
+
+  async updateUser(
+    id: string,
+    payload: {
+      nome?: string;
+      email?: string;
+      senha?: string;
+      perfil?: AuthenticatedUser['perfil'];
+      ativo?: boolean;
+    },
+  ): Promise<ManagedUser> {
+    return request<ManagedUser>(`/auth/users/${id}`, {
+      method: 'PATCH',
+      body: payload,
+    });
+  },
+
+  async disableUser(id: string): Promise<void> {
+    await request(`/auth/users/${id}`, {
+      method: 'DELETE',
+    });
   },
 
   async listProducts(): Promise<Product[]> {

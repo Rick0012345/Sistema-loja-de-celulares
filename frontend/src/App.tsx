@@ -5,6 +5,7 @@ import { DashboardView } from './views/DashboardView';
 import { InventoryView } from './views/InventoryView';
 import { ProfitAnalysisView } from './views/ProfitAnalysisView';
 import { SalesView } from './views/SalesView';
+import { SettingsView } from './views/SettingsView';
 import { ServicesView } from './views/ServicesView';
 import { WorkflowView } from './views/WorkflowView';
 import { useAuthSession } from './hooks/useAuthSession';
@@ -17,8 +18,8 @@ export default function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const { theme, toggleTheme } = useThemeMode();
 
-  const repairTabs: NavItemId[] = ['dashboard', 'inventory', 'services', 'workflow'];
-  const salesTabs: NavItemId[] = ['sales', 'inventory', 'profit'];
+  const repairTabs: NavItemId[] = ['dashboard', 'inventory', 'services', 'workflow', 'settings'];
+  const salesTabs: NavItemId[] = ['sales', 'inventory', 'profit', 'settings'];
 
   const handleSwitchMode = (mode: AppMode) => {
     setAppMode(mode);
@@ -135,6 +136,7 @@ export default function App() {
           {appMode === 'sales' && activeTab === 'profit' && (
             <ProfitAnalysisView services={backoffice.services} />
           )}
+          {activeTab === 'settings' && <SettingsView currentUser={auth.session} />}
         </>
       )}
     </AppShell>

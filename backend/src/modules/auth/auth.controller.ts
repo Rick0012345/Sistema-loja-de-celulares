@@ -1,7 +1,9 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import { perfil_usuario } from '@prisma/client';
 import { AuthService } from './auth.service';
-import { LoginDto } from './auth.dto';
+import { CreateUserDto, LoginDto, UpdateUserDto } from './auth.dto';
 import { Public } from './decorators/public.decorator';
+import { Roles } from './decorators/roles.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -17,5 +19,29 @@ export class AuthController {
   @Post('login')
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
+  }
+
+  @Roles(perfil_usuario.administrador)
+  @Get('users')
+  listUsers() {
+    return this.authService.listUsers();
+  }
+
+  @Roles(perfil_usuario.administrador)
+  @Post('users')
+  createUser(@Body() dto: CreateUserDto) {
+    return this.authService.createUser(dto);
+  }
+
+  @Roles(perfil_usuario.administrador)
+  @Patch('users/:id')
+  updateUser(@Param('id') id: string, @Body() dto: UpdateUserDto) {
+    return this.authService.updateUser(id, dto);
+  }
+
+  @Roles(perfil_usuario.administrador)
+  @Delete('users/:id')
+  disableUser(@Param('id') id: string) {
+    return this.authService.disableUser(id);
   }
 }

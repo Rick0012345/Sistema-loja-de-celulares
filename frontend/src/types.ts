@@ -9,6 +9,16 @@ export type AuthenticatedUser = {
   perfil: UserProfile;
 };
 
+export type ManagedUser = {
+  id: string;
+  nome: string;
+  email: string;
+  perfil: UserProfile;
+  ativo: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
 export type AuthStatus = {
   possuiUsuarios: boolean;
   totalUsuarios: number;

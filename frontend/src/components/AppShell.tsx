@@ -7,6 +7,7 @@ import {
   Menu,
   Moon,
   Package,
+  Settings,
   ShoppingCart,
   Smartphone,
   Store,
@@ -24,12 +25,14 @@ const repairNavItems = [
   { id: 'inventory', label: 'Estoque de Manutenção', icon: Package },
   { id: 'services', label: 'Ordens de Serviço', icon: Wrench },
   { id: 'workflow', label: 'Fluxo de Trabalho', icon: BriefcaseBusiness },
+  { id: 'settings', label: 'Configurações', icon: Settings },
 ] as const;
 
 const salesNavItems = [
   { id: 'sales', label: 'Registrar Vendas', icon: ShoppingCart },
   { id: 'inventory', label: 'Produtos para Venda', icon: Store },
   { id: 'profit', label: 'Análise de Vendas', icon: TrendingUp },
+  { id: 'settings', label: 'Configurações', icon: Settings },
 ] as const;
 
 export type AppMode = 'repair' | 'sales';
@@ -39,7 +42,8 @@ export type NavItemId =
   | 'services'
   | 'workflow'
   | 'profit'
-  | 'sales';
+  | 'sales'
+  | 'settings';
 
 type AppShellProps = {
   activeTab: NavItemId;
