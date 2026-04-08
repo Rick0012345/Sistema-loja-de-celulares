@@ -1,5 +1,5 @@
 import { type FormEvent, useMemo, useState } from 'react';
-import { CheckCircle, Clock, Plus, Search, Smartphone, X } from 'lucide-react';
+import { CheckCircle, Clock, Pencil, Plus, Search, Smartphone, X } from 'lucide-react';
 import { cn, formatCurrency } from '../lib/utils';
 import {
   getNextServiceAction,
@@ -19,6 +19,7 @@ const EMPTY_SERVICE_FORM: ServiceFormValues = {
   deviceBrand: '',
   deviceModel: '',
   issueDescription: '',
+  deliveryType: 'store_pickup',
   laborCost: '',
   selectedPartId: '',
   partQuantity: '1',
@@ -29,6 +30,7 @@ type ServicesViewProps = {
   services: ServiceOrder[];
   isBusy: boolean;
   onCreateService: (values: ServiceFormValues) => Promise<void>;
+  onUpdateService: (serviceId: string, values: ServiceFormValues) => Promise<void>;
   onUpdateServiceStatus: (serviceId: string, status: ServiceStatus) => Promise<void>;
 };
 
@@ -37,9 +39,11 @@ export const ServicesView = ({
   services,
   isBusy,
   onCreateService,
+  onUpdateService,
   onUpdateServiceStatus,
 }: ServicesViewProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'ready'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState<ServiceFormValues>(EMPTY_SERVICE_FORM);
@@ -81,11 +85,45 @@ export const ServicesView = ({
     },
   ] as const;
 
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setEditingServiceId(null);
+    setFormData(EMPTY_SERVICE_FORM);
+  };
+
+  const openCreateModal = () => {
+    setEditingServiceId(null);
+    setFormData(EMPTY_SERVICE_FORM);
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (service: ServiceOrder) => {
+    const firstPart = service.partsUsed.find((part) => part.productId);
+    setEditingServiceId(service.id);
+    setFormData({
+      customerName: service.customerName,
+      customerPhone: service.customerPhone,
+      deviceBrand: service.deviceBrand,
+      deviceModel: service.deviceModel,
+      issueDescription: service.issueDescription,
+      deliveryType: service.deliveryType,
+      laborCost: service.laborCost.toString(),
+      selectedPartId: firstPart?.productId ?? '',
+      partQuantity: firstPart?.quantity ? firstPart.quantity.toString() : '1',
+    });
+    setIsModalOpen(true);
+  };
+
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
+    if (editingServiceId) {
+      await onUpdateService(editingServiceId, formData);
+      closeModal();
+      return;
+    }
+
     await onCreateService(formData);
-    setFormData(EMPTY_SERVICE_FORM);
-    setIsModalOpen(false);
+    closeModal();
   };
 
   return (
@@ -135,7 +173,7 @@ export const ServicesView = ({
         </div>
         <button
           type="button"
-          onClick={() => setIsModalOpen(true)}
+          onClick={openCreateModal}
           className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-100 transition-colors hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 dark:shadow-blue-950/40 disabled:cursor-not-allowed disabled:opacity-60"
           disabled={isBusy}
         >
@@ -188,6 +226,16 @@ export const ServicesView = ({
                     {formatCurrency(service.totalPrice)}
                   </div>
                   <div className="mt-4 flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => openEditModal(service)}
+                      className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <Pencil size={13} />
+                        Editar OS
+                      </span>
+                    </button>
                     {service.status !== 'delivered' && service.status !== 'cancelled' && (
                       <button
                         type="button"
@@ -225,7 +273,9 @@ export const ServicesView = ({
                 {service.status === 'ready' && (
                   <div className="flex items-center gap-2 text-xs font-bold text-emerald-600">
                     <CheckCircle size={14} />
-                    Aguardando retirada
+                    {service.deliveryType === 'delivery'
+                      ? 'Aguardando entrega'
+                      : 'Aguardando retirada'}
                   </div>
                 )}
               </div>
@@ -238,10 +288,12 @@ export const ServicesView = ({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
           <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900">
             <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-5 py-4 dark:border-slate-800 dark:bg-slate-950">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">Nova Ordem de Servico</h3>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                {editingServiceId ? 'Editar Ordem de Servico' : 'Nova Ordem de Servico'}
+              </h3>
               <button
                 type="button"
-                onClick={() => setIsModalOpen(false)}
+                onClick={closeModal}
                 className="text-slate-400 transition-colors hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-200"
               >
                 <X size={24} />
@@ -270,6 +322,13 @@ export const ServicesView = ({
                   <input required type="number" step="0.01" min="0" value={formData.laborCost} onChange={(event) => setFormData((current) => ({ ...current, laborCost: event.target.value }))} className={inputClass} />
                 </div>
                 <div className="space-y-1">
+                  <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">Devolucao</label>
+                  <select value={formData.deliveryType} onChange={(event) => setFormData((current) => ({ ...current, deliveryType: event.target.value as ServiceFormValues['deliveryType'] }))} className={inputClass}>
+                    <option value="store_pickup">Retirada na loja</option>
+                    <option value="delivery">Entrega</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
                   <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">Quantidade da Peca</label>
                   <input type="number" min="1" value={formData.partQuantity} onChange={(event) => setFormData((current) => ({ ...current, partQuantity: event.target.value }))} className={inputClass} />
                 </div>
@@ -290,11 +349,11 @@ export const ServicesView = ({
                 </div>
               </div>
               <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800">
+                <button type="button" onClick={closeModal} className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800">
                   Cancelar
                 </button>
                 <button type="submit" className="flex-1 rounded-xl bg-blue-600 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-100 transition-colors hover:bg-blue-700">
-                  Gerar OS
+                  {editingServiceId ? 'Salvar alteracoes' : 'Gerar OS'}
                 </button>
               </div>
             </form>

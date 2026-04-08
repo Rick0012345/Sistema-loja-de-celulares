@@ -158,18 +158,27 @@ export const useBackofficeData = ({
     [runMutation],
   );
 
+  const resolveCustomer = useCallback(
+    async (values: ServiceFormValues) => {
+      const phone = normalizePhone(values.customerPhone);
+      let customer = customers.find((item) => normalizePhone(item.phone) === phone) ?? null;
+
+      if (!customer) {
+        customer = await api.createCustomer({
+          nome: values.customerName.trim(),
+          telefone: values.customerPhone.trim(),
+        });
+      }
+
+      return customer;
+    },
+    [customers],
+  );
+
   const createService = useCallback(
     async (values: ServiceFormValues) => {
       await runMutation(async () => {
-        const phone = normalizePhone(values.customerPhone);
-        let customer = customers.find((item) => normalizePhone(item.phone) === phone) ?? null;
-
-        if (!customer) {
-          customer = await api.createCustomer({
-            nome: values.customerName.trim(),
-            telefone: values.customerPhone.trim(),
-          });
-        }
+        const customer = await resolveCustomer(values);
 
         const selectedPart = products.find((product) => product.id === values.selectedPartId);
         const partQuantity = Math.max(parseInteger(values.partQuantity), 1);
@@ -180,6 +189,8 @@ export const useBackofficeData = ({
           aparelho_modelo: values.deviceModel.trim(),
           defeito_relatado: values.issueDescription.trim(),
           termo_responsabilidade_aceito: true,
+          tipo_entrega:
+            values.deliveryType === 'delivery' ? 'entrega' : 'retirada_loja',
           valor_mao_de_obra: parseDecimal(values.laborCost),
           itens: selectedPart
             ? [{ produto_id: selectedPart.id, quantidade: partQuantity }]
@@ -187,7 +198,31 @@ export const useBackofficeData = ({
         });
       });
     },
-    [customers, products, runMutation],
+    [products, resolveCustomer, runMutation],
+  );
+
+  const updateService = useCallback(
+    async (serviceId: string, values: ServiceFormValues) => {
+      await runMutation(async () => {
+        const customer = await resolveCustomer(values);
+        const selectedPart = products.find((product) => product.id === values.selectedPartId);
+        const partQuantity = Math.max(parseInteger(values.partQuantity), 1);
+
+        await api.updateService(serviceId, {
+          cliente_id: customer.id,
+          aparelho_marca: values.deviceBrand.trim(),
+          aparelho_modelo: values.deviceModel.trim(),
+          defeito_relatado: values.issueDescription.trim(),
+          tipo_entrega:
+            values.deliveryType === 'delivery' ? 'entrega' : 'retirada_loja',
+          valor_mao_de_obra: parseDecimal(values.laborCost),
+          itens: selectedPart
+            ? [{ produto_id: selectedPart.id, quantidade: partQuantity }]
+            : [],
+        });
+      });
+    },
+    [products, resolveCustomer, runMutation],
   );
 
   const updateServiceStatus = useCallback(
@@ -261,6 +296,7 @@ export const useBackofficeData = ({
     saveProduct,
     deleteProduct,
     createService,
+    updateService,
     createSale,
     updateServiceStatus,
   };

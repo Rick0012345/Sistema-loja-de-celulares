@@ -128,6 +128,7 @@ model ordens_servico {
   desconto                                       Decimal               @default(0) @db.Decimal(12, 2)
   valor_total                                    Decimal               @default(0) @db.Decimal(12, 2)
   lucro_estimado                                 Decimal               @default(0) @db.Decimal(12, 2)
+  tipo_entrega                                   tipo_entrega_os       @default(retirada_loja)
   status                                         status_ordem_servico  @default(aguardando_orcamento)
   data_entrada                                   DateTime              @default(now()) @db.Timestamptz(6)
   data_saida                                     DateTime?             @db.Timestamptz(6)
@@ -258,4 +259,9 @@ enum tipo_movimentacao_estoque {
   entrada
   saida
   ajuste
+}
+
+enum tipo_entrega_os {
+  retirada_loja
+  entrega
 }

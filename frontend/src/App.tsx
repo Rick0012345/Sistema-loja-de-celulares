@@ -123,6 +123,7 @@ export default function App() {
               services={backoffice.services}
               isBusy={backoffice.isMutating}
               onCreateService={backoffice.createService}
+              onUpdateService={backoffice.updateService}
               onUpdateServiceStatus={backoffice.updateServiceStatus}
             />
           )}

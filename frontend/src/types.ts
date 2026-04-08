@@ -44,6 +44,8 @@ export type ServiceStatus =
   | 'delivered'
   | 'cancelled';
 
+export type ServiceDeliveryType = 'store_pickup' | 'delivery';
+
 export type ServicePart = {
   id: string;
   productId: string | null;
@@ -62,6 +64,7 @@ export type ServiceOrder = {
   deviceBrand: string;
   deviceModel: string;
   issueDescription: string;
+  deliveryType: ServiceDeliveryType;
   status: ServiceStatus;
   partsUsed: ServicePart[];
   laborCost: number;
@@ -152,6 +155,7 @@ export type ServiceFormValues = {
   deviceBrand: string;
   deviceModel: string;
   issueDescription: string;
+  deliveryType: ServiceDeliveryType;
   laborCost: string;
   selectedPartId: string;
   partQuantity: string;

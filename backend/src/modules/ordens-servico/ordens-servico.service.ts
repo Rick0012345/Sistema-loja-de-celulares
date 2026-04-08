@@ -14,6 +14,7 @@ import { toNumber } from '../../common/utils/serialize';
 import type { AuthenticatedUser } from '../auth/auth.types';
 import type {
   CreateOrdemServicoDto,
+  UpdateOrdemServicoDto,
   UpdateStatusOrdemServicoDto,
 } from './ordens-servico.dto';
 
@@ -72,46 +73,7 @@ export class OrdensServicoService {
       throw new NotFoundException('Cliente não encontrado.');
     }
 
-    const itens = dto.itens ?? [];
-    const produtoIds = itens
-      .map((item) => item.produto_id)
-      .filter((id): id is string => Boolean(id));
-
-    const produtos = produtoIds.length
-      ? await this.prisma.produtos_pecas.findMany({
-          where: { id: { in: produtoIds }, ativo: true },
-        })
-      : [];
-
-    const produtoPorId = new Map(
-      produtos.map((produto) => [produto.id, produto]),
-    );
-
-    const itensData = itens.map((item) => {
-      const produto = item.produto_id
-        ? produtoPorId.get(item.produto_id)
-        : null;
-
-      if (item.produto_id && !produto) {
-        throw new NotFoundException('Produto não encontrado ou inativo.');
-      }
-
-      const custoUnitario =
-        item.custo_unitario ?? toNumber(produto?.preco_custo) ?? 0;
-      const vendaUnitaria =
-        item.venda_unitaria ?? toNumber(produto?.preco_venda) ?? 0;
-      const descricaoItem = item.descricao_item ?? produto?.nome ?? 'Item';
-      const subtotal = vendaUnitaria * item.quantidade;
-
-      return {
-        produto_id: item.produto_id ?? null,
-        descricao_item: descricaoItem,
-        quantidade: item.quantidade,
-        custo_unitario: custoUnitario,
-        venda_unitaria: vendaUnitaria,
-        subtotal,
-      };
-    });
+    const itensData = await this.buildItensData(this.prisma, dto.itens ?? []);
 
     const totalPecas = itensData.reduce((acc, item) => acc + item.subtotal, 0);
     const lucroPecas = itensData.reduce(
@@ -139,6 +101,7 @@ export class OrdensServicoService {
           observacoes: dto.observacoes ?? null,
           senha_desbloqueio: dto.senha_desbloqueio ?? null,
           termo_responsabilidade_aceito: dto.termo_responsabilidade_aceito,
+          tipo_entrega: dto.tipo_entrega ?? 'retirada_loja',
           valor_mao_de_obra: valorMaoDeObra,
           desconto,
           valor_total: valorTotal,
@@ -166,6 +129,92 @@ export class OrdensServicoService {
     });
 
     return this.serializeOrdem(created);
+  }
+
+  async update(id: string, dto: UpdateOrdemServicoDto) {
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const ordem = await tx.ordens_servico.findUnique({
+        where: { id },
+        include: { itens_os: true },
+      });
+
+      if (!ordem) {
+        throw new NotFoundException('Ordem de serviço não encontrada.');
+      }
+
+      if (dto.cliente_id) {
+        const cliente = await tx.clientes.findUnique({
+          where: { id: dto.cliente_id },
+          select: { id: true },
+        });
+
+        if (!cliente) {
+          throw new NotFoundException('Cliente não encontrado.');
+        }
+      }
+
+      const itensData =
+        dto.itens !== undefined
+          ? await this.buildItensData(tx, dto.itens)
+          : ordem.itens_os.map((item) => ({
+              produto_id: item.produto_id,
+              descricao_item: item.descricao_item,
+              quantidade: item.quantidade,
+              custo_unitario: toNumber(item.custo_unitario) ?? 0,
+              venda_unitaria: toNumber(item.venda_unitaria) ?? 0,
+              subtotal: toNumber(item.subtotal) ?? 0,
+            }));
+
+      const totalPecas = itensData.reduce((acc, item) => acc + item.subtotal, 0);
+      const lucroPecas = itensData.reduce(
+        (acc, item) =>
+          acc + (item.venda_unitaria - item.custo_unitario) * item.quantidade,
+        0,
+      );
+
+      const valorMaoDeObra =
+        dto.valor_mao_de_obra ?? (toNumber(ordem.valor_mao_de_obra) ?? 0);
+      const desconto = dto.desconto ?? (toNumber(ordem.desconto) ?? 0);
+      const valorTotal = totalPecas + valorMaoDeObra - desconto;
+      const lucroEstimado = lucroPecas + valorMaoDeObra - desconto;
+
+      return tx.ordens_servico.update({
+        where: { id },
+        data: {
+          cliente_id: dto.cliente_id ?? undefined,
+          atendente_id: dto.atendente_id ?? undefined,
+          tecnico_id: dto.tecnico_id ?? undefined,
+          aparelho_marca: dto.aparelho_marca ?? undefined,
+          aparelho_modelo: dto.aparelho_modelo ?? undefined,
+          aparelho_cor: dto.aparelho_cor ?? undefined,
+          imei: dto.imei ?? undefined,
+          defeito_relatado: dto.defeito_relatado ?? undefined,
+          observacoes: dto.observacoes ?? undefined,
+          senha_desbloqueio: dto.senha_desbloqueio ?? undefined,
+          termo_responsabilidade_aceito:
+            dto.termo_responsabilidade_aceito ?? undefined,
+          tipo_entrega: dto.tipo_entrega ?? undefined,
+          valor_mao_de_obra: valorMaoDeObra,
+          desconto,
+          valor_total: valorTotal,
+          lucro_estimado: lucroEstimado,
+          updated_at: new Date(),
+          itens_os:
+            dto.itens !== undefined
+              ? {
+                  deleteMany: {},
+                  create: itensData,
+                }
+              : undefined,
+        },
+        include: {
+          clientes: true,
+          itens_os: true,
+        },
+      });
+    });
+
+    return this.serializeOrdem(updated);
   }
 
   async updateStatus(
@@ -259,6 +308,52 @@ export class OrdensServicoService {
         subtotal: toNumber(item.subtotal),
       })),
     };
+  }
+
+  private async buildItensData(
+    tx: Prisma.TransactionClient | PrismaService,
+    itens: Array<{
+      produto_id?: string;
+      descricao_item?: string;
+      quantidade: number;
+      custo_unitario?: number;
+      venda_unitaria?: number;
+    }>,
+  ) {
+    const produtoIds = itens
+      .map((item) => item.produto_id)
+      .filter((item): item is string => Boolean(item));
+
+    const produtos = produtoIds.length
+      ? await tx.produtos_pecas.findMany({
+          where: { id: { in: produtoIds }, ativo: true },
+        })
+      : [];
+
+    const produtoPorId = new Map(produtos.map((produto) => [produto.id, produto]));
+
+    return itens.map((item) => {
+      const produto = item.produto_id ? produtoPorId.get(item.produto_id) : null;
+
+      if (item.produto_id && !produto) {
+        throw new NotFoundException('Produto não encontrado ou inativo.');
+      }
+
+      const custoUnitario =
+        item.custo_unitario ?? (toNumber(produto?.preco_custo) ?? 0);
+      const vendaUnitaria =
+        item.venda_unitaria ?? (toNumber(produto?.preco_venda) ?? 0);
+      const descricaoItem = item.descricao_item ?? produto?.nome ?? 'Item';
+
+      return {
+        produto_id: item.produto_id ?? null,
+        descricao_item: descricaoItem,
+        quantidade: item.quantidade,
+        custo_unitario: custoUnitario,
+        venda_unitaria: vendaUnitaria,
+        subtotal: vendaUnitaria * item.quantidade,
+      };
+    });
   }
 
   private async ensureStockConsumedIfNeeded(

@@ -3,6 +3,7 @@ import { perfil_usuario } from '@prisma/client';
 import { OrdensServicoService } from './ordens-servico.service';
 import {
   CreateOrdemServicoDto,
+  UpdateOrdemServicoDto,
   UpdateStatusOrdemServicoDto,
 } from './ordens-servico.dto';
 import type { AuthenticatedUser } from '../auth/auth.types';
@@ -36,6 +37,15 @@ export class OrdensServicoController {
     @CurrentUser() currentUser: AuthenticatedUser,
   ) {
     return this.ordensServicoService.create(dto, currentUser);
+  }
+
+  @Patch(':id')
+  @Roles(perfil_usuario.administrador, perfil_usuario.atendente)
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateOrdemServicoDto,
+  ) {
+    return this.ordensServicoService.update(id, dto);
   }
 
   @Patch(':id/status')

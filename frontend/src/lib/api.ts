@@ -242,6 +242,7 @@ export const api = {
     aparelho_modelo: string;
     defeito_relatado: string;
     termo_responsabilidade_aceito: boolean;
+    tipo_entrega: 'retirada_loja' | 'entrega';
     valor_mao_de_obra: number;
     itens?: Array<{
       produto_id: string;
@@ -250,6 +251,28 @@ export const api = {
   }): Promise<ServiceOrder> {
     const response = await request<any>('/ordens-servico', {
       method: 'POST',
+      body: payload,
+    });
+    return mapServiceFromApi(response);
+  },
+
+  async updateService(
+    id: string,
+    payload: {
+      cliente_id: string;
+      aparelho_marca: string;
+      aparelho_modelo: string;
+      defeito_relatado: string;
+      tipo_entrega: 'retirada_loja' | 'entrega';
+      valor_mao_de_obra: number;
+      itens?: Array<{
+        produto_id: string;
+        quantidade: number;
+      }>;
+    },
+  ): Promise<ServiceOrder> {
+    const response = await request<any>(`/ordens-servico/${id}`, {
+      method: 'PATCH',
       body: payload,
     });
     return mapServiceFromApi(response);

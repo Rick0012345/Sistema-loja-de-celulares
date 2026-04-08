@@ -82,6 +82,10 @@ export class CreateOrdemServicoDto {
   termo_responsabilidade_aceito: boolean;
 
   @IsOptional()
+  @IsEnum(['retirada_loja', 'entrega'])
+  tipo_entrega?: 'retirada_loja' | 'entrega';
+
+  @IsOptional()
   @IsNumber()
   @Min(0)
   valor_mao_de_obra?: number;
@@ -109,4 +113,70 @@ export class UpdateStatusOrdemServicoDto {
   @IsOptional()
   @IsUUID()
   alterado_por?: string;
+}
+
+export class UpdateOrdemServicoDto {
+  @IsOptional()
+  @IsUUID()
+  cliente_id?: string;
+
+  @IsOptional()
+  @IsUUID()
+  atendente_id?: string;
+
+  @IsOptional()
+  @IsUUID()
+  tecnico_id?: string;
+
+  @IsOptional()
+  @IsString()
+  aparelho_marca?: string;
+
+  @IsOptional()
+  @IsString()
+  aparelho_modelo?: string;
+
+  @IsOptional()
+  @IsString()
+  aparelho_cor?: string;
+
+  @IsOptional()
+  @IsString()
+  imei?: string;
+
+  @IsOptional()
+  @IsString()
+  defeito_relatado?: string;
+
+  @IsOptional()
+  @IsString()
+  observacoes?: string;
+
+  @IsOptional()
+  @IsString()
+  senha_desbloqueio?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  termo_responsabilidade_aceito?: boolean;
+
+  @IsOptional()
+  @IsEnum(['retirada_loja', 'entrega'])
+  tipo_entrega?: 'retirada_loja' | 'entrega';
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  valor_mao_de_obra?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  desconto?: number;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateItemOrdemServicoDto)
+  itens?: CreateItemOrdemServicoDto[];
 }

@@ -49,6 +49,7 @@ type ApiServiceOrder = {
   aparelho_marca: string;
   aparelho_modelo: string;
   defeito_relatado: string;
+  tipo_entrega?: 'retirada_loja' | 'entrega';
   status: string;
   valor_mao_de_obra: number;
   valor_total: number;
@@ -171,6 +172,7 @@ export const mapServiceFromApi = (service: ApiServiceOrder): ServiceOrder => {
     deviceBrand: service.aparelho_marca,
     deviceModel: service.aparelho_modelo,
     issueDescription: service.defeito_relatado,
+    deliveryType: service.tipo_entrega === 'entrega' ? 'delivery' : 'store_pickup',
     status,
     partsUsed: parts.map((item) => ({
       id: item.id,

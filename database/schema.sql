@@ -48,6 +48,11 @@ CREATE TYPE tipo_conta_financeira AS ENUM (
   'receber'
 );
 
+CREATE TYPE tipo_entrega_os AS ENUM (
+  'retirada_loja',
+  'entrega'
+);
+
 CREATE TABLE usuarios (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   nome VARCHAR(150) NOT NULL,
@@ -125,6 +130,7 @@ CREATE TABLE ordens_servico (
   desconto NUMERIC(12,2) NOT NULL DEFAULT 0,
   valor_total NUMERIC(12,2) NOT NULL DEFAULT 0,
   lucro_estimado NUMERIC(12,2) NOT NULL DEFAULT 0,
+  tipo_entrega tipo_entrega_os NOT NULL DEFAULT 'retirada_loja',
   status status_ordem_servico NOT NULL DEFAULT 'aguardando_orcamento',
   data_entrada TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   data_saida TIMESTAMPTZ,
