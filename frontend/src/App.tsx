@@ -4,6 +4,7 @@ import { AppMode, AppShell, NavItemId } from './components/AppShell';
 import { DashboardView } from './views/DashboardView';
 import { InventoryView } from './views/InventoryView';
 import { ProfitAnalysisView } from './views/ProfitAnalysisView';
+import { SalesView } from './views/SalesView';
 import { ServicesView } from './views/ServicesView';
 import { WorkflowView } from './views/WorkflowView';
 import { useAuthSession } from './hooks/useAuthSession';
@@ -17,7 +18,7 @@ export default function App() {
   const { theme, toggleTheme } = useThemeMode();
 
   const repairTabs: NavItemId[] = ['dashboard', 'inventory', 'services', 'workflow'];
-  const salesTabs: NavItemId[] = ['inventory', 'profit'];
+  const salesTabs: NavItemId[] = ['sales', 'inventory', 'profit'];
 
   const handleSwitchMode = (mode: AppMode) => {
     setAppMode(mode);
@@ -25,7 +26,7 @@ export default function App() {
       setActiveTab('dashboard');
     }
     if (mode === 'sales' && !salesTabs.includes(activeTab)) {
-      setActiveTab('inventory');
+      setActiveTab('sales');
     }
   };
 
@@ -105,6 +106,14 @@ export default function App() {
               isBusy={backoffice.isMutating}
               onDeleteProduct={backoffice.deleteProduct}
               onSaveProduct={backoffice.saveProduct}
+            />
+          )}
+          {appMode === 'sales' && activeTab === 'sales' && (
+            <SalesView
+              products={backoffice.products}
+              sales={backoffice.sales}
+              isBusy={backoffice.isMutating}
+              onCreateSale={backoffice.createSale}
             />
           )}
           {appMode === 'repair' && activeTab === 'services' && (

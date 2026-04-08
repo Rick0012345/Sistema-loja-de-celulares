@@ -2,6 +2,7 @@ import {
   mapCustomerFromApi,
   mapDashboardSummaryFromApi,
   mapProductFromApi,
+  mapSaleFromApi,
   mapServiceFromApi,
   serviceStatusToApi,
 } from './adapters';
@@ -9,7 +10,9 @@ import {
   AuthenticatedUser,
   Customer,
   DashboardSummary,
+  PaymentMethod,
   Product,
+  Sale,
   ServiceOrder,
   ServiceStatus,
 } from '../types';
@@ -229,5 +232,23 @@ export const api = {
   async getDashboardSummary(): Promise<DashboardSummary> {
     const response = await request<any>('/dashboard/resumo');
     return mapDashboardSummaryFromApi(response);
+  },
+
+  async listSales(): Promise<Sale[]> {
+    const response = await request<any[]>('/vendas');
+    return response.map(mapSaleFromApi);
+  },
+
+  async createSale(payload: {
+    cliente_nome?: string;
+    cliente_id?: string;
+    meio_pagamento: PaymentMethod;
+    itens: Array<{ produto_id: string; quantidade: number }>;
+  }): Promise<Sale> {
+    const response = await request<any>('/vendas', {
+      method: 'POST',
+      body: payload,
+    });
+    return mapSaleFromApi(response);
   },
 };

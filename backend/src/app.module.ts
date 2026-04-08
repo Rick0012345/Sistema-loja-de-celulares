@@ -8,6 +8,7 @@ import { ClientesModule } from './modules/clientes/clientes.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { EstoqueModule } from './modules/estoque/estoque.module';
 import { OrdensServicoModule } from './modules/ordens-servico/ordens-servico.module';
+import { VendasModule } from './modules/vendas/vendas.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { OrdensServicoModule } from './modules/ordens-servico/ordens-servico.mod
     EstoqueModule,
     OrdensServicoModule,
     DashboardModule,
+    VendasModule,
   ],
   controllers: [AppController],
   providers: [AppService],

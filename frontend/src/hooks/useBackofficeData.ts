@@ -5,6 +5,8 @@ import {
   DashboardSummary,
   Product,
   ProductFormValues,
+  Sale,
+  SaleFormValues,
   ServiceFormValues,
   ServiceOrder,
   ServiceStatus,
@@ -37,6 +39,7 @@ export const useBackofficeData = ({
   const [products, setProducts] = useState<Product[]>([]);
   const [services, setServices] = useState<ServiceOrder[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [sales, setSales] = useState<Sale[]>([]);
   const [dashboardSummary, setDashboardSummary] = useState<DashboardSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isMutating, setIsMutating] = useState(false);
@@ -46,6 +49,7 @@ export const useBackofficeData = ({
     setProducts([]);
     setServices([]);
     setCustomers([]);
+    setSales([]);
     setDashboardSummary(null);
     setIsLoading(false);
     onAfterUnauthorizedReset?.();
@@ -58,18 +62,20 @@ export const useBackofficeData = ({
       }
 
       try {
-        const [nextProducts, nextServices, nextCustomers, nextDashboardSummary] =
+        const [nextProducts, nextServices, nextCustomers, nextDashboardSummary, nextSales] =
           await Promise.all([
             api.listProducts(),
             api.listServices(),
             api.listCustomers(),
             api.getDashboardSummary(),
+            api.listSales(),
           ]);
 
         setProducts(nextProducts);
         setServices(nextServices);
         setCustomers(nextCustomers);
         setDashboardSummary(nextDashboardSummary);
+        setSales(nextSales);
         setErrorMessage(null);
       } catch (error) {
         if (error instanceof UnauthorizedError) {
@@ -193,6 +199,28 @@ export const useBackofficeData = ({
     [runMutation],
   );
 
+  const createSale = useCallback(
+    async (values: SaleFormValues) => {
+      await runMutation(async () => {
+        const selectedProduct = products.find(
+          (product) => product.id === values.selectedProductId,
+        );
+
+        if (!selectedProduct) {
+          throw new Error('Selecione um produto válido para registrar a venda.');
+        }
+
+        const quantity = Math.max(parseInteger(values.quantity), 1);
+        await api.createSale({
+          cliente_nome: values.customerName.trim() || undefined,
+          meio_pagamento: values.paymentMethod,
+          itens: [{ produto_id: selectedProduct.id, quantidade: quantity }],
+        });
+      });
+    },
+    [products, runMutation],
+  );
+
   const stats = useMemo(() => {
     const deliveredServices = services.filter((service) => service.status === 'delivered');
     const totalRevenue = deliveredServices.reduce((acc, service) => acc + service.totalPrice, 0);
@@ -220,6 +248,7 @@ export const useBackofficeData = ({
   return {
     products,
     services,
+    sales,
     customers,
     dashboardSummary,
     isLoading,
@@ -232,6 +261,7 @@ export const useBackofficeData = ({
     saveProduct,
     deleteProduct,
     createService,
+    createSale,
     updateServiceStatus,
   };
 };

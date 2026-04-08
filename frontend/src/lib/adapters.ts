@@ -3,7 +3,9 @@ import {
   AuthenticatedUser,
   Customer,
   DashboardSummary,
+  PaymentMethod,
   Product,
+  Sale,
   ServiceOrder,
   ServiceStatus,
 } from '../types';
@@ -80,6 +82,24 @@ type ApiDashboardSummary = {
     quantidade_estoque: number;
     estoque_minimo: number;
   }>;
+};
+
+type ApiSaleItem = {
+  produto_id: string;
+  produto_nome: string;
+  quantidade: number;
+  preco_unitario: number;
+  subtotal: number;
+};
+
+type ApiSale = {
+  id: string;
+  referencia: string;
+  cliente_nome: string;
+  meio_pagamento: PaymentMethod;
+  valor_total: number;
+  criado_em: string;
+  itens: ApiSaleItem[];
 };
 
 export const mapAuthenticatedUserFromApi = (user: AuthenticatedUser): AuthenticatedUser => user;
@@ -187,5 +207,21 @@ export const mapDashboardSummaryFromApi = (
     name: product.nome,
     stock: product.quantidade_estoque,
     minStock: product.estoque_minimo,
+  })),
+});
+
+export const mapSaleFromApi = (sale: ApiSale): Sale => ({
+  id: sale.id,
+  reference: sale.referencia,
+  customerName: sale.cliente_nome,
+  paymentMethod: sale.meio_pagamento,
+  total: sale.valor_total,
+  createdAt: sale.criado_em,
+  items: sale.itens.map((item) => ({
+    productId: item.produto_id,
+    productName: item.produto_nome,
+    quantity: item.quantidade,
+    unitPrice: item.preco_unitario,
+    subtotal: item.subtotal,
   })),
 });

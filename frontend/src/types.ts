@@ -61,6 +61,31 @@ export type ServiceOrder = {
   updatedAt: string;
 };
 
+export type PaymentMethod =
+  | 'dinheiro'
+  | 'pix'
+  | 'cartao_credito'
+  | 'cartao_debito'
+  | 'transferencia';
+
+export type SaleItem = {
+  productId: string;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  subtotal: number;
+};
+
+export type Sale = {
+  id: string;
+  reference: string;
+  customerName: string;
+  paymentMethod: PaymentMethod;
+  total: number;
+  createdAt: string;
+  items: SaleItem[];
+};
+
 export type Customer = {
   id: string;
   name: string;
@@ -120,4 +145,11 @@ export type ServiceFormValues = {
   laborCost: string;
   selectedPartId: string;
   partQuantity: string;
+};
+
+export type SaleFormValues = {
+  customerName: string;
+  paymentMethod: PaymentMethod;
+  selectedProductId: string;
+  quantity: string;
 };
