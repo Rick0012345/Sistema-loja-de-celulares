@@ -12,6 +12,7 @@ import {
   YAxis,
 } from 'recharts';
 import { format, subDays } from 'date-fns';
+import { serviceStatusLabel } from '../lib/serviceStatus';
 import { cn, formatCurrency } from '../lib/utils';
 import { StatCard } from '../components/StatCard';
 import { DashboardSummary, ServiceOrder, ServiceStatus, ThemeMode } from '../types';
@@ -44,7 +45,7 @@ export const DashboardView = ({
     const dayRevenue = services
       .filter(
         (service) =>
-          service.status === 'delivered' &&
+          service.status === 'entregue' &&
           format(new Date(service.updatedAt), 'dd/MM') === dayKey,
       )
       .reduce((accumulator, service) => accumulator + service.totalPrice, 0);
@@ -58,20 +59,31 @@ export const DashboardView = ({
       return accumulator;
     },
     {
-      pending: 0,
-      in_progress: 0,
-      ready: 0,
-      delivered: 0,
-      cancelled: 0,
+      aguardando_orcamento: 0,
+      aguardando_aprovacao: 0,
+      aguardando_peca: 0,
+      em_conserto: 0,
+      pronto_para_retirada: 0,
+      entregue: 0,
+      cancelada: 0,
     },
   );
 
   const statusData = [
-    { name: 'Pendente', value: counts.pending, color: '#94a3b8' },
-    { name: 'Em Conserto', value: counts.in_progress, color: '#3b82f6' },
-    { name: 'Pronto', value: counts.ready, color: '#10b981' },
-    { name: 'Entregue', value: counts.delivered, color: '#6366f1' },
+    { name: serviceStatusLabel.aguardando_orcamento, value: counts.aguardando_orcamento, color: '#94a3b8' },
+    { name: serviceStatusLabel.aguardando_aprovacao, value: counts.aguardando_aprovacao, color: '#f59e0b' },
+    { name: serviceStatusLabel.aguardando_peca, value: counts.aguardando_peca, color: '#f97316' },
+    { name: serviceStatusLabel.em_conserto, value: counts.em_conserto, color: '#3b82f6' },
+    { name: serviceStatusLabel.pronto_para_retirada, value: counts.pronto_para_retirada, color: '#10b981' },
+    { name: serviceStatusLabel.entregue, value: counts.entregue, color: '#6366f1' },
   ].filter((item) => item.value > 0);
+
+  const overview = summary?.indicators ?? {
+    faturamentoMes: stats.totalRevenue,
+    lucroMes: stats.profit,
+    totalOrdensAbertas: stats.pendingServices,
+    totalProdutosBaixoEstoque: stats.lowStockItems,
+  };
 
   const chartTheme =
     theme === 'dark'
@@ -104,29 +116,29 @@ export const DashboardView = ({
     <div className="space-y-6">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title="Receita Total"
-          value={formatCurrency(stats.totalRevenue)}
+          title="Faturamento do Mes"
+          value={formatCurrency(overview.faturamentoMes)}
           icon={DollarSign}
           color="blue"
         />
         <StatCard
-          title="Lucro Liquido"
-          value={formatCurrency(stats.profit)}
+          title="Lucro do Mes"
+          value={formatCurrency(overview.lucroMes)}
           icon={TrendingUp}
           color="emerald"
         />
         <StatCard
           title="Servicos em Aberto"
-          value={stats.pendingServices.toString()}
+          value={overview.totalOrdensAbertas.toString()}
           icon={Clock}
           color="amber"
         />
         <StatCard
           title="Estoque Baixo"
-          value={stats.lowStockItems.toString()}
+          value={overview.totalProdutosBaixoEstoque.toString()}
           icon={AlertTriangle}
           color="rose"
-          isWarning={stats.lowStockItems > 0}
+          isWarning={overview.totalProdutosBaixoEstoque > 0}
         />
       </div>
 
@@ -134,7 +146,7 @@ export const DashboardView = ({
         <div className={cn('rounded-2xl p-5 lg:col-span-2', panelClass)}>
           <h3 className="mb-4 flex items-center gap-2 text-base font-bold">
             <TrendingUp size={20} className="text-blue-600" />
-            Faturamento dos ultimos 7 dias
+            Valor de OS entregues nos ultimos 7 dias
           </h3>
           <div className="h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">

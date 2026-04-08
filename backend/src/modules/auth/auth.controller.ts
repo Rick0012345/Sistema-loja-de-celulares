@@ -2,6 +2,8 @@ import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/commo
 import { perfil_usuario } from '@prisma/client';
 import { AuthService } from './auth.service';
 import { CreateUserDto, LoginDto, UpdateUserDto } from './auth.dto';
+import type { AuthenticatedUser } from './auth.types';
+import { CurrentUser } from './decorators/current-user.decorator';
 import { Public } from './decorators/public.decorator';
 import { Roles } from './decorators/roles.decorator';
 
@@ -19,6 +21,11 @@ export class AuthController {
   @Post('login')
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
+  }
+
+  @Get('me')
+  getCurrentUser(@CurrentUser() currentUser: AuthenticatedUser) {
+    return this.authService.getCurrentUser(currentUser.sub);
   }
 
   @Roles(perfil_usuario.administrador)

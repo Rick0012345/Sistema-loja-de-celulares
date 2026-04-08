@@ -1,5 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { status_ordem_servico, status_pagamento } from '@prisma/client';
+import {
+  origem_movimentacao_estoque,
+  status_ordem_servico,
+  status_pagamento,
+  tipo_conta_financeira,
+  tipo_movimentacao_estoque,
+} from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { toNumber } from '../../common/utils/serialize';
 
@@ -19,6 +25,8 @@ export class DashboardService {
       ordensRecentes,
       produtosBaixoEstoque,
       pagamentosMes,
+      vendasMes,
+      custoVendasMes,
     ] = await Promise.all([
       this.prisma.clientes.count(),
       this.prisma.produtos_pecas.count({
@@ -50,9 +58,34 @@ export class DashboardService {
       this.prisma.pagamentos_os.findMany({
         where: {
           status: status_pagamento.pago,
+          pago_em: {
+            gte: inicioMes,
+          },
+        },
+      }),
+      this.prisma.contas_financeiras.findMany({
+        where: {
+          tipo: tipo_conta_financeira.receber,
+          status: status_pagamento.pago,
+          pago_em: {
+            gte: inicioMes,
+          },
+          descricao: {
+            startsWith: 'Venda balcão #',
+          },
+        },
+      }),
+      this.prisma.movimentacoes_estoque.findMany({
+        where: {
+          tipo: tipo_movimentacao_estoque.saida,
+          origem: origem_movimentacao_estoque.venda,
           created_at: {
             gte: inicioMes,
           },
+        },
+        select: {
+          quantidade: true,
+          custo_unitario: true,
         },
       }),
     ]);
@@ -61,10 +94,15 @@ export class DashboardService {
       (produto) => produto.quantidade_estoque <= produto.estoque_minimo,
     );
 
-    const faturamentoMes = pagamentosMes.reduce(
+    const faturamentoOsMes = pagamentosMes.reduce(
       (acc, pagamento) => acc + (toNumber(pagamento.valor) ?? 0),
       0,
     );
+    const faturamentoVendasMes = vendasMes.reduce(
+      (acc, venda) => acc + (toNumber(venda.valor) ?? 0),
+      0,
+    );
+    const faturamentoMes = faturamentoOsMes + faturamentoVendasMes;
 
     const lucroMes = (
       await this.prisma.ordens_servico.aggregate({
@@ -80,6 +118,14 @@ export class DashboardService {
       })
     )._sum.lucro_estimado;
 
+    const lucroVendasMes =
+      faturamentoVendasMes -
+      custoVendasMes.reduce(
+        (acc, movimentacao) =>
+          acc + (toNumber(movimentacao.custo_unitario) ?? 0) * movimentacao.quantidade,
+        0,
+      );
+
     return {
       indicadores: {
         totalClientes,
@@ -87,7 +133,7 @@ export class DashboardService {
         totalOrdensAbertas,
         totalProdutosBaixoEstoque: estoqueBaixo.length,
         faturamentoMes,
-        lucroMes: toNumber(lucroMes) ?? 0,
+        lucroMes: (toNumber(lucroMes) ?? 0) + lucroVendasMes,
       },
       ordensRecentes: ordensRecentes.map((ordem) => ({
         id: ordem.id,

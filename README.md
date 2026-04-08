@@ -2,14 +2,14 @@
 
 Sistema web para controle de estoque, ordens de serviço, financeiro e lucratividade de uma assistência técnica e loja de celulares.
 
-## Stack Definida
+## Stack Atual
 
-- Frontend: Next.js + TypeScript
-- UI: Tailwind CSS + shadcn/ui
+- Frontend: React + Vite + TypeScript
+- UI: Tailwind CSS
 - Backend: NestJS + TypeScript
 - Banco de dados: PostgreSQL
 - ORM: Prisma
-- Autenticação: JWT com refresh token
+- Autenticação: JWT
 - Infra: Docker Compose
 
 ## Arquitetura Escolhida
@@ -31,13 +31,14 @@ Sistema web para controle de estoque, ordens de serviço, financeiro e lucrativi
 - Histórico de status
 - Financeiro
 - Dashboard
+- Vendas de balcão
 
 ## Primeira Entrega Implementada
 
 - API NestJS com Prisma conectada ao PostgreSQL
-- Endpoints para autenticação inicial, clientes, estoque, ordens de serviço e dashboard
+- Endpoints para autenticação, clientes, estoque, ordens de serviço, dashboard e vendas
 - Swagger disponível em `http://localhost:3001/docs`
-- Painel Next.js com indicadores e formulários para cadastro rápido
+- Painel React/Vite com indicadores e formulários para cadastro rápido
 - Docker Compose configurado para subir banco, backend e frontend
 
 ## Estrutura Inicial Recomendada
@@ -62,7 +63,7 @@ Sistema web para controle de estoque, ordens de serviço, financeiro e lucrativi
 O projeto passa a adotar Docker Compose como padrão de ambiente local.
 
 - PostgreSQL já está configurado para subir por padrão
-- frontend e backend já sobem com o perfil `scaffold`
+- frontend e backend já sobem no compose padrão
 - o backend fica disponível em `http://localhost:3001`
 - o frontend fica disponível em `http://localhost:3000`
 
@@ -71,18 +72,19 @@ O projeto passa a adotar Docker Compose como padrão de ambiente local.
 Execute na raiz do projeto:
 
 ```bash
-docker compose --profile scaffold up -d
+docker compose up -d
 ```
 
 ## Endpoints iniciais
 
 - `GET /` status da API
 - `GET /auth/status` verifica se já existe usuário
-- `POST /auth/bootstrap-admin` cria o primeiro administrador
 - `POST /auth/login` autentica usuário
+- `GET /auth/me` valida a sessão atual
 - `GET/POST/PATCH/DELETE /clientes`
 - `GET/POST/PATCH /estoque/produtos`
 - `POST /estoque/produtos/:id/movimentacoes`
-- `GET/POST /ordens-servico`
+- `GET/POST/PATCH /ordens-servico`
 - `PATCH /ordens-servico/:id/status`
 - `GET /dashboard/resumo`
+- `GET/POST /vendas`

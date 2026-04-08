@@ -4,8 +4,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  meio_pagamento,
   Prisma,
   origem_movimentacao_estoque,
+  status_pagamento,
   status_ordem_servico,
   tipo_movimentacao_estoque,
 } from '@prisma/client';
@@ -135,7 +137,7 @@ export class OrdensServicoService {
     const updated = await this.prisma.$transaction(async (tx) => {
       const ordem = await tx.ordens_servico.findUnique({
         where: { id },
-        include: { itens_os: true },
+        include: { itens_os: true, pagamentos_os: true },
       });
 
       if (!ordem) {
@@ -225,7 +227,7 @@ export class OrdensServicoService {
     const updated = await this.prisma.$transaction(async (tx) => {
       const ordem = await tx.ordens_servico.findUnique({
         where: { id },
-        include: { itens_os: true },
+        include: { itens_os: true, pagamentos_os: true },
       });
 
       if (!ordem) {
@@ -265,6 +267,27 @@ export class OrdensServicoService {
         },
         include: { clientes: true, itens_os: true },
       });
+
+      const saldoPendente = this.getSaldoPendente(ordem);
+
+      if (nextStatus === status_ordem_servico.entregue && saldoPendente > 0) {
+        if (!dto.meio_pagamento) {
+          throw new BadRequestException(
+            'Informe a forma de pagamento para concluir a entrega da OS.',
+          );
+        }
+
+        await tx.pagamentos_os.create({
+          data: {
+            ordem_servico_id: ordem.id,
+            valor: new Prisma.Decimal(saldoPendente),
+            meio: dto.meio_pagamento,
+            status: status_pagamento.pago,
+            pago_em: new Date(),
+            observacao: dto.observacao ?? 'Pagamento registrado na entrega da OS.',
+          },
+        });
+      }
 
       await tx.historico_status_os.create({
         data: {
@@ -459,5 +482,24 @@ export class OrdensServicoService {
         observacao: 'Baixa automática de estoque via OS.',
       })),
     });
+  }
+
+  private getSaldoPendente(ordem: {
+    valor_total: Prisma.Decimal | number | string | null;
+    pagamentos_os: Array<{
+      valor: Prisma.Decimal | number | string | null;
+      status: status_pagamento;
+    }>;
+  }) {
+    const valorTotal = toNumber(ordem.valor_total) ?? 0;
+    const valorPago = ordem.pagamentos_os.reduce((acc, pagamento) => {
+      if (pagamento.status !== status_pagamento.pago) {
+        return acc;
+      }
+
+      return acc + (toNumber(pagamento.valor) ?? 0);
+    }, 0);
+
+    return Math.max(0, valorTotal - valorPago);
   }
 }

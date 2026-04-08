@@ -20,7 +20,14 @@ describe('AppController (e2e)', () => {
     return request(app.getHttpServer())
       .get('/')
       .expect(200)
-      .expect('Hello World!');
+      .expect((response) => {
+        expect(response.body).toEqual({
+          nome: 'Sistema de Gestão para Loja de Celulares',
+          status: 'online',
+          versao: '0.1.0',
+          timestamp: expect.any(String),
+        });
+      });
   });
 
   afterEach(async () => {

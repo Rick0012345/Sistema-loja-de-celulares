@@ -2,77 +2,125 @@ import { AlertTriangle, CheckCircle2, Clock3, PackageCheck, Wrench } from 'lucid
 import { ServiceStatus } from '../types';
 
 export const serviceStatusLabel: Record<ServiceStatus, string> = {
-  pending: 'Pendente',
-  in_progress: 'Em Conserto',
-  ready: 'Pronto',
-  delivered: 'Entregue',
-  cancelled: 'Cancelado',
+  aguardando_orcamento: 'Aguardando orçamento',
+  aguardando_aprovacao: 'Aguardando aprovação',
+  aguardando_peca: 'Aguardando peça',
+  em_conserto: 'Em conserto',
+  pronto_para_retirada: 'Pronto para retirada',
+  entregue: 'Entregue',
+  cancelada: 'Cancelada',
 };
 
 export const serviceStatusBadgeClass: Record<ServiceStatus, string> = {
-  pending: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
-  in_progress: 'bg-blue-100 text-blue-600 dark:bg-blue-500/15 dark:text-blue-300',
-  ready: 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300',
-  delivered: 'bg-indigo-100 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300',
-  cancelled: 'bg-rose-100 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300',
+  aguardando_orcamento:
+    'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
+  aguardando_aprovacao:
+    'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300',
+  aguardando_peca:
+    'bg-orange-100 text-orange-700 dark:bg-orange-500/15 dark:text-orange-300',
+  em_conserto:
+    'bg-blue-100 text-blue-600 dark:bg-blue-500/15 dark:text-blue-300',
+  pronto_para_retirada:
+    'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300',
+  entregue:
+    'bg-indigo-100 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300',
+  cancelada:
+    'bg-rose-100 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300',
 };
 
 export const serviceStatusPanelClass: Record<ServiceStatus, string> = {
-  pending:
+  aguardando_orcamento:
     'border-slate-200 bg-white/85 dark:border-slate-800 dark:bg-slate-900/85',
-  in_progress:
+  aguardando_aprovacao:
+    'border-amber-200 bg-amber-50/70 dark:border-amber-500/30 dark:bg-amber-500/10',
+  aguardando_peca:
+    'border-orange-200 bg-orange-50/70 dark:border-orange-500/30 dark:bg-orange-500/10',
+  em_conserto:
     'border-blue-200 bg-blue-50/70 dark:border-blue-500/30 dark:bg-blue-500/10',
-  ready:
+  pronto_para_retirada:
     'border-emerald-200 bg-emerald-50/70 dark:border-emerald-500/30 dark:bg-emerald-500/10',
-  delivered:
+  entregue:
     'border-indigo-200 bg-indigo-50/70 dark:border-indigo-500/30 dark:bg-indigo-500/10',
-  cancelled:
+  cancelada:
     'border-rose-200 bg-rose-50/70 dark:border-rose-500/30 dark:bg-rose-500/10',
 };
 
-export const workflowColumns: Array<{
+export const serviceStatusOptions: Array<{
   id: ServiceStatus;
   title: string;
   icon: typeof Clock3;
 }> = [
   {
-    id: 'pending',
-    title: 'Fila de Entrada',
+    id: 'aguardando_orcamento',
+    title: 'Aguardando orçamento',
     icon: Clock3,
   },
   {
-    id: 'in_progress',
-    title: 'Bancada',
-    icon: Wrench,
+    id: 'aguardando_aprovacao',
+    title: 'Aguardando aprovação',
+    icon: AlertTriangle,
   },
   {
-    id: 'ready',
-    title: 'Pronto para Retirada',
+    id: 'aguardando_peca',
+    title: 'Aguardando peça',
     icon: PackageCheck,
   },
   {
-    id: 'delivered',
-    title: 'Entregues',
+    id: 'em_conserto',
+    title: 'Em conserto',
+    icon: Wrench,
+  },
+  {
+    id: 'pronto_para_retirada',
+    title: 'Pronto para retirada',
     icon: CheckCircle2,
   },
   {
-    id: 'cancelled',
-    title: 'Canceladas',
+    id: 'entregue',
+    title: 'Entregue',
+    icon: CheckCircle2,
+  },
+  {
+    id: 'cancelada',
+    title: 'Cancelada',
     icon: AlertTriangle,
   },
 ];
 
+export const workflowColumns: Array<{
+  id: ServiceStatus;
+  title: string;
+  icon: typeof Clock3;
+}> = serviceStatusOptions;
+
+export const isOpenServiceStatus = (status: ServiceStatus) =>
+  status !== 'entregue' && status !== 'cancelada';
+
 export const getNextServiceAction = (status: ServiceStatus) => {
-  if (status === 'pending') {
-    return { label: 'Iniciar Conserto', nextStatus: 'in_progress' as const };
+  if (status === 'aguardando_orcamento') {
+    return {
+      label: 'Enviar para aprovação',
+      nextStatus: 'aguardando_aprovacao' as const,
+    };
   }
 
-  if (status === 'in_progress') {
-    return { label: 'Marcar como Pronto', nextStatus: 'ready' as const };
+  if (status === 'aguardando_aprovacao') {
+    return { label: 'Aguardar peça', nextStatus: 'aguardando_peca' as const };
   }
 
-  if (status === 'ready') {
-    return { label: 'Confirmar Entrega', nextStatus: 'delivered' as const };
+  if (status === 'aguardando_peca') {
+    return { label: 'Iniciar conserto', nextStatus: 'em_conserto' as const };
+  }
+
+  if (status === 'em_conserto') {
+    return {
+      label: 'Marcar como pronto',
+      nextStatus: 'pronto_para_retirada' as const,
+    };
+  }
+
+  if (status === 'pronto_para_retirada') {
+    return { label: 'Confirmar entrega', nextStatus: 'entregue' as const };
   }
 
   return null;

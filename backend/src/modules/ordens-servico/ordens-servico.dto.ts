@@ -1,4 +1,4 @@
-import { status_ordem_servico } from '@prisma/client';
+import { meio_pagamento, status_ordem_servico } from '@prisma/client';
 import {
   IsArray,
   IsBoolean,
@@ -105,6 +105,10 @@ export class CreateOrdemServicoDto {
 export class UpdateStatusOrdemServicoDto {
   @IsEnum(status_ordem_servico)
   status: status_ordem_servico;
+
+  @IsOptional()
+  @IsEnum(meio_pagamento)
+  meio_pagamento?: meio_pagamento;
 
   @IsOptional()
   @IsString()

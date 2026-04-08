@@ -19,9 +19,7 @@ import {
 } from '../types';
 
 const API_URL =
-  import.meta.env.VITE_API_URL?.trim() ||
-  import.meta.env.NEXT_PUBLIC_API_URL?.trim() ||
-  'http://localhost:3001';
+  import.meta.env.VITE_API_URL?.trim() || 'http://localhost:3001';
 const AUTH_TOKEN_STORAGE_KEY = 'consertasmart.auth.token';
 const AUTH_USER_STORAGE_KEY = 'consertasmart.auth.user';
 
@@ -126,6 +124,12 @@ export const api = {
     );
     api.setAuthToken(response.accessToken);
     api.setStoredUser(response.usuario);
+    return response;
+  },
+
+  async getCurrentUser(): Promise<AuthenticatedUser> {
+    const response = await request<AuthenticatedUser>('/auth/me');
+    api.setStoredUser(response);
     return response;
   },
 
@@ -280,12 +284,18 @@ export const api = {
 
   async updateServiceStatus(
     id: string,
-    status: ServiceStatus,
+    payload: {
+      status: ServiceStatus;
+      meio_pagamento?: PaymentMethod;
+      observacao?: string;
+    },
   ): Promise<ServiceOrder> {
     const response = await request<any>(`/ordens-servico/${id}/status`, {
       method: 'PATCH',
       body: {
-        status: serviceStatusToApi(status),
+        status: serviceStatusToApi(payload.status),
+        meio_pagamento: payload.meio_pagamento,
+        observacao: payload.observacao,
       },
     });
     return mapServiceFromApi(response);

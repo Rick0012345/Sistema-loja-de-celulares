@@ -26,6 +26,7 @@ CREATE TYPE tipo_movimentacao_estoque AS ENUM (
 CREATE TYPE origem_movimentacao_estoque AS ENUM (
   'compra',
   'ordem_servico',
+  'venda',
   'ajuste_manual'
 );
 

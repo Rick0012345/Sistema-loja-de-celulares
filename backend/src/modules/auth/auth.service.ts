@@ -106,12 +106,7 @@ export class AuthService implements OnModuleInit {
 
     return {
       accessToken: await this.jwtService.signAsync(payload),
-      usuario: {
-        id: usuario.id,
-        nome: usuario.nome,
-        email: usuario.email,
-        perfil: usuario.perfil,
-      },
+      usuario: this.serializeAuthenticatedUser(usuario),
     };
   }
 
@@ -129,16 +124,27 @@ export class AuthService implements OnModuleInit {
   listUsers() {
     return this.prisma.usuarios.findMany({
       orderBy: { created_at: 'desc' },
+      select: this.managedUserSelect,
+    });
+  }
+
+  async getCurrentUser(id: string) {
+    const usuario = await this.prisma.usuarios.findUnique({
+      where: { id },
       select: {
         id: true,
         nome: true,
         email: true,
         perfil: true,
         ativo: true,
-        created_at: true,
-        updated_at: true,
       },
     });
+
+    if (!usuario || !usuario.ativo) {
+      throw new UnauthorizedException('Usuário não autenticado.');
+    }
+
+    return this.serializeAuthenticatedUser(usuario);
   }
 
   async createUser(dto: CreateUserDto) {
@@ -154,15 +160,7 @@ export class AuthService implements OnModuleInit {
         perfil: dto.perfil,
         ativo: true,
       },
-      select: {
-        id: true,
-        nome: true,
-        email: true,
-        perfil: true,
-        ativo: true,
-        created_at: true,
-        updated_at: true,
-      },
+      select: this.managedUserSelect,
     });
   }
 
@@ -224,15 +222,7 @@ export class AuthService implements OnModuleInit {
     return this.prisma.usuarios.update({
       where: { id },
       data,
-      select: {
-        id: true,
-        nome: true,
-        email: true,
-        perfil: true,
-        ativo: true,
-        created_at: true,
-        updated_at: true,
-      },
+      select: this.managedUserSelect,
     });
   }
 
@@ -268,5 +258,29 @@ export class AuthService implements OnModuleInit {
     if (usuario) {
       throw new BadRequestException('Já existe um usuário com este e-mail.');
     }
+  }
+
+  private readonly managedUserSelect = {
+    id: true,
+    nome: true,
+    email: true,
+    perfil: true,
+    ativo: true,
+    created_at: true,
+    updated_at: true,
+  } as const;
+
+  private serializeAuthenticatedUser(usuario: {
+    id: string;
+    nome: string;
+    email: string;
+    perfil: perfil_usuario;
+  }) {
+    return {
+      id: usuario.id,
+      nome: usuario.nome,
+      email: usuario.email,
+      perfil: usuario.perfil,
+    };
   }
 }

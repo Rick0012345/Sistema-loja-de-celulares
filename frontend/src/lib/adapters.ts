@@ -108,29 +108,33 @@ export const mapAuthenticatedUserFromApi = (user: AuthenticatedUser): Authentica
 export const mapAuthStatusFromApi = (status: AuthStatus): AuthStatus => status;
 
 const STATUS_FROM_API: Record<string, ServiceStatus> = {
-  aguardando_orcamento: 'pending',
-  aguardando_aprovacao: 'pending',
-  aguardando_peca: 'pending',
-  em_conserto: 'in_progress',
-  pronto_para_retirada: 'ready',
-  entregue: 'delivered',
-  cancelada: 'cancelled',
+  aguardando_orcamento: 'aguardando_orcamento',
+  aguardando_aprovacao: 'aguardando_aprovacao',
+  aguardando_peca: 'aguardando_peca',
+  em_conserto: 'em_conserto',
+  pronto_para_retirada: 'pronto_para_retirada',
+  entregue: 'entregue',
+  cancelada: 'cancelada',
 };
 
 const STATUS_TO_API: Record<ServiceStatus, string> = {
-  pending: 'aguardando_orcamento',
-  in_progress: 'em_conserto',
-  ready: 'pronto_para_retirada',
-  delivered: 'entregue',
-  cancelled: 'cancelada',
+  aguardando_orcamento: 'aguardando_orcamento',
+  aguardando_aprovacao: 'aguardando_aprovacao',
+  aguardando_peca: 'aguardando_peca',
+  em_conserto: 'em_conserto',
+  pronto_para_retirada: 'pronto_para_retirada',
+  entregue: 'entregue',
+  cancelada: 'cancelada',
 };
 
 const STATUS_LABELS: Record<ServiceStatus, string> = {
-  pending: 'Pendente',
-  in_progress: 'Em Conserto',
-  ready: 'Pronto',
-  delivered: 'Entregue',
-  cancelled: 'Cancelado',
+  aguardando_orcamento: 'Aguardando orçamento',
+  aguardando_aprovacao: 'Aguardando aprovação',
+  aguardando_peca: 'Aguardando peça',
+  em_conserto: 'Em conserto',
+  pronto_para_retirada: 'Pronto para retirada',
+  entregue: 'Entregue',
+  cancelada: 'Cancelada',
 };
 
 export const serviceStatusToApi = (status: ServiceStatus) => STATUS_TO_API[status];
@@ -162,7 +166,7 @@ export const mapCustomerFromApi = (customer: ApiCustomer): Customer => ({
 export const mapServiceFromApi = (service: ApiServiceOrder): ServiceOrder => {
   const customer = service.cliente ?? service.clientes;
   const parts = service.itens ?? service.itens_os ?? [];
-  const status = STATUS_FROM_API[service.status] ?? 'pending';
+  const status = STATUS_FROM_API[service.status] ?? 'aguardando_orcamento';
 
   return {
     id: service.id,
@@ -200,7 +204,7 @@ export const mapDashboardSummaryFromApi = (
     customerName: order.cliente,
     deviceLabel: order.aparelho,
     statusLabel:
-      STATUS_LABELS[STATUS_FROM_API[order.status] ?? 'pending'],
+      STATUS_LABELS[STATUS_FROM_API[order.status] ?? 'aguardando_orcamento'],
     totalPrice: order.valor_total,
     createdAt: order.created_at,
   })),

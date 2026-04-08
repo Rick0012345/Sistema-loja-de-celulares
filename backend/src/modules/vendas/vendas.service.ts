@@ -38,7 +38,7 @@ export class VendasService {
       ? await this.prisma.movimentacoes_estoque.findMany({
           where: {
             tipo: tipo_movimentacao_estoque.saida,
-            origem: origem_movimentacao_estoque.ajuste_manual,
+            origem: origem_movimentacao_estoque.venda,
             origem_id: { in: referencias },
           },
           include: {
@@ -77,14 +77,17 @@ export class VendasService {
       return acc;
     }, {});
 
-    return contas.map((conta) => {
+      return contas.map((conta) => {
       const referencia = this.extractSaleRef(conta.descricao, conta.id);
       const itens = itensPorRef[referencia] ?? [];
 
       return {
         id: referencia,
         referencia,
-        cliente_nome: conta.clientes?.nome ?? 'Cliente não informado',
+        cliente_nome:
+          conta.clientes?.nome ??
+          this.extractCustomerName(conta.descricao) ??
+          'Cliente não informado',
         meio_pagamento: this.extractPaymentMethod(conta.descricao),
         valor_total: toNumber(conta.valor),
         criado_em: conta.created_at,
@@ -130,8 +133,8 @@ export class VendasService {
     );
 
     const referencia = randomUUID();
-    const descricaoConta = `Venda balcão #${referencia} | pagamento:${dto.meio_pagamento}`;
     const clienteNome = dto.cliente_nome?.trim() || 'Cliente não informado';
+    const descricaoConta = `Venda balcão #${referencia} | cliente:${clienteNome} | pagamento:${dto.meio_pagamento}`;
 
     await this.prisma.$transaction(async (tx) => {
       await Promise.all(
@@ -147,9 +150,12 @@ export class VendasService {
         data: itensNormalizados.map((item) => ({
           produto_id: item.produtoId,
           tipo: tipo_movimentacao_estoque.saida,
-          origem: origem_movimentacao_estoque.ajuste_manual,
+          origem: origem_movimentacao_estoque.venda,
           origem_id: referencia,
           quantidade: item.quantidade,
+          custo_unitario: new Prisma.Decimal(
+            produtoPorId.get(item.produtoId)?.preco_custo ?? 0,
+          ),
           observacao: `Venda de balcão (${clienteNome}).`,
         })),
       });
@@ -192,5 +198,10 @@ export class VendasService {
   private extractPaymentMethod(descricao: string) {
     const match = descricao.match(/pagamento:([a-z_]+)/);
     return match?.[1] ?? 'dinheiro';
+  }
+
+  private extractCustomerName(descricao: string) {
+    const match = descricao.match(/cliente:([^|]+)/);
+    return match?.[1]?.trim() ?? null;
   }
 }

@@ -1,8 +1,10 @@
 import { Activity, ArrowRight, CheckCircle2, CircleDollarSign, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { promptForPaymentMethod } from '../lib/paymentMethods';
 import { cn, formatCurrency } from '../lib/utils';
 import {
   getNextServiceAction,
+  isOpenServiceStatus,
   serviceStatusBadgeClass,
   serviceStatusLabel,
   serviceStatusPanelClass,
@@ -13,7 +15,10 @@ import { ServiceOrder, ServiceStatus } from '../types';
 type WorkflowViewProps = {
   services: ServiceOrder[];
   isBusy: boolean;
-  onUpdateServiceStatus: (serviceId: string, status: ServiceStatus) => Promise<void>;
+  onUpdateServiceStatus: (inputId: string, input: {
+    status: ServiceStatus;
+    paymentMethod?: 'dinheiro' | 'pix' | 'cartao_credito' | 'cartao_debito' | 'transferencia';
+  }) => Promise<void>;
 };
 
 const metricCardClass =
@@ -63,15 +68,15 @@ export const WorkflowView = ({
   );
 
   const metrics = useMemo(() => {
-    const openOrders = visibleServices.filter(
-      (service) => service.status !== 'delivered' && service.status !== 'cancelled',
+    const openOrders = visibleServices.filter((service) => isOpenServiceStatus(service.status));
+    const readyOrders = visibleServices.filter(
+      (service) => service.status === 'pronto_para_retirada',
     );
-    const readyOrders = visibleServices.filter((service) => service.status === 'ready');
     const inProgressOrders = visibleServices.filter(
-      (service) => service.status === 'in_progress',
+      (service) => service.status === 'em_conserto',
     );
     const deliveredRevenue = visibleServices
-      .filter((service) => service.status === 'delivered')
+      .filter((service) => service.status === 'entregue')
       .reduce((total, service) => total + service.totalPrice, 0);
 
     return {
@@ -81,6 +86,28 @@ export const WorkflowView = ({
       deliveredRevenue,
     };
   }, [visibleServices]);
+
+  const handleStatusUpdate = async (service: ServiceOrder, status: ServiceStatus) => {
+    if (status === service.status) {
+      return;
+    }
+
+    if (status === 'entregue') {
+      const paymentMethod = promptForPaymentMethod();
+      if (!paymentMethod) {
+        window.alert('Informe uma forma de pagamento válida para concluir a entrega.');
+        return;
+      }
+
+      await onUpdateServiceStatus(service.id, {
+        status,
+        paymentMethod,
+      });
+      return;
+    }
+
+    await onUpdateServiceStatus(service.id, { status });
+  };
 
   return (
     <div className="space-y-5">
@@ -218,7 +245,7 @@ export const WorkflowView = ({
                             serviceStatusBadgeClass[service.status],
                           )}
                         >
-                          {serviceStatusLabel[service.status]}
+                            {serviceStatusLabel[service.status]}
                         </span>
                       </div>
 
@@ -260,9 +287,7 @@ export const WorkflowView = ({
                           <button
                             type="button"
                             disabled={isBusy}
-                            onClick={() =>
-                              void onUpdateServiceStatus(service.id, nextAction.nextStatus)
-                            }
+                            onClick={() => void handleStatusUpdate(service, nextAction.nextStatus)}
                             className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
                           >
                             {nextAction.label}
@@ -270,16 +295,30 @@ export const WorkflowView = ({
                           </button>
                         )}
 
-                        {service.status !== 'delivered' && service.status !== 'cancelled' && (
+                        {service.status !== 'entregue' && service.status !== 'cancelada' && (
                           <button
                             type="button"
                             disabled={isBusy}
-                            onClick={() => void onUpdateServiceStatus(service.id, 'cancelled')}
+                            onClick={() => void handleStatusUpdate(service, 'cancelada')}
                             className="w-full rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-semibold text-rose-600 transition-colors hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300 dark:hover:bg-rose-500/20"
                           >
                             Cancelar OS
                           </button>
                         )}
+                        <select
+                          value={service.status}
+                          disabled={isBusy}
+                          onChange={(event) =>
+                            void handleStatusUpdate(service, event.target.value as ServiceStatus)
+                          }
+                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                        >
+                          {workflowColumns.map((column) => (
+                            <option key={column.id} value={column.id}>
+                              {column.title}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                     </article>
                   );

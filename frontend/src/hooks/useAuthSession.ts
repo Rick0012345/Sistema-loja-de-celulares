@@ -65,10 +65,10 @@ export const useAuthSession = ({
 
       try {
         const token = api.getAuthToken();
-        const storedUser = api.getStoredUser();
 
-        if (token && storedUser) {
-          setSession(storedUser);
+        if (token) {
+          const currentUser = await api.getCurrentUser();
+          setSession(currentUser);
           await onAuthenticatedRef.current();
         } else {
           setSession(null);

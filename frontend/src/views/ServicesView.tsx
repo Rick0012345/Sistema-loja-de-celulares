@@ -1,11 +1,13 @@
 import { type FormEvent, useMemo, useState } from 'react';
-import { CheckCircle, Clock, Pencil, Plus, Search, Smartphone, X } from 'lucide-react';
-import { cn, formatCurrency } from '../lib/utils';
+import { CheckCircle, Clock, Pencil, Plus, Search, Smartphone, Trash2, X } from 'lucide-react';
+import { promptForPaymentMethod } from '../lib/paymentMethods';
 import {
   getNextServiceAction,
   serviceStatusBadgeClass,
   serviceStatusLabel,
+  serviceStatusOptions,
 } from '../lib/serviceStatus';
+import { cn, formatCurrency } from '../lib/utils';
 import { Product, ServiceFormValues, ServiceOrder, ServiceStatus } from '../types';
 
 const inputClass =
@@ -21,8 +23,7 @@ const EMPTY_SERVICE_FORM: ServiceFormValues = {
   issueDescription: '',
   deliveryType: 'store_pickup',
   laborCost: '',
-  selectedPartId: '',
-  partQuantity: '1',
+  parts: [],
 };
 
 type ServicesViewProps = {
@@ -31,7 +32,10 @@ type ServicesViewProps = {
   isBusy: boolean;
   onCreateService: (values: ServiceFormValues) => Promise<void>;
   onUpdateService: (serviceId: string, values: ServiceFormValues) => Promise<void>;
-  onUpdateServiceStatus: (serviceId: string, status: ServiceStatus) => Promise<void>;
+  onUpdateServiceStatus: (inputId: string, input: {
+    status: ServiceStatus;
+    paymentMethod?: 'dinheiro' | 'pix' | 'cartao_credito' | 'cartao_debito' | 'transferencia';
+  }) => Promise<void>;
 };
 
 export const ServicesView = ({
@@ -44,7 +48,7 @@ export const ServicesView = ({
 }: ServicesViewProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'ready'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | ServiceStatus>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState<ServiceFormValues>(EMPTY_SERVICE_FORM);
 
@@ -71,20 +75,6 @@ export const ServicesView = ({
     [normalizedSearch, services, statusFilter],
   );
 
-  const filterOptions = [
-    { id: 'all', label: 'Todos', count: services.length },
-    {
-      id: 'pending',
-      label: 'Pendentes',
-      count: services.filter((service) => service.status === 'pending').length,
-    },
-    {
-      id: 'ready',
-      label: 'Prontos',
-      count: services.filter((service) => service.status === 'ready').length,
-    },
-  ] as const;
-
   const closeModal = () => {
     setIsModalOpen(false);
     setEditingServiceId(null);
@@ -98,7 +88,6 @@ export const ServicesView = ({
   };
 
   const openEditModal = (service: ServiceOrder) => {
-    const firstPart = service.partsUsed.find((part) => part.productId);
     setEditingServiceId(service.id);
     setFormData({
       customerName: service.customerName,
@@ -108,10 +97,73 @@ export const ServicesView = ({
       issueDescription: service.issueDescription,
       deliveryType: service.deliveryType,
       laborCost: service.laborCost.toString(),
-      selectedPartId: firstPart?.productId ?? '',
-      partQuantity: firstPart?.quantity ? firstPart.quantity.toString() : '1',
+      parts: service.partsUsed.map((part) => ({
+        id: part.id,
+        productId: part.productId ?? '',
+        description: part.description,
+        quantity: part.quantity.toString(),
+        costPrice: part.costPrice.toString(),
+        salePrice: part.salePrice.toString(),
+      })),
     });
     setIsModalOpen(true);
+  };
+
+  const updatePart = (
+    index: number,
+    updater: (current: ServiceFormValues['parts'][number]) => ServiceFormValues['parts'][number],
+  ) => {
+    setFormData((current) => ({
+      ...current,
+      parts: current.parts.map((part, partIndex) =>
+        partIndex === index ? updater(part) : part,
+      ),
+    }));
+  };
+
+  const addPart = () => {
+    setFormData((current) => ({
+      ...current,
+      parts: [
+        ...current.parts,
+        {
+          productId: '',
+          description: '',
+          quantity: '1',
+          costPrice: '0',
+          salePrice: '0',
+        },
+      ],
+    }));
+  };
+
+  const removePart = (index: number) => {
+    setFormData((current) => ({
+      ...current,
+      parts: current.parts.filter((_, partIndex) => partIndex !== index),
+    }));
+  };
+
+  const handleStatusUpdate = async (service: ServiceOrder, status: ServiceStatus) => {
+    if (status === service.status) {
+      return;
+    }
+
+    if (status === 'entregue') {
+      const paymentMethod = promptForPaymentMethod();
+      if (!paymentMethod) {
+        window.alert('Informe uma forma de pagamento válida para concluir a entrega.');
+        return;
+      }
+
+      await onUpdateServiceStatus(service.id, {
+        status,
+        paymentMethod,
+      });
+      return;
+    }
+
+    await onUpdateServiceStatus(service.id, { status });
   };
 
   const handleSubmit = async (event: FormEvent) => {
@@ -129,26 +181,21 @@ export const ServicesView = ({
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex flex-wrap gap-3">
-          {filterOptions.map((filter) => (
-            <button
-              key={filter.id}
-              type="button"
-              onClick={() => setStatusFilter(filter.id)}
-              className={cn(
-                secondaryButtonClass,
-                statusFilter === filter.id &&
-                  'border-blue-200 bg-blue-50 text-blue-600 dark:border-blue-500/30 dark:bg-blue-500/15 dark:text-blue-300',
-              )}
-            >
-              {filter.label}
-              <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-300">
-                {filter.count}
-              </span>
-            </button>
-          ))}
-        </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center lg:ml-auto">
+          <select
+            value={statusFilter}
+            onChange={(event) =>
+              setStatusFilter(event.target.value === 'all' ? 'all' : (event.target.value as ServiceStatus))
+            }
+            className={inputClass}
+          >
+            <option value="all">Todos os status</option>
+            {serviceStatusOptions.map((statusOption) => (
+              <option key={statusOption.id} value={statusOption.id}>
+                {statusOption.title}
+              </option>
+            ))}
+          </select>
           <label className="relative block">
             <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
             <input
@@ -236,10 +283,10 @@ export const ServicesView = ({
                         Editar OS
                       </span>
                     </button>
-                    {service.status !== 'delivered' && service.status !== 'cancelled' && (
+                    {service.status !== 'entregue' && service.status !== 'cancelada' && (
                       <button
                         type="button"
-                        onClick={() => void onUpdateServiceStatus(service.id, 'cancelled')}
+                        onClick={() => void handleStatusUpdate(service, 'cancelada')}
                         className="rounded-xl bg-rose-50 px-4 py-2 text-xs font-bold text-rose-600 transition-colors hover:bg-rose-100 dark:bg-rose-500/15 dark:text-rose-300 dark:hover:bg-rose-500/20"
                       >
                         Cancelar OS
@@ -248,20 +295,37 @@ export const ServicesView = ({
                     {nextAction && (
                       <button
                         type="button"
-                        onClick={() => void onUpdateServiceStatus(service.id, nextAction.nextStatus)}
+                        onClick={() => void handleStatusUpdate(service, nextAction.nextStatus)}
                         className={cn(
                           'rounded-xl px-4 py-2 text-xs font-bold transition-colors',
-                          service.status === 'pending' &&
+                          service.status === 'aguardando_orcamento' &&
                             'bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-500/15 dark:text-blue-300 dark:hover:bg-blue-500/20',
-                          service.status === 'in_progress' &&
+                          service.status === 'aguardando_aprovacao' &&
+                            'bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-500/15 dark:text-amber-300 dark:hover:bg-amber-500/20',
+                          service.status === 'aguardando_peca' &&
+                            'bg-orange-50 text-orange-700 hover:bg-orange-100 dark:bg-orange-500/15 dark:text-orange-300 dark:hover:bg-orange-500/20',
+                          service.status === 'em_conserto' &&
                             'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-500/15 dark:text-emerald-300 dark:hover:bg-emerald-500/20',
-                          service.status === 'ready' &&
+                          service.status === 'pronto_para_retirada' &&
                             'bg-indigo-600 text-white hover:bg-indigo-700',
                         )}
                       >
                         {nextAction.label}
                       </button>
                     )}
+                    <select
+                      value={service.status}
+                      onChange={(event) =>
+                        void handleStatusUpdate(service, event.target.value as ServiceStatus)
+                      }
+                      className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                    >
+                      {serviceStatusOptions.map((statusOption) => (
+                        <option key={statusOption.id} value={statusOption.id}>
+                          {statusOption.title}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
               </div>
@@ -270,7 +334,7 @@ export const ServicesView = ({
                 <div className="text-sm italic text-slate-600 dark:text-slate-300">
                   "{service.issueDescription}"
                 </div>
-                {service.status === 'ready' && (
+                {service.status === 'pronto_para_retirada' && (
                   <div className="flex items-center gap-2 text-xs font-bold text-emerald-600">
                     <CheckCircle size={14} />
                     {service.deliveryType === 'delivery'
@@ -328,24 +392,135 @@ export const ServicesView = ({
                     <option value="delivery">Entrega</option>
                   </select>
                 </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">Quantidade da Peca</label>
-                  <input type="number" min="1" value={formData.partQuantity} onChange={(event) => setFormData((current) => ({ ...current, partQuantity: event.target.value }))} className={inputClass} />
-                </div>
                 <div className="space-y-1 sm:col-span-2">
                   <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">Descricao do Problema</label>
                   <textarea required rows={2} value={formData.issueDescription} onChange={(event) => setFormData((current) => ({ ...current, issueDescription: event.target.value }))} className={inputClass} />
                 </div>
                 <div className="space-y-1 sm:col-span-2">
-                  <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">Peca Utilizada (Opcional)</label>
-                  <select value={formData.selectedPartId} onChange={(event) => setFormData((current) => ({ ...current, selectedPartId: event.target.value }))} className={inputClass}>
-                    <option value="">Nenhuma peca</option>
-                    {products.map((product) => (
-                      <option key={product.id} value={product.id}>
-                        {product.name} - {formatCurrency(product.salePrice)} (Estoque: {product.stock})
-                      </option>
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">Peças / itens</label>
+                    <button
+                      type="button"
+                      onClick={addPart}
+                      className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                    >
+                      Adicionar item
+                    </button>
+                  </div>
+                  <div className="space-y-3">
+                    {formData.parts.length === 0 && (
+                      <div className="rounded-2xl border border-dashed border-slate-300 px-4 py-3 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                        Nenhum item adicionado.
+                      </div>
+                    )}
+                    {formData.parts.map((part, index) => (
+                      <div key={part.id ?? `part-${index}`} className="grid grid-cols-1 gap-3 rounded-2xl border border-slate-200 p-3 dark:border-slate-800 sm:grid-cols-2">
+                        <div className="space-y-1 sm:col-span-2">
+                          <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">Produto vinculado</label>
+                          <select
+                            value={part.productId}
+                            onChange={(event) => {
+                              const selectedProduct = products.find(
+                                (product) => product.id === event.target.value,
+                              );
+                              updatePart(index, (current) => ({
+                                ...current,
+                                productId: event.target.value,
+                                description: selectedProduct?.name ?? current.description,
+                                costPrice: selectedProduct
+                                  ? selectedProduct.costPrice.toString()
+                                  : current.costPrice,
+                                salePrice: selectedProduct
+                                  ? selectedProduct.salePrice.toString()
+                                  : current.salePrice,
+                              }));
+                            }}
+                            className={inputClass}
+                          >
+                            <option value="">Item manual</option>
+                            {products.map((product) => (
+                              <option key={product.id} value={product.id}>
+                                {product.name} - {formatCurrency(product.salePrice)} (Estoque: {product.stock})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="space-y-1 sm:col-span-2">
+                          <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">Descrição</label>
+                          <input
+                            required
+                            value={part.description}
+                            onChange={(event) =>
+                              updatePart(index, (current) => ({
+                                ...current,
+                                description: event.target.value,
+                              }))
+                            }
+                            className={inputClass}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">Quantidade</label>
+                          <input
+                            min="1"
+                            type="number"
+                            value={part.quantity}
+                            onChange={(event) =>
+                              updatePart(index, (current) => ({
+                                ...current,
+                                quantity: event.target.value,
+                              }))
+                            }
+                            className={inputClass}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">Custo unitário</label>
+                          <input
+                            min="0"
+                            step="0.01"
+                            type="number"
+                            value={part.costPrice}
+                            onChange={(event) =>
+                              updatePart(index, (current) => ({
+                                ...current,
+                                costPrice: event.target.value,
+                              }))
+                            }
+                            className={inputClass}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">Venda unitária</label>
+                          <input
+                            min="0"
+                            step="0.01"
+                            type="number"
+                            value={part.salePrice}
+                            onChange={(event) =>
+                              updatePart(index, (current) => ({
+                                ...current,
+                                salePrice: event.target.value,
+                              }))
+                            }
+                            className={inputClass}
+                          />
+                        </div>
+                        <div className="flex items-end justify-end">
+                          <button
+                            type="button"
+                            onClick={() => removePart(index)}
+                            className="rounded-xl bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-600 transition-colors hover:bg-rose-100 dark:bg-rose-500/15 dark:text-rose-300 dark:hover:bg-rose-500/20"
+                          >
+                            <span className="flex items-center gap-1.5">
+                              <Trash2 size={14} />
+                              Remover
+                            </span>
+                          </button>
+                        </div>
+                      </div>
                     ))}
-                  </select>
+                  </div>
                 </div>
               </div>
               <div className="flex gap-3 pt-2">

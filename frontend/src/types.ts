@@ -38,11 +38,13 @@ export type Product = {
 };
 
 export type ServiceStatus =
-  | 'pending'
-  | 'in_progress'
-  | 'ready'
-  | 'delivered'
-  | 'cancelled';
+  | 'aguardando_orcamento'
+  | 'aguardando_aprovacao'
+  | 'aguardando_peca'
+  | 'em_conserto'
+  | 'pronto_para_retirada'
+  | 'entregue'
+  | 'cancelada';
 
 export type ServiceDeliveryType = 'store_pickup' | 'delivery';
 
@@ -138,6 +140,15 @@ export type DashboardSummary = {
   lowStockProducts: DashboardLowStockProduct[];
 };
 
+export type ServicePartFormValue = {
+  id?: string;
+  productId: string;
+  description: string;
+  quantity: string;
+  costPrice: string;
+  salePrice: string;
+};
+
 export type ProductFormValues = {
   name: string;
   brand: string;
@@ -157,8 +168,7 @@ export type ServiceFormValues = {
   issueDescription: string;
   deliveryType: ServiceDeliveryType;
   laborCost: string;
-  selectedPartId: string;
-  partQuantity: string;
+  parts: ServicePartFormValue[];
 };
 
 export type SaleFormValues = {

@@ -1,18 +1,11 @@
 import { type FormEvent, useMemo, useState } from 'react';
 import { CreditCard, Plus, ShoppingCart, X } from 'lucide-react';
+import { PAYMENT_METHOD_LABELS } from '../lib/paymentMethods';
 import { formatCurrency } from '../lib/utils';
 import { PaymentMethod, Product, Sale, SaleFormValues } from '../types';
 
 const inputClass =
   'w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500';
-
-const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
-  dinheiro: 'Dinheiro',
-  pix: 'Pix',
-  cartao_credito: 'Cartão de Crédito',
-  cartao_debito: 'Cartão de Débito',
-  transferencia: 'Transferência',
-};
 
 const EMPTY_FORM: SaleFormValues = {
   customerName: '',

@@ -224,6 +224,7 @@ enum meio_pagamento {
 enum origem_movimentacao_estoque {
   compra
   ordem_servico
+  venda
   ajuste_manual
 }
 

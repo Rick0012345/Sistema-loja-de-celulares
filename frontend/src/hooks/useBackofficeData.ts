@@ -3,6 +3,7 @@ import { api, UnauthorizedError } from '../lib/api';
 import {
   Customer,
   DashboardSummary,
+  PaymentMethod,
   Product,
   ProductFormValues,
   Sale,
@@ -26,6 +27,17 @@ const parseDecimal = (value: string) => {
   const parsed = Number.parseFloat(value);
   return Number.isFinite(parsed) ? parsed : 0;
 };
+
+const buildServiceItemsPayload = (values: ServiceFormValues) =>
+  values.parts
+    .map((part) => ({
+      produto_id: part.productId || undefined,
+      descricao_item: part.description.trim() || undefined,
+      quantidade: Math.max(parseInteger(part.quantity), 1),
+      custo_unitario: parseDecimal(part.costPrice),
+      venda_unitaria: parseDecimal(part.salePrice),
+    }))
+    .filter((part) => part.produto_id || part.descricao_item);
 
 type UseBackofficeDataOptions = {
   onUnauthorized: (message: string) => Promise<void>;
@@ -179,9 +191,7 @@ export const useBackofficeData = ({
     async (values: ServiceFormValues) => {
       await runMutation(async () => {
         const customer = await resolveCustomer(values);
-
-        const selectedPart = products.find((product) => product.id === values.selectedPartId);
-        const partQuantity = Math.max(parseInteger(values.partQuantity), 1);
+        const itens = buildServiceItemsPayload(values);
 
         await api.createService({
           cliente_id: customer.id,
@@ -192,21 +202,18 @@ export const useBackofficeData = ({
           tipo_entrega:
             values.deliveryType === 'delivery' ? 'entrega' : 'retirada_loja',
           valor_mao_de_obra: parseDecimal(values.laborCost),
-          itens: selectedPart
-            ? [{ produto_id: selectedPart.id, quantidade: partQuantity }]
-            : undefined,
+          itens: itens.length ? itens : undefined,
         });
       });
     },
-    [products, resolveCustomer, runMutation],
+    [resolveCustomer, runMutation],
   );
 
   const updateService = useCallback(
     async (serviceId: string, values: ServiceFormValues) => {
       await runMutation(async () => {
         const customer = await resolveCustomer(values);
-        const selectedPart = products.find((product) => product.id === values.selectedPartId);
-        const partQuantity = Math.max(parseInteger(values.partQuantity), 1);
+        const itens = buildServiceItemsPayload(values);
 
         await api.updateService(serviceId, {
           cliente_id: customer.id,
@@ -216,19 +223,28 @@ export const useBackofficeData = ({
           tipo_entrega:
             values.deliveryType === 'delivery' ? 'entrega' : 'retirada_loja',
           valor_mao_de_obra: parseDecimal(values.laborCost),
-          itens: selectedPart
-            ? [{ produto_id: selectedPart.id, quantidade: partQuantity }]
-            : [],
+          itens,
         });
       });
     },
-    [products, resolveCustomer, runMutation],
+    [resolveCustomer, runMutation],
   );
 
   const updateServiceStatus = useCallback(
-    async (serviceId: string, status: ServiceStatus) => {
+    async (
+      serviceId: string,
+      input: {
+        status: ServiceStatus;
+        paymentMethod?: PaymentMethod;
+        note?: string;
+      },
+    ) => {
       await runMutation(async () => {
-        await api.updateServiceStatus(serviceId, status);
+        await api.updateServiceStatus(serviceId, {
+          status: input.status,
+          meio_pagamento: input.paymentMethod,
+          observacao: input.note,
+        });
       });
     },
     [runMutation],
@@ -257,7 +273,7 @@ export const useBackofficeData = ({
   );
 
   const stats = useMemo(() => {
-    const deliveredServices = services.filter((service) => service.status === 'delivered');
+    const deliveredServices = services.filter((service) => service.status === 'entregue');
     const totalRevenue = deliveredServices.reduce((acc, service) => acc + service.totalPrice, 0);
     const totalCosts = deliveredServices.reduce(
       (acc, service) =>
@@ -274,7 +290,7 @@ export const useBackofficeData = ({
       totalCosts,
       profit: totalRevenue - totalCosts,
       pendingServices: services.filter(
-        (service) => service.status !== 'delivered' && service.status !== 'cancelled',
+        (service) => service.status !== 'entregue' && service.status !== 'cancelada',
       ).length,
       lowStockItems: products.filter((product) => product.isLowStock).length,
     };

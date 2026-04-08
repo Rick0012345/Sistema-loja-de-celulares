@@ -108,7 +108,7 @@ export class EstoqueService {
       });
 
       if (!atual || !atual.ativo) {
-        throw new NotFoundException('Produto nÃ£o encontrado.');
+        throw new NotFoundException('Produto não encontrado.');
       }
 
       const quantidadeEstoque =
@@ -138,7 +138,7 @@ export class EstoqueService {
             quantidade: deltaEstoque,
             custo_unitario: dto.preco_custo ?? atual.preco_custo,
             observacao:
-              'Ajuste automÃ¡tico de estoque via ediÃ§Ã£o de produto.',
+              'Ajuste automático de estoque via edição de produto.',
           },
         });
       }
@@ -158,7 +158,7 @@ export class EstoqueService {
     });
 
     if (!produto || !produto.ativo) {
-      throw new NotFoundException('Produto nÃ£o encontrado.');
+      throw new NotFoundException('Produto não encontrado.');
     }
 
     await this.prisma.produtos_pecas.update({
