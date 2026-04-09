@@ -3,6 +3,7 @@ import { api, UnauthorizedError } from '../lib/api';
 import {
   Customer,
   DashboardSummary,
+  NotificationItem,
   PaymentMethod,
   Product,
   ProductFormValues,
@@ -53,6 +54,7 @@ export const useBackofficeData = ({
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
   const [dashboardSummary, setDashboardSummary] = useState<DashboardSummary | null>(null);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isMutating, setIsMutating] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -62,6 +64,7 @@ export const useBackofficeData = ({
     setServices([]);
     setCustomers([]);
     setSales([]);
+    setNotifications([]);
     setDashboardSummary(null);
     setIsLoading(false);
     onAfterUnauthorizedReset?.();
@@ -74,13 +77,21 @@ export const useBackofficeData = ({
       }
 
       try {
-        const [nextProducts, nextServices, nextCustomers, nextDashboardSummary, nextSales] =
+        const [
+          nextProducts,
+          nextServices,
+          nextCustomers,
+          nextDashboardSummary,
+          nextSales,
+          nextNotifications,
+        ] =
           await Promise.all([
             api.listProducts(),
             api.listServices(),
             api.listCustomers(),
             api.getDashboardSummary(),
             api.listSales(),
+            api.listNotifications(),
           ]);
 
         setProducts(nextProducts);
@@ -88,6 +99,7 @@ export const useBackofficeData = ({
         setCustomers(nextCustomers);
         setDashboardSummary(nextDashboardSummary);
         setSales(nextSales);
+        setNotifications(nextNotifications);
         setErrorMessage(null);
       } catch (error) {
         if (error instanceof UnauthorizedError) {
@@ -272,6 +284,21 @@ export const useBackofficeData = ({
     [products, runMutation],
   );
 
+  const markNotificationAsRead = useCallback(
+    async (id: string) => {
+      await runMutation(async () => {
+        await api.markNotificationAsRead(id);
+      });
+    },
+    [runMutation],
+  );
+
+  const markAllNotificationsAsRead = useCallback(async () => {
+    await runMutation(async () => {
+      await api.markAllNotificationsAsRead();
+    });
+  }, [runMutation]);
+
   const stats = useMemo(() => {
     const deliveredServices = services.filter((service) => service.status === 'entregue');
     const totalRevenue = deliveredServices.reduce((acc, service) => acc + service.totalPrice, 0);
@@ -302,6 +329,7 @@ export const useBackofficeData = ({
     sales,
     customers,
     dashboardSummary,
+    notifications,
     isLoading,
     isMutating,
     errorMessage,
@@ -314,6 +342,8 @@ export const useBackofficeData = ({
     createService,
     updateService,
     createSale,
+    markNotificationAsRead,
+    markAllNotificationsAsRead,
     updateServiceStatus,
   };
 };

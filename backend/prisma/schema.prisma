@@ -110,6 +110,24 @@ model movimentacoes_estoque {
   @@index([produto_id], map: "idx_movimentacoes_estoque_produto")
 }
 
+model notificacoes {
+  id               String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tipo             notificacao_tipo
+  titulo           String                 @db.VarChar(160)
+  mensagem         String
+  severidade       notificacao_severidade @default(info)
+  referencia_tipo  String?                @db.VarChar(60)
+  referencia_id    String?                @db.Uuid
+  metadados        Json?
+  lida             Boolean                @default(false)
+  lida_em          DateTime?              @db.Timestamptz(6)
+  created_at       DateTime               @default(now()) @db.Timestamptz(6)
+
+  @@index([created_at], map: "idx_notificacoes_created_at")
+  @@index([lida, created_at], map: "idx_notificacoes_lida_created_at")
+  @@index([tipo, referencia_id], map: "idx_notificacoes_tipo_referencia")
+}
+
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model ordens_servico {
   id                                             String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -226,6 +244,21 @@ enum origem_movimentacao_estoque {
   ordem_servico
   venda
   ajuste_manual
+}
+
+enum notificacao_severidade {
+  info
+  warning
+  critical
+  success
+}
+
+enum notificacao_tipo {
+  estoque_baixo
+  estoque_critico
+  venda_registrada
+  ordem_status_atualizado
+  produto_cadastrado
 }
 
 enum perfil_usuario {

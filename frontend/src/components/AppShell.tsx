@@ -1,6 +1,8 @@
-import { ReactNode } from 'react';
+import { ReactNode, useMemo, useState } from 'react';
 import {
+  Bell,
   BriefcaseBusiness,
+  CheckCheck,
   Clock,
   LayoutDashboard,
   LogOut,
@@ -16,9 +18,10 @@ import {
   Wrench,
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '../lib/utils';
-import { ThemeMode } from '../types';
+import { NotificationItem, ThemeMode } from '../types';
 
 const repairNavItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -53,7 +56,10 @@ type AppShellProps = {
   errorMessage: string | null;
   isMutating: boolean;
   isSidebarOpen: boolean;
+  notifications: NotificationItem[];
   onLogout: () => void | Promise<void>;
+  onMarkAllNotificationsAsRead: () => void | Promise<void>;
+  onMarkNotificationAsRead: (id: string) => void | Promise<void>;
   onSelectTab: (tab: NavItemId) => void;
   onSwitchMode: (mode: AppMode) => void;
   onToggleSidebar: () => void;
@@ -69,15 +75,37 @@ export const AppShell = ({
   errorMessage,
   isMutating,
   isSidebarOpen,
+  notifications,
   onLogout,
+  onMarkAllNotificationsAsRead,
+  onMarkNotificationAsRead,
   onSelectTab,
   onSwitchMode,
   onToggleSidebar,
   onToggleTheme,
   theme,
 }: AppShellProps) => {
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const navItems = appMode === 'repair' ? repairNavItems : salesNavItems;
   const currentLabel = navItems.find((item) => item.id === activeTab)?.label;
+  const unreadCount = useMemo(
+    () => notifications.filter((item) => !item.isRead).length,
+    [notifications],
+  );
+
+  const getNotificationStyle = (severity: NotificationItem['severity']) => {
+    const styles = {
+      info: 'border-slate-200 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200',
+      warning:
+        'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-200',
+      critical:
+        'border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-200',
+      success:
+        'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-200',
+    } as const;
+
+    return styles[severity];
+  };
 
   return (
     <div className="flex h-screen bg-slate-50 font-sans text-slate-900 transition-colors dark:bg-slate-950 dark:text-slate-100">
@@ -162,6 +190,76 @@ export const AppShell = ({
                 Salvando...
               </div>
             )}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsNotificationsOpen((current) => !current)}
+                className="relative flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-600 shadow-sm transition-colors hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+              >
+                <Bell size={16} />
+                <span>Notificacoes</span>
+                {unreadCount > 0 && (
+                  <span className="absolute -right-1 -top-1 rounded-full bg-rose-600 px-1.5 py-0.5 text-[11px] font-semibold text-white">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
+              {isNotificationsOpen && (
+                <div className="absolute right-0 z-20 mt-2 w-[360px] rounded-2xl border border-slate-200 bg-white p-3 shadow-xl dark:border-slate-800 dark:bg-slate-950">
+                  <div className="mb-3 flex items-center justify-between">
+                    <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+                      Central de notificacoes
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => void onMarkAllNotificationsAsRead()}
+                      className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-blue-600 transition-colors hover:bg-blue-50 dark:text-blue-300 dark:hover:bg-blue-500/10"
+                    >
+                      <CheckCheck size={14} />
+                      Marcar todas
+                    </button>
+                  </div>
+                  <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
+                    {notifications.length === 0 && (
+                      <div className="rounded-xl border border-dashed border-slate-200 p-3 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                        Nenhuma notificacao no momento.
+                      </div>
+                    )}
+                    {notifications.map((notification) => (
+                      <button
+                        key={notification.id}
+                        type="button"
+                        onClick={() => {
+                          if (!notification.isRead) {
+                            void onMarkNotificationAsRead(notification.id);
+                          }
+                        }}
+                        className={cn(
+                          'w-full rounded-xl border p-3 text-left transition-all',
+                          getNotificationStyle(notification.severity),
+                          notification.isRead
+                            ? 'opacity-75'
+                            : 'ring-1 ring-blue-200 dark:ring-blue-500/20',
+                        )}
+                      >
+                        <div className="mb-1 flex items-start justify-between gap-3">
+                          <p className="text-sm font-semibold">{notification.title}</p>
+                          <span className="whitespace-nowrap text-xs opacity-70">
+                            {formatDistanceToNow(new Date(notification.createdAt), {
+                              addSuffix: true,
+                              locale: ptBR,
+                            })}
+                          </span>
+                        </div>
+                        <p className="text-xs leading-relaxed opacity-90">
+                          {notification.message}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
             <button
               type="button"
               onClick={onToggleTheme}

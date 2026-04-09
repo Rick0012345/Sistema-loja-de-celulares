@@ -30,6 +30,21 @@ CREATE TYPE origem_movimentacao_estoque AS ENUM (
   'ajuste_manual'
 );
 
+CREATE TYPE notificacao_severidade AS ENUM (
+  'info',
+  'warning',
+  'critical',
+  'success'
+);
+
+CREATE TYPE notificacao_tipo AS ENUM (
+  'estoque_baixo',
+  'estoque_critico',
+  'venda_registrada',
+  'ordem_status_atualizado',
+  'produto_cadastrado'
+);
+
 CREATE TYPE status_pagamento AS ENUM (
   'pendente',
   'pago',
@@ -182,6 +197,20 @@ CREATE TABLE movimentacoes_estoque (
   CONSTRAINT ck_movimentacao_custo_unitario_nao_negativo CHECK (custo_unitario IS NULL OR custo_unitario >= 0)
 );
 
+CREATE TABLE notificacoes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tipo notificacao_tipo NOT NULL,
+  titulo VARCHAR(160) NOT NULL,
+  mensagem TEXT NOT NULL,
+  severidade notificacao_severidade NOT NULL DEFAULT 'info',
+  referencia_tipo VARCHAR(60),
+  referencia_id UUID,
+  metadados JSONB,
+  lida BOOLEAN NOT NULL DEFAULT FALSE,
+  lida_em TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE pagamentos_os (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   ordem_servico_id UUID NOT NULL REFERENCES ordens_servico(id) ON DELETE CASCADE,
@@ -229,6 +258,9 @@ CREATE INDEX idx_ordens_servico_data_entrada ON ordens_servico(data_entrada);
 CREATE INDEX idx_itens_os_ordem_servico ON itens_os(ordem_servico_id);
 CREATE INDEX idx_historico_status_os_ordem_servico ON historico_status_os(ordem_servico_id);
 CREATE INDEX idx_movimentacoes_estoque_produto ON movimentacoes_estoque(produto_id);
+CREATE INDEX idx_notificacoes_created_at ON notificacoes(created_at);
+CREATE INDEX idx_notificacoes_lida_created_at ON notificacoes(lida, created_at);
+CREATE INDEX idx_notificacoes_tipo_referencia ON notificacoes(tipo, referencia_id);
 CREATE INDEX idx_pagamentos_os_ordem_servico ON pagamentos_os(ordem_servico_id);
 CREATE INDEX idx_contas_financeiras_tipo_status ON contas_financeiras(tipo, status);
 CREATE INDEX idx_webhook_eventos_evento ON webhook_eventos(evento);

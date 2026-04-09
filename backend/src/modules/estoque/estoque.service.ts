@@ -14,10 +14,14 @@ import {
   RegistrarMovimentacaoDto,
   UpdateProdutoDto,
 } from './estoque.dto';
+import { NotificacoesService } from '../notificacoes/notificacoes.service';
 
 @Injectable()
 export class EstoqueService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificacoesService: NotificacoesService,
+  ) {}
 
   async list() {
     const produtos = await this.prisma.produtos_pecas.findMany({
@@ -94,6 +98,17 @@ export class EstoqueService {
       return created;
     });
 
+    await this.notificacoesService.notifyProductCreated({
+      produtoId: produto.id,
+      nome: produto.nome,
+    });
+    await this.notificacoesService.notifyStockStatus({
+      produtoId: produto.id,
+      nome: produto.nome,
+      quantidade: produto.quantidade_estoque,
+      estoqueMinimo: produto.estoque_minimo,
+    });
+
     return {
       ...produto,
       preco_custo: toNumber(produto.preco_custo),
@@ -102,7 +117,7 @@ export class EstoqueService {
   }
 
   async update(id: string, dto: UpdateProdutoDto) {
-    return this.prisma.$transaction(async (tx) => {
+    const produto = await this.prisma.$transaction(async (tx) => {
       const atual = await tx.produtos_pecas.findUnique({
         where: { id },
       });
@@ -149,6 +164,15 @@ export class EstoqueService {
         preco_venda: toNumber(produto.preco_venda),
       };
     });
+
+    await this.notificacoesService.notifyStockStatus({
+      produtoId: produto.id,
+      nome: produto.nome,
+      quantidade: produto.quantidade_estoque,
+      estoqueMinimo: produto.estoque_minimo,
+    });
+
+    return produto;
   }
 
   async remove(id: string) {
@@ -170,7 +194,7 @@ export class EstoqueService {
   }
 
   async registrarMovimentacao(id: string, dto: RegistrarMovimentacaoDto) {
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       const produto = await tx.produtos_pecas.findUnique({
         where: { id },
       });
@@ -219,6 +243,15 @@ export class EstoqueService {
         },
       };
     });
+
+    await this.notificacoesService.notifyStockStatus({
+      produtoId: result.produto.id,
+      nome: result.produto.nome,
+      quantidade: result.produto.quantidade_estoque,
+      estoqueMinimo: result.produto.estoque_minimo,
+    });
+
+    return result;
   }
 
   private getEstoqueDelta(tipo: tipo_movimentacao_estoque, quantidade: number) {

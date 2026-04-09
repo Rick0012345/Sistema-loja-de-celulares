@@ -111,7 +111,10 @@ export default function App() {
       errorMessage={errorMessage}
       isMutating={backoffice.isMutating}
       isSidebarOpen={isSidebarOpen}
+      notifications={backoffice.notifications}
       onLogout={auth.logout}
+      onMarkAllNotificationsAsRead={backoffice.markAllNotificationsAsRead}
+      onMarkNotificationAsRead={backoffice.markNotificationAsRead}
       onSelectTab={setActiveTab}
       onSwitchMode={handleSwitchMode}
       onToggleSidebar={() => setIsSidebarOpen((current) => !current)}

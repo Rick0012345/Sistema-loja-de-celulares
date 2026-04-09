@@ -13,11 +13,15 @@ import {
 import { randomUUID } from 'crypto';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { toNumber } from '../../common/utils/serialize';
+import { NotificacoesService } from '../notificacoes/notificacoes.service';
 import { CreateVendaDto } from './vendas.dto';
 
 @Injectable()
 export class VendasService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificacoesService: NotificacoesService,
+  ) {}
 
   async list() {
     const contas = await this.prisma.contas_financeiras.findMany({
@@ -136,12 +140,18 @@ export class VendasService {
     const clienteNome = dto.cliente_nome?.trim() || 'Cliente não informado';
     const descricaoConta = `Venda balcão #${referencia} | cliente:${clienteNome} | pagamento:${dto.meio_pagamento}`;
 
-    await this.prisma.$transaction(async (tx) => {
-      await Promise.all(
+    const produtosAtualizados = await this.prisma.$transaction(async (tx) => {
+      const updatedProducts = await Promise.all(
         itensNormalizados.map((item) =>
           tx.produtos_pecas.update({
             where: { id: item.produtoId },
             data: { quantidade_estoque: { decrement: item.quantidade } },
+            select: {
+              id: true,
+              nome: true,
+              quantidade_estoque: true,
+              estoque_minimo: true,
+            },
           }),
         ),
       );
@@ -171,6 +181,26 @@ export class VendasService {
           pago_em: new Date(),
         },
       });
+
+      return updatedProducts;
+    });
+
+    await Promise.all(
+      produtosAtualizados.map((produto) =>
+        this.notificacoesService.notifyStockStatus({
+          produtoId: produto.id,
+          nome: produto.nome,
+          quantidade: produto.quantidade_estoque,
+          estoqueMinimo: produto.estoque_minimo,
+        }),
+      ),
+    );
+
+    await this.notificacoesService.notifySaleRegistered({
+      referencia,
+      clienteNome,
+      valorTotal,
+      itens: itensNormalizados.length,
     });
 
     return {

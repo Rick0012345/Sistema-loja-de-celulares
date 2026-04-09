@@ -3,6 +3,9 @@ import {
   AuthenticatedUser,
   Customer,
   DashboardSummary,
+  NotificationItem,
+  NotificationSeverity,
+  NotificationType,
   PaymentMethod,
   Product,
   Sale,
@@ -101,6 +104,16 @@ type ApiSale = {
   valor_total: number;
   criado_em: string;
   itens: ApiSaleItem[];
+};
+
+type ApiNotification = {
+  id: string;
+  tipo: NotificationType;
+  titulo: string;
+  mensagem: string;
+  severidade: NotificationSeverity;
+  lida: boolean;
+  created_at: string;
 };
 
 export const mapAuthenticatedUserFromApi = (user: AuthenticatedUser): AuthenticatedUser => user;
@@ -230,4 +243,16 @@ export const mapSaleFromApi = (sale: ApiSale): Sale => ({
     unitPrice: item.preco_unitario,
     subtotal: item.subtotal,
   })),
+});
+
+export const mapNotificationFromApi = (
+  notification: ApiNotification,
+): NotificationItem => ({
+  id: notification.id,
+  type: notification.tipo,
+  title: notification.titulo,
+  message: notification.mensagem,
+  severity: notification.severidade,
+  isRead: notification.lida,
+  createdAt: notification.created_at,
 });

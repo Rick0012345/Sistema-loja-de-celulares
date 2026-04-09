@@ -101,6 +101,25 @@ export type Sale = {
   items: SaleItem[];
 };
 
+export type NotificationSeverity = 'info' | 'warning' | 'critical' | 'success';
+
+export type NotificationType =
+  | 'estoque_baixo'
+  | 'estoque_critico'
+  | 'venda_registrada'
+  | 'ordem_status_atualizado'
+  | 'produto_cadastrado';
+
+export type NotificationItem = {
+  id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  severity: NotificationSeverity;
+  isRead: boolean;
+  createdAt: string;
+};
+
 export type Customer = {
   id: string;
   name: string;

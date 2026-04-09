@@ -10,7 +10,7 @@ FROM deps AS dev
 ENV NODE_ENV=development
 COPY . .
 EXPOSE 3001
-CMD ["sh", "-c", "npm run prisma:generate && npm run start:dev"]
+CMD ["sh", "-c", "npm run prisma:generate && npm run db:migrate && npm run start:dev"]
 
 FROM deps AS build
 COPY . .
@@ -29,4 +29,4 @@ COPY --from=build /app/dist ./dist
 COPY --from=build /app/prisma ./prisma
 COPY package.json ./
 EXPOSE 3001
-CMD ["node", "dist/main.js"]
+CMD ["sh", "-c", "npm run db:migrate && node dist/main.js"]

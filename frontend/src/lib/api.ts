@@ -1,6 +1,7 @@
 import {
   mapCustomerFromApi,
   mapDashboardSummaryFromApi,
+  mapNotificationFromApi,
   mapProductFromApi,
   mapSaleFromApi,
   mapServiceFromApi,
@@ -11,6 +12,7 @@ import {
   Customer,
   DashboardSummary,
   ManagedUser,
+  NotificationItem,
   PaymentMethod,
   Product,
   Sale,
@@ -322,5 +324,22 @@ export const api = {
       body: payload,
     });
     return mapSaleFromApi(response);
+  },
+
+  async listNotifications(limit = 30): Promise<NotificationItem[]> {
+    const response = await request<any[]>(`/notificacoes?limit=${limit}`);
+    return response.map(mapNotificationFromApi);
+  },
+
+  async markNotificationAsRead(id: string): Promise<void> {
+    await request(`/notificacoes/${id}/lida`, {
+      method: 'PATCH',
+    });
+  },
+
+  async markAllNotificationsAsRead(): Promise<void> {
+    await request('/notificacoes/lidas', {
+      method: 'PATCH',
+    });
   },
 };

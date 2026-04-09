@@ -14,6 +14,7 @@ import {
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { toNumber } from '../../common/utils/serialize';
 import type { AuthenticatedUser } from '../auth/auth.types';
+import { NotificacoesService } from '../notificacoes/notificacoes.service';
 import type {
   CreateOrdemServicoDto,
   UpdateOrdemServicoDto,
@@ -22,7 +23,10 @@ import type {
 
 @Injectable()
 export class OrdensServicoService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificacoesService: NotificacoesService,
+  ) {}
 
   async list() {
     const ordens = await this.prisma.ordens_servico.findMany({
@@ -224,6 +228,18 @@ export class OrdensServicoService {
     dto: UpdateStatusOrdemServicoDto,
     currentUser: AuthenticatedUser,
   ) {
+    const produtosRelacionados = await this.prisma.itens_os.findMany({
+      where: { ordem_servico_id: id, produto_id: { not: null } },
+      select: { produto_id: true },
+    });
+    const produtoIds = [
+      ...new Set(
+        produtosRelacionados
+          .map((item) => item.produto_id)
+          .filter((item): item is string => Boolean(item)),
+      ),
+    ];
+
     const updated = await this.prisma.$transaction(async (tx) => {
       const ordem = await tx.ordens_servico.findUnique({
         where: { id },
@@ -301,6 +317,35 @@ export class OrdensServicoService {
 
       return saved;
     });
+
+    await this.notificacoesService.notifyOrderStatusChanged({
+      ordemId: updated.id,
+      clienteNome: updated.clientes?.nome ?? 'Cliente nao informado',
+      status: updated.status,
+    });
+
+    if (produtoIds.length) {
+      const produtos = await this.prisma.produtos_pecas.findMany({
+        where: { id: { in: produtoIds } },
+        select: {
+          id: true,
+          nome: true,
+          quantidade_estoque: true,
+          estoque_minimo: true,
+        },
+      });
+
+      await Promise.all(
+        produtos.map((produto) =>
+          this.notificacoesService.notifyStockStatus({
+            produtoId: produto.id,
+            nome: produto.nome,
+            quantidade: produto.quantidade_estoque,
+            estoqueMinimo: produto.estoque_minimo,
+          }),
+        ),
+      );
+    }
 
     return this.serializeOrdem(updated);
   }
