@@ -80,6 +80,13 @@ CREATE TABLE usuarios (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE configuracoes_loja (
+  id UUID PRIMARY KEY,
+  telefone_loja VARCHAR(20),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE clientes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   nome VARCHAR(150) NOT NULL,

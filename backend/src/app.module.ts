@@ -5,6 +5,7 @@ import { AppService } from './app.service';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ClientesModule } from './modules/clientes/clientes.module';
+import { ConfiguracoesLojaModule } from './modules/configuracoes-loja/configuracoes-loja.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { EstoqueModule } from './modules/estoque/estoque.module';
 import { NotificacoesModule } from './modules/notificacoes/notificacoes.module';
@@ -20,6 +21,7 @@ import { VendasModule } from './modules/vendas/vendas.module';
     PrismaModule,
     AuthModule,
     ClientesModule,
+    ConfiguracoesLojaModule,
     EstoqueModule,
     NotificacoesModule,
     OrdensServicoModule,

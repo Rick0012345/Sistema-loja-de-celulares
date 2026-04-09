@@ -75,6 +75,7 @@ O projeto passa a adotar Docker Compose como padrão de ambiente local.
 - o backend fica disponível em `http://localhost:3001`
 - o frontend fica disponível em `http://localhost:3000`
 - o n8n fica disponível em `http://localhost:5678`
+- a Evolution API fica disponível em `http://localhost:8080`
 
 ## Como subir
 
@@ -84,7 +85,7 @@ Execute na raiz do projeto:
 docker compose up -d
 ```
 
-Se for a primeira vez usando n8n, copie `.env.example` para `.env` e defina uma chave forte em `N8N_ENCRYPTION_KEY`.
+Se for a primeira vez usando n8n e Evolution API, copie `.env.example` para `.env` e defina chaves fortes em `N8N_ENCRYPTION_KEY` e `EVOLUTION_API_AUTHENTICATION_API_KEY`.
 
 ## Endpoints iniciais
 

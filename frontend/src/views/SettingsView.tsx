@@ -26,9 +26,12 @@ const emptyForm = {
 export const SettingsView = ({ currentUser }: SettingsViewProps) => {
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+  const [isUserSaving, setIsUserSaving] = useState(false);
+  const [isStoreLoading, setIsStoreLoading] = useState(false);
+  const [isStoreSaving, setIsStoreSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [storePhone, setStorePhone] = useState('');
 
   const isAdmin = currentUser.perfil === 'administrador';
 
@@ -57,12 +60,51 @@ export const SettingsView = ({ currentUser }: SettingsViewProps) => {
     }
   }, [isAdmin]);
 
+  const loadStoreSettings = useCallback(async () => {
+    if (!isAdmin) {
+      return;
+    }
+    setIsStoreLoading(true);
+    try {
+      const response = await api.getStoreSettings();
+      setStorePhone(response.storePhone);
+      setMessage(null);
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : 'Nao foi possivel carregar o telefone da loja.',
+      );
+    } finally {
+      setIsStoreLoading(false);
+    }
+  }, [isAdmin]);
+
+  const handleSaveStorePhone = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!isAdmin) {
+      return;
+    }
+    setIsStoreSaving(true);
+    try {
+      const response = await api.updateStoreSettings({
+        storePhone,
+      });
+      setStorePhone(response.storePhone);
+      setMessage('Telefone da loja salvo com sucesso.');
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : 'Nao foi possivel salvar o telefone da loja.',
+      );
+    } finally {
+      setIsStoreSaving(false);
+    }
+  };
+
   const handleCreateUser = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!isAdmin) {
       return;
     }
-    setIsSaving(true);
+    setIsUserSaving(true);
     try {
       await api.createUser({
         nome: form.nome.trim(),
@@ -76,7 +118,7 @@ export const SettingsView = ({ currentUser }: SettingsViewProps) => {
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Nao foi possivel criar usuário.');
     } finally {
-      setIsSaving(false);
+      setIsUserSaving(false);
     }
   };
 
@@ -84,7 +126,7 @@ export const SettingsView = ({ currentUser }: SettingsViewProps) => {
     if (!isAdmin || user.id === currentUser.id) {
       return;
     }
-    setIsSaving(true);
+    setIsUserSaving(true);
     try {
       if (user.ativo) {
         await api.disableUser(user.id);
@@ -98,7 +140,7 @@ export const SettingsView = ({ currentUser }: SettingsViewProps) => {
         error instanceof Error ? error.message : 'Nao foi possivel atualizar o status.',
       );
     } finally {
-      setIsSaving(false);
+      setIsUserSaving(false);
     }
   };
 
@@ -110,14 +152,14 @@ export const SettingsView = ({ currentUser }: SettingsViewProps) => {
     if (!nextPassword) {
       return;
     }
-    setIsSaving(true);
+    setIsUserSaving(true);
     try {
       await api.updateUser(user.id, { senha: nextPassword });
       setMessage('Senha redefinida com sucesso.');
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Nao foi possivel redefinir a senha.');
     } finally {
-      setIsSaving(false);
+      setIsUserSaving(false);
     }
   };
 
@@ -127,14 +169,15 @@ export const SettingsView = ({ currentUser }: SettingsViewProps) => {
 
   useEffect(() => {
     void loadUsers();
-  }, [loadUsers]);
+    void loadStoreSettings();
+  }, [loadStoreSettings, loadUsers]);
 
   if (!isAdmin) {
     return (
       <div className={panelClass}>
         <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Configurações</h3>
         <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-          Apenas administradores podem gerenciar logins de funcionários.
+          Apenas administradores podem gerenciar as configurações da loja.
         </p>
       </div>
     );
@@ -143,13 +186,49 @@ export const SettingsView = ({ currentUser }: SettingsViewProps) => {
   return (
     <div className="space-y-6">
       <div className={panelClass}>
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+          Dados da loja
+        </h3>
+        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+          Cadastre o número principal da loja para centralizar o contato do atendimento.
+        </p>
+        {message && (
+          <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-200">
+            {message}
+          </div>
+        )}
+      </div>
+
+      <form onSubmit={(event) => void handleSaveStorePhone(event)} className={panelClass}>
+        <h4 className="text-base font-semibold text-slate-900 dark:text-slate-100">
+          Telefone da loja
+        </h4>
+        <div className="mt-4 flex flex-col gap-3 md:flex-row">
+          <input
+            value={storePhone}
+            onChange={(event) => setStorePhone(event.target.value)}
+            placeholder="(11) 99999-9999"
+            type="tel"
+            className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
+          />
+          <button
+            type="submit"
+            disabled={isStoreLoading || isStoreSaving}
+            className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isStoreSaving ? 'Salvando...' : 'Salvar telefone'}
+          </button>
+        </div>
+      </form>
+
+      <div className={panelClass}>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
             Logins de Funcionários
           </h3>
           <button
             type="button"
-            disabled={isLoading || isSaving}
+            disabled={isLoading || isUserSaving}
             onClick={() => void handleRefresh()}
             className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
           >
@@ -159,11 +238,6 @@ export const SettingsView = ({ currentUser }: SettingsViewProps) => {
         <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
           Crie acessos extras para atendentes, técnicos e financeiro.
         </p>
-        {message && (
-          <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-200">
-            {message}
-          </div>
-        )}
       </div>
 
       <form onSubmit={(event) => void handleCreateUser(event)} className={panelClass}>
@@ -211,7 +285,7 @@ export const SettingsView = ({ currentUser }: SettingsViewProps) => {
         </div>
         <button
           type="submit"
-          disabled={isSaving}
+          disabled={isUserSaving}
           className="mt-4 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
         >
           Criar login
@@ -274,7 +348,7 @@ export const SettingsView = ({ currentUser }: SettingsViewProps) => {
                   <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
-                      disabled={isSaving || user.id === currentUser.id}
+                      disabled={isUserSaving || user.id === currentUser.id}
                       onClick={() => void toggleUserStatus(user)}
                       className="rounded-lg border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
                     >
@@ -282,7 +356,7 @@ export const SettingsView = ({ currentUser }: SettingsViewProps) => {
                     </button>
                     <button
                       type="button"
-                      disabled={isSaving || user.id === currentUser.id}
+                      disabled={isUserSaving || user.id === currentUser.id}
                       onClick={() => void resetPassword(user)}
                       className="rounded-lg border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
                     >

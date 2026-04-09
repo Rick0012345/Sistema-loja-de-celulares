@@ -18,6 +18,7 @@ import {
   Sale,
   ServiceOrder,
   ServiceStatus,
+  StoreSettings,
 } from '../types';
 
 const API_URL =
@@ -171,6 +172,26 @@ export const api = {
     await request(`/auth/users/${id}`, {
       method: 'DELETE',
     });
+  },
+
+  async getStoreSettings(): Promise<StoreSettings> {
+    const response = await request<{ telefone_loja?: string | null }>('/configuracoes/loja');
+    return {
+      storePhone: response.telefone_loja ?? '',
+    };
+  },
+
+  async updateStoreSettings(payload: { storePhone: string }): Promise<StoreSettings> {
+    const response = await request<{ telefone_loja?: string | null }>('/configuracoes/loja', {
+      method: 'PATCH',
+      body: {
+        telefone_loja: payload.storePhone.trim() || null,
+      },
+    });
+
+    return {
+      storePhone: response.telefone_loja ?? '',
+    };
   },
 
   async listProducts(): Promise<Product[]> {

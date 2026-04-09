@@ -19,6 +19,10 @@ export type ManagedUser = {
   updated_at: string;
 };
 
+export type StoreSettings = {
+  storePhone: string;
+};
+
 export type AuthStatus = {
   possuiUsuarios: boolean;
   totalUsuarios: number;
