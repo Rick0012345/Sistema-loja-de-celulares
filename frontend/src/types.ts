@@ -193,6 +193,8 @@ export type ServiceFormValues = {
 export type SaleFormValues = {
   customerName: string;
   paymentMethod: PaymentMethod;
-  selectedProductId: string;
-  quantity: string;
+  items: Array<{
+    productId: string;
+    quantity: string;
+  }>;
 };

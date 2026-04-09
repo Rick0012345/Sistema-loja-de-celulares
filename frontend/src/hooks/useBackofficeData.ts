@@ -265,19 +265,31 @@ export const useBackofficeData = ({
   const createSale = useCallback(
     async (values: SaleFormValues) => {
       await runMutation(async () => {
-        const selectedProduct = products.find(
-          (product) => product.id === values.selectedProductId,
-        );
-
-        if (!selectedProduct) {
-          throw new Error('Selecione um produto válido para registrar a venda.');
+        if (!values.items.length) {
+          throw new Error('Adicione pelo menos um produto para registrar a venda.');
         }
 
-        const quantity = Math.max(parseInteger(values.quantity), 1);
+        const groupedItems = values.items.reduce<Record<string, number>>((acc, item) => {
+          const quantity = Math.max(parseInteger(item.quantity), 1);
+          acc[item.productId] = (acc[item.productId] ?? 0) + quantity;
+          return acc;
+        }, {});
+
+        const payloadItems = Object.entries(groupedItems).map(([productId, quantity]) => {
+          const selectedProduct = products.find((product) => product.id === productId);
+          if (!selectedProduct) {
+            throw new Error('Um dos produtos selecionados nao e valido.');
+          }
+          if (quantity > selectedProduct.stock) {
+            throw new Error(`Quantidade acima do estoque para "${selectedProduct.name}".`);
+          }
+          return { produto_id: productId, quantidade: quantity };
+        });
+
         await api.createSale({
           cliente_nome: values.customerName.trim() || undefined,
           meio_pagamento: values.paymentMethod,
-          itens: [{ produto_id: selectedProduct.id, quantidade: quantity }],
+          itens: payloadItems,
         });
       });
     },

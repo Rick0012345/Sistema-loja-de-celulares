@@ -34,8 +34,7 @@ const inputClass =
 const EMPTY_FORM: SaleFormValues = {
   customerName: '',
   paymentMethod: 'pix',
-  selectedProductId: '',
-  quantity: '1',
+  items: [],
 };
 
 const PIE_COLORS = ['#2563eb', '#22c55e', '#f59e0b', '#7c3aed', '#ef4444'];
@@ -57,20 +56,25 @@ export const SalesView = ({
   const [formData, setFormData] = useState<SaleFormValues>(EMPTY_FORM);
   const [productSearchTerm, setProductSearchTerm] = useState('');
   const [productSelectionError, setProductSelectionError] = useState('');
+  const [selectedProductId, setSelectedProductId] = useState('');
+  const [selectedQuantity, setSelectedQuantity] = useState('1');
 
   const selectedProduct = useMemo(
-    () => products.find((product) => product.id === formData.selectedProductId),
-    [formData.selectedProductId, products],
+    () => products.find((product) => product.id === selectedProductId),
+    [products, selectedProductId],
   );
 
   const totalPreview = useMemo(() => {
-    if (!selectedProduct) {
-      return 0;
-    }
-    const quantity = Number.parseInt(formData.quantity, 10);
-    const normalizedQuantity = Number.isFinite(quantity) ? Math.max(quantity, 1) : 1;
-    return selectedProduct.salePrice * normalizedQuantity;
-  }, [formData.quantity, selectedProduct]);
+    return formData.items.reduce((sum, item) => {
+      const product = products.find((current) => current.id === item.productId);
+      if (!product) {
+        return sum;
+      }
+      const quantity = Number.parseInt(item.quantity, 10);
+      const normalizedQuantity = Number.isFinite(quantity) ? Math.max(quantity, 1) : 1;
+      return sum + product.salePrice * normalizedQuantity;
+    }, 0);
+  }, [formData.items, products]);
 
   const filteredProducts = useMemo(() => {
     const search = productSearchTerm.trim().toLowerCase();
@@ -206,15 +210,82 @@ export const SalesView = ({
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    if (!formData.selectedProductId) {
+    if (!formData.items.length) {
       setProductSelectionError('Selecione um produto para continuar.');
       return;
     }
     await onCreateSale(formData);
     setFormData(EMPTY_FORM);
+    setSelectedProductId('');
+    setSelectedQuantity('1');
     setProductSearchTerm('');
     setProductSelectionError('');
     setIsModalOpen(false);
+  };
+
+  const addSelectedProduct = () => {
+    if (!selectedProductId) {
+      setProductSelectionError('Selecione um produto para adicionar.');
+      return;
+    }
+
+    const quantity = Number.parseInt(selectedQuantity, 10);
+    const normalizedQuantity = Number.isFinite(quantity) ? Math.max(quantity, 1) : 1;
+    const product = products.find((item) => item.id === selectedProductId);
+
+    if (!product) {
+      setProductSelectionError('Produto selecionado nao encontrado.');
+      return;
+    }
+
+    setFormData((current) => {
+      const existingIndex = current.items.findIndex(
+        (item) => item.productId === selectedProductId,
+      );
+
+      if (existingIndex >= 0) {
+        const updatedItems = [...current.items];
+        const currentQuantity = Number.parseInt(updatedItems[existingIndex].quantity, 10);
+        const mergedQuantity =
+          (Number.isFinite(currentQuantity) ? Math.max(currentQuantity, 1) : 1) +
+          normalizedQuantity;
+        updatedItems[existingIndex] = {
+          ...updatedItems[existingIndex],
+          quantity: String(Math.min(mergedQuantity, product.stock)),
+        };
+        return { ...current, items: updatedItems };
+      }
+
+      return {
+        ...current,
+        items: [
+          ...current.items,
+          {
+            productId: selectedProductId,
+            quantity: String(Math.min(normalizedQuantity, product.stock)),
+          },
+        ],
+      };
+    });
+
+    setProductSelectionError('');
+    setSelectedQuantity('1');
+  };
+
+  const removeSaleItem = (productId: string) => {
+    setFormData((current) => ({
+      ...current,
+      items: current.items.filter((item) => item.productId !== productId),
+    }));
+  };
+
+  const updateSaleItemQuantity = (productId: string, quantity: string) => {
+    setFormData((current) => ({
+      ...current,
+      items: current.items.map((item) =>
+        item.productId === productId ? { ...item, quantity } : item,
+      ),
+    }));
   };
 
   return (
@@ -489,8 +560,11 @@ export const SalesView = ({
               <button
                 type="button"
                 onClick={() => {
+                  setSelectedProductId('');
+                  setSelectedQuantity('1');
                   setProductSearchTerm('');
                   setProductSelectionError('');
+                  setFormData(EMPTY_FORM);
                   setIsModalOpen(false);
                 }}
                 className="text-slate-400 transition-colors hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-200"
@@ -542,16 +616,13 @@ export const SalesView = ({
                       </p>
                     )}
                     {filteredProducts.map((product) => {
-                      const isSelected = formData.selectedProductId === product.id;
+                      const isSelected = selectedProductId === product.id;
                       return (
                         <button
                           key={product.id}
                           type="button"
                           onClick={() => {
-                            setFormData((current) => ({
-                              ...current,
-                              selectedProductId: product.id,
-                            }));
+                            setSelectedProductId(product.id);
                             setProductSelectionError('');
                           }}
                           className={`w-full rounded-lg border px-3 py-2 text-left transition-colors ${
@@ -568,11 +639,11 @@ export const SalesView = ({
                       );
                     })}
                   </div>
-                  {formData.selectedProductId && (
+                  {selectedProductId && (
                     <p className="text-xs text-slate-500 dark:text-slate-400">
                       Selecionado:{' '}
                       <span className="font-semibold">
-                        {products.find((product) => product.id === formData.selectedProductId)?.name}
+                        {products.find((product) => product.id === selectedProductId)?.name}
                       </span>
                     </p>
                   )}
@@ -587,18 +658,21 @@ export const SalesView = ({
                     Quantidade
                   </label>
                   <input
-                    required
                     min="1"
                     type="number"
-                    value={formData.quantity}
-                    onChange={(event) =>
-                      setFormData((current) => ({
-                        ...current,
-                        quantity: event.target.value,
-                      }))
-                    }
+                    value={selectedQuantity}
+                    onChange={(event) => setSelectedQuantity(event.target.value)}
                     className={inputClass}
                   />
+                </div>
+                <div className="flex items-end">
+                  <button
+                    type="button"
+                    onClick={addSelectedProduct}
+                    className="w-full rounded-xl bg-slate-800 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-700 dark:bg-slate-200 dark:text-slate-900 dark:hover:bg-slate-300"
+                  >
+                    Adicionar produto
+                  </button>
                 </div>
                 <div className="space-y-1">
                   <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">
@@ -622,6 +696,51 @@ export const SalesView = ({
                   </select>
                 </div>
               </div>
+              <div className="space-y-2 rounded-xl border border-slate-100 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950">
+                <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                  Itens da venda
+                </p>
+                {formData.items.length === 0 ? (
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Nenhum produto adicionado.
+                  </p>
+                ) : (
+                  formData.items.map((item) => {
+                    const product = products.find((current) => current.id === item.productId);
+                    if (!product) {
+                      return null;
+                    }
+                    return (
+                      <div
+                        key={item.productId}
+                        className="grid grid-cols-[1fr_90px_28px] items-center gap-2"
+                      >
+                        <p className="truncate text-sm text-slate-700 dark:text-slate-200">
+                          {product.name}
+                        </p>
+                        <input
+                          min="1"
+                          max={product.stock}
+                          type="number"
+                          value={item.quantity}
+                          onChange={(event) =>
+                            updateSaleItemQuantity(item.productId, event.target.value)
+                          }
+                          className={inputClass}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeSaleItem(item.productId)}
+                          className="flex h-7 w-7 items-center justify-center rounded-md text-rose-600 transition-colors hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/15"
+                          aria-label={`Remover ${product.name}`}
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
               <div className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-950">
                 <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
                   <CreditCard size={16} />
@@ -635,8 +754,11 @@ export const SalesView = ({
                 <button
                   type="button"
                   onClick={() => {
+                    setSelectedProductId('');
+                    setSelectedQuantity('1');
                     setProductSearchTerm('');
                     setProductSelectionError('');
+                    setFormData(EMPTY_FORM);
                     setIsModalOpen(false);
                   }}
                   className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800"
