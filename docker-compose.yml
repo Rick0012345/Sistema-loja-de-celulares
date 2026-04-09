@@ -59,10 +59,35 @@ services:
     networks:
       - app_network
 
+  n8n:
+    image: docker.n8n.io/n8nio/n8n
+    container_name: loja-celulares-n8n
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      N8N_HOST: ${N8N_HOST}
+      N8N_PORT: 5678
+      N8N_PROTOCOL: ${N8N_PROTOCOL}
+      N8N_EDITOR_BASE_URL: ${N8N_EDITOR_BASE_URL}
+      WEBHOOK_URL: ${N8N_WEBHOOK_URL}
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
+      N8N_SECURE_COOKIE: "false"
+      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "true"
+      TZ: ${GENERIC_TIMEZONE}
+      GENERIC_TIMEZONE: ${GENERIC_TIMEZONE}
+    ports:
+      - "127.0.0.1:${N8N_PORT}:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - app_network
+
 volumes:
   postgres_data:
   backend_node_modules:
   frontend_node_modules:
+  n8n_data:
 
 networks:
   app_network:

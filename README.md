@@ -74,6 +74,7 @@ O projeto passa a adotar Docker Compose como padrão de ambiente local.
 - frontend e backend já sobem no compose padrão
 - o backend fica disponível em `http://localhost:3001`
 - o frontend fica disponível em `http://localhost:3000`
+- o n8n fica disponível em `http://localhost:5678`
 
 ## Como subir
 
@@ -82,6 +83,8 @@ Execute na raiz do projeto:
 ```bash
 docker compose up -d
 ```
+
+Se for a primeira vez usando n8n, copie `.env.example` para `.env` e defina uma chave forte em `N8N_ENCRYPTION_KEY`.
 
 ## Endpoints iniciais
 
