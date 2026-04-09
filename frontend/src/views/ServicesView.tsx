@@ -436,10 +436,10 @@ export const ServicesView = ({
                     }
                     inputMode="numeric"
                     autoComplete="tel"
-                    placeholder="(00) 000000000000"
-                    pattern="\\(\\d{2}\\) \\d{8,12}"
-                    title="Use o formato (XX) 0000000000 até (XX) 000000000000"
-                    maxLength={17}
+                    placeholder="(00) 00000-0000"
+                    pattern="\\(\\d{2}\\) \\d{4,8}-\\d{4}"
+                    title="Use o formato (XX) 0000-0000 até (XX) 00000000-0000"
+                    maxLength={18}
                     className={inputClass}
                   />
                 </div>

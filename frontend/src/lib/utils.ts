@@ -19,5 +19,10 @@ export function formatPhone(value: string) {
 
   const ddd = digits.slice(0, 2);
   const rest = digits.slice(2);
-  return `(${ddd})${rest.length ? ` ${rest}` : ''}`;
+  if (rest.length === 0) return `(${ddd})`;
+  if (rest.length <= 4) return `(${ddd}) ${rest}`;
+
+  const prefix = rest.slice(0, -4);
+  const suffix = rest.slice(-4);
+  return `(${ddd}) ${prefix}-${suffix}`;
 }
