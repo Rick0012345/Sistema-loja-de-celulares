@@ -25,6 +25,7 @@ import {
 } from 'recharts';
 import { StatCard } from '../components/StatCard';
 import { PAYMENT_METHOD_LABELS } from '../lib/paymentMethods';
+import { emitReceiptPdf } from '../lib/receiptPdf';
 import { formatCurrency } from '../lib/utils';
 import { PaymentMethod, Product, Sale, SaleFormValues } from '../types';
 
@@ -288,6 +289,30 @@ export const SalesView = ({
     }));
   };
 
+  const handleEmitReceipt = (sale: Sale) => {
+    try {
+      emitReceiptPdf({
+        reference: sale.reference,
+        customerName: sale.customerName,
+        paymentMethodLabel: PAYMENT_METHOD_LABELS[sale.paymentMethod],
+        total: sale.total,
+        createdAt: sale.createdAt,
+        items: sale.items.map((item) => ({
+          productName: item.productName,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          subtotal: item.subtotal,
+        })),
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Nao foi possivel emitir o recibo desta venda.';
+      window.alert(message);
+    }
+  };
+
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 lg:flex-row lg:items-center lg:justify-between">
@@ -545,6 +570,15 @@ export const SalesView = ({
                   </span>
                 </div>
               ))}
+            </div>
+            <div className="mt-3 flex justify-end">
+              <button
+                type="button"
+                onClick={() => handleEmitReceipt(sale)}
+                className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-100 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300 dark:hover:bg-blue-500/20"
+              >
+                Emitir recibo (PDF)
+              </button>
             </div>
           </div>
         ))}

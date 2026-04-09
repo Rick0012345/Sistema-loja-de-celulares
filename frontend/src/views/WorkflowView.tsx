@@ -275,7 +275,7 @@ export const WorkflowView = ({
             return (
               <section
                 key={column.id}
-                className="flex min-h-[320px] flex-col rounded-3xl border border-slate-200 bg-gradient-to-b from-white to-slate-50/80 p-3.5 shadow-sm dark:border-slate-800 dark:from-slate-900 dark:to-slate-950"
+                className="flex h-[min(72vh,680px)] min-h-[320px] flex-col rounded-3xl border border-slate-200 bg-gradient-to-b from-white to-slate-50/80 p-3.5 shadow-sm dark:border-slate-800 dark:from-slate-900 dark:to-slate-950"
               >
                 <div className="mb-4 flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
@@ -294,7 +294,7 @@ export const WorkflowView = ({
                   </span>
                 </div>
 
-                <div className="flex flex-1 flex-col gap-3">
+                <div className="flex flex-1 flex-col gap-3 overflow-y-auto pr-1">
                   {columnServices.length === 0 && (
                     <div className="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50/80 p-5 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400">
                       Nenhuma OS nesta etapa.

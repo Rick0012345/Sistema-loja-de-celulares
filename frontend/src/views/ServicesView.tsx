@@ -6,6 +6,7 @@ import {
   serviceStatusLabel,
   serviceStatusOptions,
 } from '../lib/serviceStatus';
+import { emitServiceOrderReceiptPdf } from '../lib/receiptPdf';
 import { cn, formatCurrency } from '../lib/utils';
 import { Product, ServiceFormValues, ServiceOrder, ServiceStatus } from '../types';
 
@@ -181,6 +182,37 @@ export const ServicesView = ({
     await onUpdateServiceStatus(service.id, { status });
   };
 
+  const handleEmitServiceReceipt = (service: ServiceOrder) => {
+    try {
+      emitServiceOrderReceiptPdf({
+        id: service.id,
+        customerName: service.customerName,
+        customerPhone: service.customerPhone,
+        deviceBrand: service.deviceBrand,
+        deviceModel: service.deviceModel,
+        deliveryTypeLabel:
+          service.deliveryType === 'delivery' ? 'Entrega em endereco' : 'Retirada na loja',
+        statusLabel: serviceStatusLabel[service.status],
+        issueDescription: service.issueDescription,
+        laborCost: service.laborCost,
+        total: service.totalPrice,
+        createdAt: service.createdAt,
+        parts: service.partsUsed.map((part) => ({
+          description: part.description,
+          quantity: part.quantity,
+          unitPrice: part.salePrice,
+          subtotal: part.subtotal,
+        })),
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Nao foi possivel emitir o recibo desta ordem de servico.';
+      window.alert(message);
+    }
+  };
+
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     if (editingServiceId) {
@@ -297,6 +329,13 @@ export const ServicesView = ({
                         <Pencil size={13} />
                         Editar OS
                       </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleEmitServiceReceipt(service)}
+                      className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-bold text-blue-700 transition-colors hover:bg-blue-100 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300 dark:hover:bg-blue-500/20"
+                    >
+                      Emitir recibo OS (PDF)
                     </button>
                     {service.status !== 'entregue' && service.status !== 'cancelada' && (
                       <button
