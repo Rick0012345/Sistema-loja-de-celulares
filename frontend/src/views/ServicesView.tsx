@@ -7,7 +7,7 @@ import {
   serviceStatusOptions,
 } from '../lib/serviceStatus';
 import { emitServiceOrderReceiptPdf } from '../lib/receiptPdf';
-import { cn, formatCurrency } from '../lib/utils';
+import { cn, formatCurrency, formatPhone } from '../lib/utils';
 import { Product, ServiceFormValues, ServiceOrder, ServiceStatus } from '../types';
 
 const inputClass =
@@ -101,7 +101,7 @@ export const ServicesView = ({
     setEditingServiceId(service.id);
     setFormData({
       customerName: service.customerName,
-      customerPhone: service.customerPhone,
+      customerPhone: formatPhone(service.customerPhone),
       deviceBrand: service.deviceBrand,
       deviceModel: service.deviceModel,
       issueDescription: service.issueDescription,
@@ -425,7 +425,23 @@ export const ServicesView = ({
                 </div>
                 <div className="space-y-1">
                   <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">Telefone</label>
-                  <input required value={formData.customerPhone} onChange={(event) => setFormData((current) => ({ ...current, customerPhone: event.target.value }))} className={inputClass} />
+                  <input
+                    required
+                    value={formData.customerPhone}
+                    onChange={(event) =>
+                      setFormData((current) => ({
+                        ...current,
+                        customerPhone: formatPhone(event.target.value),
+                      }))
+                    }
+                    inputMode="numeric"
+                    autoComplete="tel"
+                    placeholder="(00) 000000000000"
+                    pattern="\\(\\d{2}\\) \\d{8,12}"
+                    title="Use o formato (XX) 0000000000 até (XX) 000000000000"
+                    maxLength={17}
+                    className={inputClass}
+                  />
                 </div>
                 <div className="space-y-1">
                   <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">Marca do Aparelho</label>

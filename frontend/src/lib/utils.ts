@@ -11,3 +11,13 @@ export function formatCurrency(value: number) {
     currency: 'BRL',
   }).format(value);
 }
+
+export function formatPhone(value: string) {
+  const digits = value.replace(/\D/g, '').slice(0, 14);
+  if (digits.length === 0) return '';
+  if (digits.length <= 2) return `(${digits}`;
+
+  const ddd = digits.slice(0, 2);
+  const rest = digits.slice(2);
+  return `(${ddd})${rest.length ? ` ${rest}` : ''}`;
+}
