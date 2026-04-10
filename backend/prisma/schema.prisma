@@ -29,10 +29,15 @@ model clientes {
 }
 
 model configuracoes_loja {
-  id            String   @id @db.Uuid
-  telefone_loja String?  @db.VarChar(20)
-  created_at    DateTime @default(now()) @db.Timestamptz(6)
-  updated_at    DateTime @default(now()) @db.Timestamptz(6)
+  id                      String   @id @db.Uuid
+  telefone_loja           String?  @db.VarChar(20)
+  evolution_instance_name String?  @db.VarChar(120)
+  evolution_api_base_url  String?  @db.VarChar(255)
+  evolution_api_key       String?
+  ordem_pronta_webhook_url String? @db.VarChar(255)
+  ordem_pronta_webhook_token String? @db.VarChar(255)
+  created_at              DateTime @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime @default(now()) @db.Timestamptz(6)
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.

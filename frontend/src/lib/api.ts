@@ -175,22 +175,59 @@ export const api = {
   },
 
   async getStoreSettings(): Promise<StoreSettings> {
-    const response = await request<{ telefone_loja?: string | null }>('/configuracoes/loja');
+    const response = await request<{
+      telefone_loja?: string | null;
+      evolution_instance_name?: string | null;
+      evolution_api_base_url?: string | null;
+      evolution_api_key?: string | null;
+      ordem_pronta_webhook_url?: string | null;
+      ordem_pronta_webhook_token?: string | null;
+    }>('/configuracoes/loja');
     return {
       storePhone: response.telefone_loja ?? '',
+      evolutionInstanceName: response.evolution_instance_name ?? '',
+      evolutionApiBaseUrl: response.evolution_api_base_url ?? '',
+      evolutionApiKey: response.evolution_api_key ?? '',
+      ordemProntaWebhookUrl: response.ordem_pronta_webhook_url ?? '',
+      ordemProntaWebhookToken: response.ordem_pronta_webhook_token ?? '',
     };
   },
 
-  async updateStoreSettings(payload: { storePhone: string }): Promise<StoreSettings> {
-    const response = await request<{ telefone_loja?: string | null }>('/configuracoes/loja', {
+  async updateStoreSettings(payload: {
+    storePhone: string;
+    evolutionInstanceName: string;
+    evolutionApiBaseUrl: string;
+    evolutionApiKey: string;
+    ordemProntaWebhookUrl: string;
+    ordemProntaWebhookToken: string;
+  }): Promise<StoreSettings> {
+    const response = await request<{
+      telefone_loja?: string | null;
+      evolution_instance_name?: string | null;
+      evolution_api_base_url?: string | null;
+      evolution_api_key?: string | null;
+      ordem_pronta_webhook_url?: string | null;
+      ordem_pronta_webhook_token?: string | null;
+    }>('/configuracoes/loja', {
       method: 'PATCH',
       body: {
         telefone_loja: payload.storePhone.trim() || null,
+        evolution_instance_name: payload.evolutionInstanceName.trim() || null,
+        evolution_api_base_url: payload.evolutionApiBaseUrl.trim() || null,
+        evolution_api_key: payload.evolutionApiKey.trim() || null,
+        ordem_pronta_webhook_url: payload.ordemProntaWebhookUrl.trim() || null,
+        ordem_pronta_webhook_token:
+          payload.ordemProntaWebhookToken.trim() || null,
       },
     });
 
     return {
       storePhone: response.telefone_loja ?? '',
+      evolutionInstanceName: response.evolution_instance_name ?? '',
+      evolutionApiBaseUrl: response.evolution_api_base_url ?? '',
+      evolutionApiKey: response.evolution_api_key ?? '',
+      ordemProntaWebhookUrl: response.ordem_pronta_webhook_url ?? '',
+      ordemProntaWebhookToken: response.ordem_pronta_webhook_token ?? '',
     };
   },
 

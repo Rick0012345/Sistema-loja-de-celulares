@@ -4,7 +4,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
-  meio_pagamento,
   Prisma,
   origem_movimentacao_estoque,
   status_pagamento,
@@ -15,6 +14,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { toNumber } from '../../common/utils/serialize';
 import type { AuthenticatedUser } from '../auth/auth.types';
 import { NotificacoesService } from '../notificacoes/notificacoes.service';
+import { WebhookEventosService } from '../webhooks/webhook-eventos.service';
 import type {
   CreateOrdemServicoDto,
   UpdateOrdemServicoDto,
@@ -26,6 +26,7 @@ export class OrdensServicoService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notificacoesService: NotificacoesService,
+    private readonly webhookEventosService: WebhookEventosService,
   ) {}
 
   async list() {
@@ -171,7 +172,10 @@ export class OrdensServicoService {
               subtotal: toNumber(item.subtotal) ?? 0,
             }));
 
-      const totalPecas = itensData.reduce((acc, item) => acc + item.subtotal, 0);
+      const totalPecas = itensData.reduce(
+        (acc, item) => acc + item.subtotal,
+        0,
+      );
       const lucroPecas = itensData.reduce(
         (acc, item) =>
           acc + (item.venda_unitaria - item.custo_unitario) * item.quantidade,
@@ -179,8 +183,8 @@ export class OrdensServicoService {
       );
 
       const valorMaoDeObra =
-        dto.valor_mao_de_obra ?? (toNumber(ordem.valor_mao_de_obra) ?? 0);
-      const desconto = dto.desconto ?? (toNumber(ordem.desconto) ?? 0);
+        dto.valor_mao_de_obra ?? toNumber(ordem.valor_mao_de_obra) ?? 0;
+      const desconto = dto.desconto ?? toNumber(ordem.desconto) ?? 0;
       const valorTotal = totalPecas + valorMaoDeObra - desconto;
       const lucroEstimado = lucroPecas + valorMaoDeObra - desconto;
 
@@ -240,83 +244,89 @@ export class OrdensServicoService {
       ),
     ];
 
-    const updated = await this.prisma.$transaction(async (tx) => {
-      const ordem = await tx.ordens_servico.findUnique({
-        where: { id },
-        include: { itens_os: true, pagamentos_os: true },
-      });
+    const { updated, previousStatus } = await this.prisma.$transaction(
+      async (tx) => {
+        const ordem = await tx.ordens_servico.findUnique({
+          where: { id },
+          include: { itens_os: true, pagamentos_os: true },
+        });
 
-      if (!ordem) {
-        throw new NotFoundException('Ordem de serviço não encontrada.');
-      }
-
-      const previousStatus = ordem.status;
-      const nextStatus = dto.status;
-
-      const itensComProduto = ordem.itens_os.filter(
-        (item): item is typeof item & { produto_id: string } =>
-          Boolean(item.produto_id),
-      );
-
-      await this.ensureStockConsumedIfNeeded(tx, {
-        ordemId: ordem.id,
-        nextStatus,
-        itens: itensComProduto.map((item) => ({
-          produtoId: item.produto_id,
-          quantidade: item.quantidade,
-        })),
-      });
-
-      const dataSaida =
-        (nextStatus === status_ordem_servico.entregue ||
-          nextStatus === status_ordem_servico.cancelada) &&
-        !ordem.data_saida
-          ? new Date()
-          : ordem.data_saida;
-
-      const saved = await tx.ordens_servico.update({
-        where: { id: ordem.id },
-        data: {
-          status: nextStatus,
-          data_saida: dataSaida,
-          updated_at: new Date(),
-        },
-        include: { clientes: true, itens_os: true },
-      });
-
-      const saldoPendente = this.getSaldoPendente(ordem);
-
-      if (nextStatus === status_ordem_servico.entregue && saldoPendente > 0) {
-        if (!dto.meio_pagamento) {
-          throw new BadRequestException(
-            'Informe a forma de pagamento para concluir a entrega da OS.',
-          );
+        if (!ordem) {
+          throw new NotFoundException('Ordem de serviço não encontrada.');
         }
 
-        await tx.pagamentos_os.create({
+        const previousStatus = ordem.status;
+        const nextStatus = dto.status;
+
+        const itensComProduto = ordem.itens_os.filter(
+          (item): item is typeof item & { produto_id: string } =>
+            Boolean(item.produto_id),
+        );
+
+        await this.ensureStockConsumedIfNeeded(tx, {
+          ordemId: ordem.id,
+          nextStatus,
+          itens: itensComProduto.map((item) => ({
+            produtoId: item.produto_id,
+            quantidade: item.quantidade,
+          })),
+        });
+
+        const dataSaida =
+          (nextStatus === status_ordem_servico.entregue ||
+            nextStatus === status_ordem_servico.cancelada) &&
+          !ordem.data_saida
+            ? new Date()
+            : ordem.data_saida;
+
+        const saved = await tx.ordens_servico.update({
+          where: { id: ordem.id },
+          data: {
+            status: nextStatus,
+            data_saida: dataSaida,
+            updated_at: new Date(),
+          },
+          include: { clientes: true, itens_os: true },
+        });
+
+        const saldoPendente = this.getSaldoPendente(ordem);
+
+        if (nextStatus === status_ordem_servico.entregue && saldoPendente > 0) {
+          if (!dto.meio_pagamento) {
+            throw new BadRequestException(
+              'Informe a forma de pagamento para concluir a entrega da OS.',
+            );
+          }
+
+          await tx.pagamentos_os.create({
+            data: {
+              ordem_servico_id: ordem.id,
+              valor: new Prisma.Decimal(saldoPendente),
+              meio: dto.meio_pagamento,
+              status: status_pagamento.pago,
+              pago_em: new Date(),
+              observacao:
+                dto.observacao ?? 'Pagamento registrado na entrega da OS.',
+            },
+          });
+        }
+
+        await tx.historico_status_os.create({
           data: {
             ordem_servico_id: ordem.id,
-            valor: new Prisma.Decimal(saldoPendente),
-            meio: dto.meio_pagamento,
-            status: status_pagamento.pago,
-            pago_em: new Date(),
-            observacao: dto.observacao ?? 'Pagamento registrado na entrega da OS.',
+            status_anterior: previousStatus,
+            status_novo: nextStatus,
+            alterado_por: dto.alterado_por ?? currentUser.sub,
+            observacao: dto.observacao ?? null,
           },
         });
-      }
 
-      await tx.historico_status_os.create({
-        data: {
-          ordem_servico_id: ordem.id,
-          status_anterior: previousStatus,
-          status_novo: nextStatus,
-          alterado_por: dto.alterado_por ?? currentUser.sub,
-          observacao: dto.observacao ?? null,
-        },
-      });
-
-      return saved;
-    });
+        return {
+          updated: saved,
+          previousStatus,
+        };
+      },
+    );
 
     await this.notificacoesService.notifyOrderStatusChanged({
       ordemId: updated.id,
@@ -345,6 +355,21 @@ export class OrdensServicoService {
           }),
         ),
       );
+    }
+
+    if (
+      previousStatus !== updated.status &&
+      updated.status === status_ordem_servico.pronto_para_retirada &&
+      updated.clientes
+    ) {
+      await this.webhookEventosService.dispatchOrdemServicoPronta({
+        ordemId: updated.id,
+        clienteNome: updated.clientes.nome,
+        clienteTelefone: updated.clientes.telefone,
+        tipoEntrega: updated.tipo_entrega,
+        aparelhoMarca: updated.aparelho_marca,
+        aparelhoModelo: updated.aparelho_modelo,
+      });
     }
 
     return this.serializeOrdem(updated);
@@ -398,19 +423,23 @@ export class OrdensServicoService {
         })
       : [];
 
-    const produtoPorId = new Map(produtos.map((produto) => [produto.id, produto]));
+    const produtoPorId = new Map(
+      produtos.map((produto) => [produto.id, produto]),
+    );
 
     return itens.map((item) => {
-      const produto = item.produto_id ? produtoPorId.get(item.produto_id) : null;
+      const produto = item.produto_id
+        ? produtoPorId.get(item.produto_id)
+        : null;
 
       if (item.produto_id && !produto) {
         throw new NotFoundException('Produto não encontrado ou inativo.');
       }
 
       const custoUnitario =
-        item.custo_unitario ?? (toNumber(produto?.preco_custo) ?? 0);
+        item.custo_unitario ?? toNumber(produto?.preco_custo) ?? 0;
       const vendaUnitaria =
-        item.venda_unitaria ?? (toNumber(produto?.preco_venda) ?? 0);
+        item.venda_unitaria ?? toNumber(produto?.preco_venda) ?? 0;
       const descricaoItem = item.descricao_item ?? produto?.nome ?? 'Item';
 
       return {

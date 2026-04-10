@@ -16,6 +16,11 @@ export class ConfiguracoesLojaService {
     if (!configuracoes) {
       return {
         telefone_loja: null,
+        evolution_instance_name: null,
+        evolution_api_base_url: null,
+        evolution_api_key: null,
+        ordem_pronta_webhook_url: null,
+        ordem_pronta_webhook_token: null,
       };
     }
 
@@ -24,15 +29,32 @@ export class ConfiguracoesLojaService {
 
   update(dto: UpdateConfiguracoesLojaDto) {
     const telefone_loja = dto.telefone_loja?.trim() || null;
+    const evolution_instance_name = dto.evolution_instance_name?.trim() || null;
+    const evolution_api_base_url = dto.evolution_api_base_url?.trim() || null;
+    const evolution_api_key = dto.evolution_api_key?.trim() || null;
+    const ordem_pronta_webhook_url =
+      dto.ordem_pronta_webhook_url?.trim() || null;
+    const ordem_pronta_webhook_token =
+      dto.ordem_pronta_webhook_token?.trim() || null;
 
     return this.prisma.configuracoes_loja.upsert({
       where: { id: CONFIGURACOES_LOJA_ID },
       update: {
         telefone_loja,
+        evolution_instance_name,
+        evolution_api_base_url,
+        evolution_api_key,
+        ordem_pronta_webhook_url,
+        ordem_pronta_webhook_token,
       },
       create: {
         id: CONFIGURACOES_LOJA_ID,
         telefone_loja,
+        evolution_instance_name,
+        evolution_api_base_url,
+        evolution_api_key,
+        ordem_pronta_webhook_url,
+        ordem_pronta_webhook_token,
       },
     });
   }

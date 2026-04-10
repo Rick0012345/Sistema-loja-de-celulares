@@ -9,12 +9,15 @@ type SettingsViewProps = {
 const profileLabels: Record<UserProfile, string> = {
   administrador: 'Administrador',
   atendente: 'Atendente',
-  tecnico: 'Técnico',
+  tecnico: 'Tecnico',
   financeiro: 'Financeiro',
 };
 
 const panelClass =
   'rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900';
+
+const inputClass =
+  'mt-1 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200';
 
 const emptyForm = {
   nome: '',
@@ -32,6 +35,11 @@ export const SettingsView = ({ currentUser }: SettingsViewProps) => {
   const [message, setMessage] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [storePhone, setStorePhone] = useState('');
+  const [evolutionInstanceName, setEvolutionInstanceName] = useState('');
+  const [evolutionApiBaseUrl, setEvolutionApiBaseUrl] = useState('');
+  const [evolutionApiKey, setEvolutionApiKey] = useState('');
+  const [ordemProntaWebhookUrl, setOrdemProntaWebhookUrl] = useState('');
+  const [ordemProntaWebhookToken, setOrdemProntaWebhookToken] = useState('');
 
   const isAdmin = currentUser.perfil === 'administrador';
 
@@ -39,7 +47,8 @@ export const SettingsView = ({ currentUser }: SettingsViewProps) => {
     () =>
       [...users].sort(
         (first, second) =>
-          new Date(second.created_at).getTime() - new Date(first.created_at).getTime(),
+          new Date(second.created_at).getTime() -
+          new Date(first.created_at).getTime(),
       ),
     [users],
   );
@@ -54,7 +63,11 @@ export const SettingsView = ({ currentUser }: SettingsViewProps) => {
       setUsers(response);
       setMessage(null);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Nao foi possivel carregar usuários.');
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : 'Nao foi possivel carregar usuarios.',
+      );
     } finally {
       setIsLoading(false);
     }
@@ -68,17 +81,24 @@ export const SettingsView = ({ currentUser }: SettingsViewProps) => {
     try {
       const response = await api.getStoreSettings();
       setStorePhone(response.storePhone);
+      setEvolutionInstanceName(response.evolutionInstanceName);
+      setEvolutionApiBaseUrl(response.evolutionApiBaseUrl);
+      setEvolutionApiKey(response.evolutionApiKey);
+      setOrdemProntaWebhookUrl(response.ordemProntaWebhookUrl);
+      setOrdemProntaWebhookToken(response.ordemProntaWebhookToken);
       setMessage(null);
     } catch (error) {
       setMessage(
-        error instanceof Error ? error.message : 'Nao foi possivel carregar o telefone da loja.',
+        error instanceof Error
+          ? error.message
+          : 'Nao foi possivel carregar as configuracoes da loja.',
       );
     } finally {
       setIsStoreLoading(false);
     }
   }, [isAdmin]);
 
-  const handleSaveStorePhone = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSaveStoreSettings = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!isAdmin) {
       return;
@@ -87,12 +107,24 @@ export const SettingsView = ({ currentUser }: SettingsViewProps) => {
     try {
       const response = await api.updateStoreSettings({
         storePhone,
+        evolutionInstanceName,
+        evolutionApiBaseUrl,
+        evolutionApiKey,
+        ordemProntaWebhookUrl,
+        ordemProntaWebhookToken,
       });
       setStorePhone(response.storePhone);
-      setMessage('Telefone da loja salvo com sucesso.');
+      setEvolutionInstanceName(response.evolutionInstanceName);
+      setEvolutionApiBaseUrl(response.evolutionApiBaseUrl);
+      setEvolutionApiKey(response.evolutionApiKey);
+      setOrdemProntaWebhookUrl(response.ordemProntaWebhookUrl);
+      setOrdemProntaWebhookToken(response.ordemProntaWebhookToken);
+      setMessage('Configuracoes da loja salvas com sucesso.');
     } catch (error) {
       setMessage(
-        error instanceof Error ? error.message : 'Nao foi possivel salvar o telefone da loja.',
+        error instanceof Error
+          ? error.message
+          : 'Nao foi possivel salvar as configuracoes da loja.',
       );
     } finally {
       setIsStoreSaving(false);
@@ -113,10 +145,14 @@ export const SettingsView = ({ currentUser }: SettingsViewProps) => {
         perfil: form.perfil,
       });
       setForm(emptyForm);
-      setMessage('Usuário criado com sucesso.');
+      setMessage('Usuario criado com sucesso.');
       await loadUsers();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Nao foi possivel criar usuário.');
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : 'Nao foi possivel criar usuario.',
+      );
     } finally {
       setIsUserSaving(false);
     }
@@ -137,7 +173,9 @@ export const SettingsView = ({ currentUser }: SettingsViewProps) => {
       await loadUsers();
     } catch (error) {
       setMessage(
-        error instanceof Error ? error.message : 'Nao foi possivel atualizar o status.',
+        error instanceof Error
+          ? error.message
+          : 'Nao foi possivel atualizar o status.',
       );
     } finally {
       setIsUserSaving(false);
@@ -157,7 +195,11 @@ export const SettingsView = ({ currentUser }: SettingsViewProps) => {
       await api.updateUser(user.id, { senha: nextPassword });
       setMessage('Senha redefinida com sucesso.');
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Nao foi possivel redefinir a senha.');
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : 'Nao foi possivel redefinir a senha.',
+      );
     } finally {
       setIsUserSaving(false);
     }
@@ -175,9 +217,11 @@ export const SettingsView = ({ currentUser }: SettingsViewProps) => {
   if (!isAdmin) {
     return (
       <div className={panelClass}>
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Configurações</h3>
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+          Configuracoes
+        </h3>
         <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-          Apenas administradores podem gerenciar as configurações da loja.
+          Apenas administradores podem gerenciar as configuracoes da loja.
         </p>
       </div>
     );
@@ -190,7 +234,8 @@ export const SettingsView = ({ currentUser }: SettingsViewProps) => {
           Dados da loja
         </h3>
         <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-          Cadastre o número principal da loja para centralizar o contato do atendimento.
+          Configure aqui todos os dados usados no disparo de notificacoes da OS
+          pronta, sem depender de variaveis de ambiente no workflow.
         </p>
         {message && (
           <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-200">
@@ -199,24 +244,82 @@ export const SettingsView = ({ currentUser }: SettingsViewProps) => {
         )}
       </div>
 
-      <form onSubmit={(event) => void handleSaveStorePhone(event)} className={panelClass}>
+      <form
+        onSubmit={(event) => void handleSaveStoreSettings(event)}
+        className={panelClass}
+      >
         <h4 className="text-base font-semibold text-slate-900 dark:text-slate-100">
-          Telefone da loja
+          Integracoes da loja
         </h4>
-        <div className="mt-4 flex flex-col gap-3 md:flex-row">
-          <input
-            value={storePhone}
-            onChange={(event) => setStorePhone(event.target.value)}
-            placeholder="(11) 99999-9999"
-            type="tel"
-            className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
-          />
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <label className="text-sm text-slate-600 dark:text-slate-300">
+            Telefone da loja
+            <input
+              value={storePhone}
+              onChange={(event) => setStorePhone(event.target.value)}
+              placeholder="(11) 99999-9999"
+              type="tel"
+              className={inputClass}
+            />
+          </label>
+          <label className="text-sm text-slate-600 dark:text-slate-300">
+            Nome da instancia Evolution
+            <input
+              value={evolutionInstanceName}
+              onChange={(event) => setEvolutionInstanceName(event.target.value)}
+              placeholder="Instancia-conserto-celular"
+              type="text"
+              className={inputClass}
+            />
+          </label>
+          <label className="text-sm text-slate-600 dark:text-slate-300">
+            URL base da Evolution API
+            <input
+              value={evolutionApiBaseUrl}
+              onChange={(event) => setEvolutionApiBaseUrl(event.target.value)}
+              placeholder="http://evolution-api:8080"
+              type="text"
+              className={inputClass}
+            />
+          </label>
+          <label className="text-sm text-slate-600 dark:text-slate-300">
+            API key da Evolution
+            <input
+              value={evolutionApiKey}
+              onChange={(event) => setEvolutionApiKey(event.target.value)}
+              placeholder="API key da Evolution"
+              type="password"
+              className={inputClass}
+            />
+          </label>
+          <label className="text-sm text-slate-600 dark:text-slate-300">
+            URL do webhook da OS pronta
+            <input
+              value={ordemProntaWebhookUrl}
+              onChange={(event) => setOrdemProntaWebhookUrl(event.target.value)}
+              placeholder="http://n8n:5678/webhook/ordem-servico-pronta"
+              type="text"
+              className={inputClass}
+            />
+          </label>
+          <label className="text-sm text-slate-600 dark:text-slate-300">
+            Token do webhook
+            <input
+              value={ordemProntaWebhookToken}
+              onChange={(event) => setOrdemProntaWebhookToken(event.target.value)}
+              placeholder="Token do webhook"
+              type="password"
+              className={inputClass}
+            />
+          </label>
+        </div>
+        <div className="mt-4 flex justify-end">
           <button
             type="submit"
             disabled={isStoreLoading || isStoreSaving}
             className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isStoreSaving ? 'Salvando...' : 'Salvar telefone'}
+            {isStoreSaving ? 'Salvando...' : 'Salvar configuracoes'}
           </button>
         </div>
       </form>
@@ -224,7 +327,7 @@ export const SettingsView = ({ currentUser }: SettingsViewProps) => {
       <div className={panelClass}>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-            Logins de Funcionários
+            Logins de Funcionarios
           </h3>
           <button
             type="button"
@@ -236,25 +339,32 @@ export const SettingsView = ({ currentUser }: SettingsViewProps) => {
           </button>
         </div>
         <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-          Crie acessos extras para atendentes, técnicos e financeiro.
+          Crie acessos extras para atendentes, tecnicos e financeiro.
         </p>
       </div>
 
-      <form onSubmit={(event) => void handleCreateUser(event)} className={panelClass}>
+      <form
+        onSubmit={(event) => void handleCreateUser(event)}
+        className={panelClass}
+      >
         <h4 className="text-base font-semibold text-slate-900 dark:text-slate-100">
-          Novo usuário
+          Novo usuario
         </h4>
         <div className="mt-4 grid gap-3 md:grid-cols-2">
           <input
             value={form.nome}
-            onChange={(event) => setForm((current) => ({ ...current, nome: event.target.value }))}
+            onChange={(event) =>
+              setForm((current) => ({ ...current, nome: event.target.value }))
+            }
             placeholder="Nome completo"
             required
             className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
           />
           <input
             value={form.email}
-            onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
+            onChange={(event) =>
+              setForm((current) => ({ ...current, email: event.target.value }))
+            }
             placeholder="E-mail"
             type="email"
             required
@@ -262,7 +372,9 @@ export const SettingsView = ({ currentUser }: SettingsViewProps) => {
           />
           <input
             value={form.senha}
-            onChange={(event) => setForm((current) => ({ ...current, senha: event.target.value }))}
+            onChange={(event) =>
+              setForm((current) => ({ ...current, senha: event.target.value }))
+            }
             placeholder="Senha inicial"
             type="password"
             minLength={6}
@@ -272,7 +384,10 @@ export const SettingsView = ({ currentUser }: SettingsViewProps) => {
           <select
             value={form.perfil}
             onChange={(event) =>
-              setForm((current) => ({ ...current, perfil: event.target.value as UserProfile }))
+              setForm((current) => ({
+                ...current,
+                perfil: event.target.value as UserProfile,
+              }))
             }
             className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
           >
@@ -309,15 +424,18 @@ export const SettingsView = ({ currentUser }: SettingsViewProps) => {
                 Status
               </th>
               <th className="p-3.5 text-sm font-semibold text-slate-600 dark:text-slate-300">
-                Ações
+                Acoes
               </th>
             </tr>
           </thead>
           <tbody>
             {!isLoading && sortedUsers.length === 0 && (
               <tr>
-                <td colSpan={5} className="p-4 text-center text-sm text-slate-500 dark:text-slate-400">
-                  Nenhum usuário cadastrado.
+                <td
+                  colSpan={5}
+                  className="p-4 text-center text-sm text-slate-500 dark:text-slate-400"
+                >
+                  Nenhum usuario cadastrado.
                 </td>
               </tr>
             )}
@@ -329,7 +447,9 @@ export const SettingsView = ({ currentUser }: SettingsViewProps) => {
                 <td className="p-3.5 text-sm font-medium text-slate-900 dark:text-slate-100">
                   {user.nome}
                 </td>
-                <td className="p-3.5 text-sm text-slate-600 dark:text-slate-300">{user.email}</td>
+                <td className="p-3.5 text-sm text-slate-600 dark:text-slate-300">
+                  {user.email}
+                </td>
                 <td className="p-3.5 text-sm text-slate-600 dark:text-slate-300">
                   {profileLabels[user.perfil]}
                 </td>

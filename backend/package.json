@@ -7,7 +7,7 @@
   "license": "UNLICENSED",
   "scripts": {
     "prisma:generate": "npx prisma generate",
-    "db:migrate": "npx prisma db execute --schema prisma/schema.prisma --file prisma/migrations/2026-04-08_notificacoes.sql && npx prisma db execute --schema prisma/schema.prisma --file prisma/migrations/2026-04-09_configuracoes_loja.sql",
+    "db:migrate": "npx prisma db execute --schema prisma/schema.prisma --file prisma/migrations/2026-04-08_notificacoes.sql && npx prisma db execute --schema prisma/schema.prisma --file prisma/migrations/2026-04-09_configuracoes_loja.sql && npx prisma db execute --schema prisma/schema.prisma --file prisma/migrations/2026-04-09_configuracoes_loja_instancia.sql && npx prisma db execute --schema prisma/schema.prisma --file prisma/migrations/2026-04-09_configuracoes_integracoes.sql",
     "prebuild": "npm run prisma:generate",
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",

@@ -1,0 +1,120 @@
+{
+  "id": "os-pronta-whatsapp-local",
+  "name": "OS pronta > Notificar cliente via WhatsApp",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ordem-servico-pronta",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "webhook-os-pronta",
+      "name": "Webhook OS pronta",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        280,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const source = $('Webhook OS pronta').first().json;\nconst config = $input.first().json;\nconst body = source.body ?? {};\nconst headers = source.headers ?? {};\nconst configuredToken = String(config.ordem_pronta_webhook_token ?? '').trim();\nconst incomingToken = headers['x-webhook-token'] ?? headers['X-Webhook-Token'] ?? '';\n\nif (configuredToken && incomingToken !== configuredToken) {\n  throw new Error('Webhook token invalido.');\n}\n\nconst telefone = String(body.clienteTelefoneNumerico ?? body.clienteTelefone ?? '').replace(/\\D/g, '');\nif (!telefone) {\n  throw new Error('Telefone do cliente ausente no payload.');\n}\n\nconst evolutionApiBaseUrl = String(config.evolution_api_base_url ?? '').trim();\nconst evolutionApiKey = String(config.evolution_api_key ?? '').trim();\nconst evolutionInstanceName = String(config.evolution_instance_name ?? '').trim();\nif (!evolutionApiBaseUrl || !evolutionApiKey || !evolutionInstanceName) {\n  throw new Error('Configuracoes da Evolution API incompletas no banco.');\n}\n\nconst tipoEntrega = body.tipoEntrega === 'entrega' ? 'entrega' : 'retirada_loja';\nconst mensagem = body.mensagem || (tipoEntrega === 'entrega'\n  ? 'seu conserto esta finalizado, nosso entregador ira realizar a entrega nas proximas horas'\n  : 'vc ja pode retirar na loja');\n\nreturn [{\n  json: {\n    ordemId: body.ordemId,\n    clienteNome: body.clienteNome,\n    telefone,\n    tipoEntrega,\n    mensagem,\n    aparelhoMarca: body.aparelhoMarca,\n    aparelhoModelo: body.aparelhoModelo,\n    evolutionApiBaseUrl,\n    evolutionApiKey,\n    evolutionInstanceName,\n  },\n}];"
+      },
+      "id": "code-validar-payload",
+      "name": "Validar e montar mensagem",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        820,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "database",
+        "operation": "executeQuery",
+        "query": "SELECT evolution_instance_name, evolution_api_base_url, evolution_api_key, ordem_pronta_webhook_token FROM configuracoes_loja WHERE id = '00000000-0000-0000-0000-000000000001' LIMIT 1;",
+        "options": {}
+      },
+      "id": "postgres-buscar-config",
+      "name": "Buscar configuracoes Postgres",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        540,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$json.evolutionApiBaseUrl + '/message/sendText/' + $json.evolutionInstanceName}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{$json.evolutionApiKey}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"number\": $json.telefone, \"text\": $json.mensagem }",
+        "options": {}
+      },
+      "id": "http-enviar-whatsapp",
+      "name": "Enviar WhatsApp via Evolution",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook OS pronta": {
+      "main": [
+        [
+          {
+            "node": "Buscar configuracoes Postgres",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar configuracoes Postgres": {
+      "main": [
+        [
+          {
+            "node": "Validar e montar mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar e montar mensagem": {
+      "main": [
+        [
+          {
+            "node": "Enviar WhatsApp via Evolution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "versionId": "7f74ef9c-62c4-4d4c-9053-1a59c6cc1b17",
+  "tags": []
+}

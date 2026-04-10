@@ -152,8 +152,7 @@ export class EstoqueService {
             origem: origem_movimentacao_estoque.ajuste_manual,
             quantidade: deltaEstoque,
             custo_unitario: dto.preco_custo ?? atual.preco_custo,
-            observacao:
-              'Ajuste automático de estoque via edição de produto.',
+            observacao: 'Ajuste automático de estoque via edição de produto.',
           },
         });
       }

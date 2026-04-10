@@ -21,6 +21,11 @@ export type ManagedUser = {
 
 export type StoreSettings = {
   storePhone: string;
+  evolutionInstanceName: string;
+  evolutionApiBaseUrl: string;
+  evolutionApiKey: string;
+  ordemProntaWebhookUrl: string;
+  ordemProntaWebhookToken: string;
 };
 
 export type AuthStatus = {

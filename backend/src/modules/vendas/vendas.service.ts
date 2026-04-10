@@ -75,13 +75,14 @@ export class VendasService {
           produto_nome: item.produtos_pecas.nome,
           quantidade: item.quantidade,
           preco_unitario: toNumber(item.produtos_pecas.preco_venda) ?? 0,
-          subtotal: (toNumber(item.produtos_pecas.preco_venda) ?? 0) * item.quantidade,
+          subtotal:
+            (toNumber(item.produtos_pecas.preco_venda) ?? 0) * item.quantidade,
         },
       ];
       return acc;
     }, {});
 
-      return contas.map((conta) => {
+    return contas.map((conta) => {
       const referencia = this.extractSaleRef(conta.descricao, conta.id);
       const itens = itensPorRef[referencia] ?? [];
 
@@ -102,14 +103,18 @@ export class VendasService {
 
   async create(dto: CreateVendaDto) {
     if (!dto.itens.length) {
-      throw new BadRequestException('Informe pelo menos um item para registrar a venda.');
+      throw new BadRequestException(
+        'Informe pelo menos um item para registrar a venda.',
+      );
     }
 
     const produtoIds = [...new Set(dto.itens.map((item) => item.produto_id))];
     const produtos = await this.prisma.produtos_pecas.findMany({
       where: { id: { in: produtoIds }, ativo: true },
     });
-    const produtoPorId = new Map(produtos.map((produto) => [produto.id, produto]));
+    const produtoPorId = new Map(
+      produtos.map((produto) => [produto.id, produto]),
+    );
 
     const itensNormalizados = dto.itens.map((item) => {
       const produto = produtoPorId.get(item.produto_id);

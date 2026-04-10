@@ -122,7 +122,9 @@ export class DashboardService {
       faturamentoVendasMes -
       custoVendasMes.reduce(
         (acc, movimentacao) =>
-          acc + (toNumber(movimentacao.custo_unitario) ?? 0) * movimentacao.quantidade,
+          acc +
+          (toNumber(movimentacao.custo_unitario) ?? 0) *
+            movimentacao.quantidade,
         0,
       );
 

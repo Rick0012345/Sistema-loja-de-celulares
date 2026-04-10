@@ -7,7 +7,9 @@ import { ConfiguracoesLojaService } from './configuracoes-loja.service';
 @Controller('configuracoes/loja')
 @Roles(perfil_usuario.administrador)
 export class ConfiguracoesLojaController {
-  constructor(private readonly configuracoesLojaService: ConfiguracoesLojaService) {}
+  constructor(
+    private readonly configuracoesLojaService: ConfiguracoesLojaService,
+  ) {}
 
   @Get()
   get() {

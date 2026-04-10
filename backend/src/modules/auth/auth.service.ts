@@ -177,13 +177,19 @@ export class AuthService implements OnModuleInit {
 
     if (usuarioAtual.email === adminEmail) {
       if (dto.email !== undefined) {
-        throw new BadRequestException('Não é permitido alterar o e-mail do administrador.');
+        throw new BadRequestException(
+          'Não é permitido alterar o e-mail do administrador.',
+        );
       }
       if (dto.perfil !== undefined) {
-        throw new BadRequestException('Não é permitido alterar o perfil do administrador.');
+        throw new BadRequestException(
+          'Não é permitido alterar o perfil do administrador.',
+        );
       }
       if (dto.ativo !== undefined && dto.ativo === false) {
-        throw new BadRequestException('Não é permitido desativar o administrador.');
+        throw new BadRequestException(
+          'Não é permitido desativar o administrador.',
+        );
       }
     }
 
@@ -238,7 +244,9 @@ export class AuthService implements OnModuleInit {
     }
 
     if (usuario.email === adminEmail) {
-      throw new BadRequestException('Não é permitido desativar o administrador.');
+      throw new BadRequestException(
+        'Não é permitido desativar o administrador.',
+      );
     }
 
     await this.prisma.usuarios.update({
