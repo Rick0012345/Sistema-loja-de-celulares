@@ -555,7 +555,7 @@ export const SettingsView = ({ currentUser }: SettingsViewProps) => {
             <input
               value={ordemProntaWebhookUrl}
               onChange={(event) => setOrdemProntaWebhookUrl(event.target.value)}
-              placeholder="http://n8n:5678/webhook/ordem-servico-pronta"
+              placeholder="http://localhost:5678/webhook/ordem-servico-pronta"
               type="text"
               className={inputClass}
             />

@@ -330,29 +330,42 @@ export class WebhookEventosService {
     } | null = null;
 
     for (const url of urls) {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          ...(webhookToken ? { 'x-webhook-token': webhookToken } : {}),
-        },
-        body: JSON.stringify(payload),
-        signal: AbortSignal.timeout(10000),
-      });
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            ...(webhookToken ? { 'x-webhook-token': webhookToken } : {}),
+          },
+          body: JSON.stringify(payload),
+          signal: AbortSignal.timeout(10000),
+        });
 
-      const responseBody = await response.text();
-      const summary = `HTTP ${response.status} [${url}]${
-        responseBody ? ` - ${responseBody}` : ''
-      }`;
+        const responseBody = await response.text();
+        const summary = `HTTP ${response.status} [${url}]${
+          responseBody ? ` - ${responseBody}` : ''
+        }`;
 
-      lastResponse = {
-        ok: response.ok,
-        status: response.status,
-        summary,
-      };
+        lastResponse = {
+          ok: response.ok,
+          status: response.status,
+          summary,
+        };
 
-      if (response.ok) {
-        return lastResponse;
+        if (response.ok) {
+          return lastResponse;
+        }
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : 'Erro desconhecido ao enviar webhook.';
+
+        lastResponse = {
+          ok: false,
+          status: 0,
+          summary: `NETWORK_ERROR [${url}] - ${message}`,
+        };
       }
     }
 
