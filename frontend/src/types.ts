@@ -28,6 +28,22 @@ export type StoreSettings = {
   ordemProntaWebhookToken: string;
 };
 
+export type EvolutionInstanceOverview = {
+  configured: boolean;
+  exists: boolean;
+  instanceName: string;
+  connectionStatus: string;
+  ownerJid: string | null;
+  profileName: string | null;
+};
+
+export type EvolutionInstanceConnectResult = {
+  instanceName: string;
+  qrCode: string | null;
+  pairingCode: string | null;
+  attempts: number | null;
+};
+
 export type AuthStatus = {
   possuiUsuarios: boolean;
   totalUsuarios: number;

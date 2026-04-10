@@ -11,6 +11,8 @@ import {
   AuthenticatedUser,
   Customer,
   DashboardSummary,
+  EvolutionInstanceConnectResult,
+  EvolutionInstanceOverview,
   ManagedUser,
   NotificationItem,
   PaymentMethod,
@@ -228,6 +230,64 @@ export const api = {
       evolutionApiKey: response.evolution_api_key ?? '',
       ordemProntaWebhookUrl: response.ordem_pronta_webhook_url ?? '',
       ordemProntaWebhookToken: response.ordem_pronta_webhook_token ?? '',
+    };
+  },
+
+  async getEvolutionInstanceOverview(): Promise<EvolutionInstanceOverview> {
+    const response = await request<{
+      configured: boolean;
+      exists: boolean;
+      instanceName?: string | null;
+      connectionStatus?: string | null;
+      ownerJid?: string | null;
+      profileName?: string | null;
+    }>('/configuracoes/loja/evolution/instance');
+
+    return {
+      configured: Boolean(response.configured),
+      exists: Boolean(response.exists),
+      instanceName: response.instanceName ?? '',
+      connectionStatus: response.connectionStatus ?? 'unknown',
+      ownerJid: response.ownerJid ?? null,
+      profileName: response.profileName ?? null,
+    };
+  },
+
+  async createEvolutionInstance(): Promise<EvolutionInstanceConnectResult> {
+    const response = await request<{
+      instanceName?: string | null;
+      qrCode?: string | null;
+      pairingCode?: string | null;
+      attempts?: number | null;
+    }>('/configuracoes/loja/evolution/instance/create', {
+      method: 'POST',
+    });
+
+    return {
+      instanceName: response.instanceName ?? '',
+      qrCode: response.qrCode ?? null,
+      pairingCode: response.pairingCode ?? null,
+      attempts:
+        typeof response.attempts === 'number' ? response.attempts : null,
+    };
+  },
+
+  async connectEvolutionInstance(): Promise<EvolutionInstanceConnectResult> {
+    const response = await request<{
+      instanceName?: string | null;
+      qrCode?: string | null;
+      pairingCode?: string | null;
+      attempts?: number | null;
+    }>('/configuracoes/loja/evolution/instance/connect', {
+      method: 'POST',
+    });
+
+    return {
+      instanceName: response.instanceName ?? '',
+      qrCode: response.qrCode ?? null,
+      pairingCode: response.pairingCode ?? null,
+      attempts:
+        typeof response.attempts === 'number' ? response.attempts : null,
     };
   },
 
