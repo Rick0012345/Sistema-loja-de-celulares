@@ -141,11 +141,15 @@ export const useBackofficeData = ({
 
   const saveProduct = useCallback(
     async (values: ProductFormValues, product?: Product | null) => {
+      const inventoryType: 'manutencao' | 'venda' =
+        values.inventoryType === 'repair' ? 'manutencao' : 'venda';
+
       const payload = {
         nome: values.name.trim(),
         marca: values.brand.trim() || undefined,
         modelo_compatavel: values.compatibleModel.trim() || undefined,
         sku: values.sku.trim() || undefined,
+        tipo_estoque: inventoryType,
         estoque_minimo: parseInteger(values.minStock),
         preco_custo: parseDecimal(values.costPrice),
         preco_venda: parseDecimal(values.salePrice),

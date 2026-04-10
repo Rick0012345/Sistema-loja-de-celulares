@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  Prisma,
   origem_movimentacao_estoque,
   tipo_movimentacao_estoque,
 } from '@prisma/client';
@@ -12,6 +13,7 @@ import { toNumber } from '../../common/utils/serialize';
 import {
   CreateProdutoDto,
   RegistrarMovimentacaoDto,
+  TipoEstoqueProdutoDto,
   UpdateProdutoDto,
 } from './estoque.dto';
 import { NotificacoesService } from '../notificacoes/notificacoes.service';
@@ -74,6 +76,7 @@ export class EstoqueService {
           nome: dto.nome,
           marca: dto.marca,
           modelo_compatavel: dto.modelo_compatavel,
+          categoria_id: await this.resolveCategoriaId(tx, dto.tipo_estoque),
           sku: dto.sku,
           estoque_minimo: dto.estoque_minimo,
           quantidade_estoque: dto.quantidade_inicial ?? 0,
@@ -120,6 +123,11 @@ export class EstoqueService {
     const produto = await this.prisma.$transaction(async (tx) => {
       const atual = await tx.produtos_pecas.findUnique({
         where: { id },
+        include: {
+          categorias_produto: {
+            select: { nome: true },
+          },
+        },
       });
 
       if (!atual || !atual.ativo) {
@@ -136,6 +144,11 @@ export class EstoqueService {
           nome: dto.nome,
           marca: dto.marca,
           modelo_compatavel: dto.modelo_compatavel,
+          categoria_id: await this.resolveCategoriaId(
+            tx,
+            dto.tipo_estoque ??
+              this.getTipoEstoqueFromCategoria(atual.categorias_produto?.nome),
+          ),
           sku: dto.sku,
           estoque_minimo: dto.estoque_minimo,
           preco_custo: dto.preco_custo,
@@ -274,5 +287,44 @@ export class EstoqueService {
     if (!produto || !produto.ativo) {
       throw new NotFoundException('Produto não encontrado.');
     }
+  }
+
+  private async resolveCategoriaId(
+    tx: Prisma.TransactionClient,
+    tipo: TipoEstoqueProdutoDto,
+  ) {
+    const nomeCategoria = tipo === TipoEstoqueProdutoDto.venda ? 'venda' : 'manutencao';
+    const categoriaExistente = await tx.categorias_produto.findFirst({
+      where: {
+        nome: {
+          equals: nomeCategoria,
+          mode: 'insensitive',
+        },
+      },
+      select: { id: true },
+    });
+
+    if (categoriaExistente) {
+      return categoriaExistente.id;
+    }
+
+    const categoriaCriada = await tx.categorias_produto.create({
+      data: { nome: nomeCategoria },
+      select: { id: true },
+    });
+
+    return categoriaCriada.id;
+  }
+
+  private getTipoEstoqueFromCategoria(categoriaNome?: string | null) {
+    if (categoriaNome?.trim().toLowerCase() === 'venda') {
+      return TipoEstoqueProdutoDto.venda;
+    }
+
+    if (!categoriaNome) {
+      return TipoEstoqueProdutoDto.manutencao;
+    }
+
+    return TipoEstoqueProdutoDto.manutencao;
   }
 }

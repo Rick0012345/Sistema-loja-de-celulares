@@ -82,6 +82,15 @@ export default function App() {
   });
 
   const errorMessage = auth.errorMessage ?? backoffice.errorMessage;
+  const repairInventoryProducts = backoffice.products.filter(
+    (product) => product.inventoryType !== 'sales',
+  );
+  const repairProducts = backoffice.products.filter(
+    (product) => product.inventoryType === 'repair',
+  );
+  const salesProducts = backoffice.products.filter(
+    (product) => product.inventoryType === 'sales',
+  );
 
   if (auth.isCheckingAuth) {
     return (
@@ -137,7 +146,8 @@ export default function App() {
           )}
           {activeTab === 'inventory' && (
             <InventoryView
-              products={backoffice.products}
+              appMode={appMode}
+              products={appMode === 'repair' ? repairInventoryProducts : salesProducts}
               isBusy={backoffice.isMutating}
               onDeleteProduct={backoffice.deleteProduct}
               onSaveProduct={backoffice.saveProduct}
@@ -145,7 +155,7 @@ export default function App() {
           )}
           {appMode === 'sales' && activeTab === 'sales' && (
             <SalesView
-              products={backoffice.products}
+              products={salesProducts}
               sales={backoffice.sales}
               isBusy={backoffice.isMutating}
               onCreateSale={backoffice.createSale}
@@ -153,7 +163,7 @@ export default function App() {
           )}
           {appMode === 'repair' && activeTab === 'services' && (
             <ServicesView
-              products={backoffice.products}
+              products={repairProducts}
               services={backoffice.services}
               isBusy={backoffice.isMutating}
               onCreateService={backoffice.createService}

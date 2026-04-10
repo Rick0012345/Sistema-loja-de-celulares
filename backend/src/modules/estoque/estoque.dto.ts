@@ -12,6 +12,11 @@ import {
   Min,
 } from 'class-validator';
 
+export enum TipoEstoqueProdutoDto {
+  manutencao = 'manutencao',
+  venda = 'venda',
+}
+
 export class CreateProdutoDto {
   @IsString()
   nome: string;
@@ -27,6 +32,9 @@ export class CreateProdutoDto {
   @IsOptional()
   @IsString()
   sku?: string;
+
+  @IsEnum(TipoEstoqueProdutoDto)
+  tipo_estoque: TipoEstoqueProdutoDto;
 
   @IsInt()
   @Min(0)

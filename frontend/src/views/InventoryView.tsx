@@ -13,6 +13,7 @@ const EMPTY_PRODUCT_FORM: ProductFormValues = {
   brand: '',
   compatibleModel: '',
   sku: '',
+  inventoryType: 'repair',
   costPrice: '',
   salePrice: '',
   stock: '',
@@ -20,6 +21,7 @@ const EMPTY_PRODUCT_FORM: ProductFormValues = {
 };
 
 type InventoryViewProps = {
+  appMode: 'repair' | 'sales';
   products: Product[];
   isBusy: boolean;
   onDeleteProduct: (product: Product) => Promise<void>;
@@ -30,6 +32,7 @@ type InventoryViewProps = {
 };
 
 export const InventoryView = ({
+  appMode,
   products,
   isBusy,
   onDeleteProduct,
@@ -63,6 +66,10 @@ export const InventoryView = ({
         brand: product.brand,
         compatibleModel: product.compatibleModel,
         sku: product.sku,
+        inventoryType:
+          product.inventoryType === 'uncategorized'
+            ? appMode
+            : product.inventoryType,
         costPrice: product.costPrice.toString(),
         salePrice: product.salePrice.toString(),
         stock: product.stock.toString(),
@@ -70,7 +77,10 @@ export const InventoryView = ({
       });
     } else {
       setEditingProduct(null);
-      setFormData(EMPTY_PRODUCT_FORM);
+      setFormData({
+        ...EMPTY_PRODUCT_FORM,
+        inventoryType: appMode,
+      });
     }
 
     setIsModalOpen(true);
@@ -204,6 +214,22 @@ export const InventoryView = ({
                 <div className="space-y-1">
                   <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">Modelo Compativel</label>
                   <input value={formData.compatibleModel} onChange={(event) => setFormData((current) => ({ ...current, compatibleModel: event.target.value }))} className={inputClass} />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">Tipo de Estoque</label>
+                  <select
+                    value={formData.inventoryType}
+                    onChange={(event) =>
+                      setFormData((current) => ({
+                        ...current,
+                        inventoryType: event.target.value as ProductFormValues['inventoryType'],
+                      }))
+                    }
+                    className={inputClass}
+                  >
+                    <option value="repair">Conserto / OS</option>
+                    <option value="sales">Venda</option>
+                  </select>
                 </div>
                 <div className="space-y-1">
                   <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">SKU</label>

@@ -13,7 +13,7 @@ export function formatCurrency(value: number) {
 }
 
 export function formatPhone(value: string) {
-  const digits = value.replace(/\D/g, '').slice(0, 14);
+  const digits = value.replace(/\D/g, '').slice(0, 11);
   if (digits.length === 0) return '';
   if (digits.length <= 2) return `(${digits}`;
 
@@ -22,7 +22,8 @@ export function formatPhone(value: string) {
   if (rest.length === 0) return `(${ddd})`;
   if (rest.length <= 4) return `(${ddd}) ${rest}`;
 
-  const prefix = rest.slice(0, -4);
-  const suffix = rest.slice(-4);
+  const prefixLength = rest.length > 8 ? 5 : 4;
+  const prefix = rest.slice(0, prefixLength);
+  const suffix = rest.slice(prefixLength, prefixLength + 4);
   return `(${ddd}) ${prefix}-${suffix}`;
 }

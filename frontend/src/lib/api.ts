@@ -367,6 +367,7 @@ export const api = {
     marca?: string;
     modelo_compatavel?: string;
     sku?: string;
+    tipo_estoque: 'manutencao' | 'venda';
     estoque_minimo: number;
     preco_custo: number;
     preco_venda: number;
@@ -386,6 +387,7 @@ export const api = {
       marca?: string;
       modelo_compatavel?: string;
       sku?: string;
+      tipo_estoque: 'manutencao' | 'venda';
       estoque_minimo: number;
       preco_custo: number;
       preco_venda: number;

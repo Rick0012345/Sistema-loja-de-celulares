@@ -18,6 +18,13 @@ type ApiProduct = {
   nome: string;
   marca?: string | null;
   modelo_compatavel?: string | null;
+  categoria_id?: string | null;
+  categorias_produto?:
+    | {
+        id: string;
+        nome: string;
+      }
+    | null;
   sku?: string | null;
   preco_custo: number;
   preco_venda: number;
@@ -150,6 +157,22 @@ const STATUS_LABELS: Record<ServiceStatus, string> = {
   cancelada: 'Cancelada',
 };
 
+const mapInventoryTypeFromCategory = (
+  categoryName?: string | null,
+): Product['inventoryType'] => {
+  const normalized = categoryName?.trim().toLowerCase() ?? '';
+
+  if (normalized === 'venda') {
+    return 'sales';
+  }
+
+  if (normalized === 'manutencao') {
+    return 'repair';
+  }
+
+  return 'uncategorized';
+};
+
 export const serviceStatusToApi = (status: ServiceStatus) => STATUS_TO_API[status];
 
 export const serviceStatusLabel = (status: ServiceStatus) => STATUS_LABELS[status];
@@ -160,6 +183,9 @@ export const mapProductFromApi = (product: ApiProduct): Product => ({
   brand: product.marca ?? '',
   compatibleModel: product.modelo_compatavel ?? '',
   sku: product.sku ?? '',
+  categoryId: product.categoria_id ?? product.categorias_produto?.id ?? null,
+  categoryName: product.categorias_produto?.nome ?? '',
+  inventoryType: mapInventoryTypeFromCategory(product.categorias_produto?.nome),
   costPrice: product.preco_custo,
   salePrice: product.preco_venda,
   stock: product.quantidade_estoque,

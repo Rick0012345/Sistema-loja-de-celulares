@@ -26,6 +26,48 @@ const EMPTY_SERVICE_FORM: ServiceFormValues = {
   parts: [],
 };
 
+const PHONE_PATTERN = /^\(\d{2}\)\s\d{4,5}-\d{4}$/;
+
+const REPAIR_CATEGORY_KEYWORDS = [
+  'conserto',
+  'assistencia',
+  'assistência',
+  'reparo',
+  'manutencao',
+  'manutenção',
+  'peca',
+  'peça',
+  'celular',
+  'smartphone',
+  'telefone',
+];
+
+const isRepairProduct = (product: Product) => {
+  if (product.inventoryType === 'repair') {
+    return true;
+  }
+
+  if (product.inventoryType === 'sales') {
+    return false;
+  }
+
+  const category = product.categoryName.trim().toLowerCase();
+  if (category.length > 0) {
+    return REPAIR_CATEGORY_KEYWORDS.some((keyword) => category.includes(keyword));
+  }
+
+  const haystack = [
+    product.name,
+    product.brand,
+    product.compatibleModel,
+    product.sku,
+  ]
+    .join(' ')
+    .toLowerCase();
+
+  return REPAIR_CATEGORY_KEYWORDS.some((keyword) => haystack.includes(keyword));
+};
+
 type ServicesViewProps = {
   products: Product[];
   services: ServiceOrder[];
@@ -61,6 +103,10 @@ export const ServicesView = ({
   const [statusFilter, setStatusFilter] = useState<'all' | ServiceStatus>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState<ServiceFormValues>(EMPTY_SERVICE_FORM);
+  const [partSearchTerm, setPartSearchTerm] = useState('');
+  const [partSelectionError, setPartSelectionError] = useState('');
+  const [selectedPartProductId, setSelectedPartProductId] = useState('');
+  const [selectedPartQuantity, setSelectedPartQuantity] = useState('1');
 
   const normalizedSearch = searchTerm.trim().toLowerCase();
   const filteredServices = useMemo(
@@ -85,10 +131,49 @@ export const ServicesView = ({
     [normalizedSearch, services, statusFilter],
   );
 
+  const repairProducts = useMemo(
+    () => products.filter((product) => product.stock > 0 && isRepairProduct(product)),
+    [products],
+  );
+
+  const filteredRepairProducts = useMemo(() => {
+    const normalizedPartSearch = partSearchTerm.trim().toLowerCase();
+
+    if (!normalizedPartSearch) {
+      return repairProducts;
+    }
+
+    return repairProducts.filter((product) =>
+      [
+        product.name,
+        product.brand,
+        product.compatibleModel,
+        product.sku,
+        product.categoryName,
+      ]
+        .join(' ')
+        .toLowerCase()
+        .includes(normalizedPartSearch),
+    );
+  }, [partSearchTerm, repairProducts]);
+
+  const selectedRepairProduct = useMemo(
+    () => repairProducts.find((product) => product.id === selectedPartProductId),
+    [repairProducts, selectedPartProductId],
+  );
+
+  const isPhoneValid =
+    formData.customerPhone.trim().length === 0 ||
+    PHONE_PATTERN.test(formData.customerPhone.trim());
+
   const closeModal = () => {
     setIsModalOpen(false);
     setEditingServiceId(null);
     setFormData(EMPTY_SERVICE_FORM);
+    setPartSearchTerm('');
+    setPartSelectionError('');
+    setSelectedPartProductId('');
+    setSelectedPartQuantity('1');
   };
 
   const openCreateModal = () => {
@@ -145,6 +230,66 @@ export const ServicesView = ({
         },
       ],
     }));
+  };
+
+  const addSelectedPart = () => {
+    if (!selectedPartProductId) {
+      setPartSelectionError('Selecione um produto de conserto para adicionar.');
+      return;
+    }
+
+    const selectedProduct = repairProducts.find(
+      (product) => product.id === selectedPartProductId,
+    );
+
+    if (!selectedProduct) {
+      setPartSelectionError('Produto selecionado nao encontrado no estoque de conserto.');
+      return;
+    }
+
+    const quantity = Number.parseInt(selectedPartQuantity, 10);
+    const normalizedQuantity = Number.isFinite(quantity) ? Math.max(quantity, 1) : 1;
+
+    setFormData((current) => {
+      const existingIndex = current.parts.findIndex(
+        (part) => part.productId === selectedPartProductId,
+      );
+
+      if (existingIndex >= 0) {
+        const updatedParts = [...current.parts];
+        const currentQuantity = Number.parseInt(updatedParts[existingIndex].quantity, 10);
+        const mergedQuantity =
+          (Number.isFinite(currentQuantity) ? Math.max(currentQuantity, 1) : 1) +
+          normalizedQuantity;
+
+        updatedParts[existingIndex] = {
+          ...updatedParts[existingIndex],
+          quantity: String(Math.min(mergedQuantity, selectedProduct.stock)),
+          description: selectedProduct.name,
+          costPrice: selectedProduct.costPrice.toString(),
+          salePrice: selectedProduct.salePrice.toString(),
+        };
+
+        return { ...current, parts: updatedParts };
+      }
+
+      return {
+        ...current,
+        parts: [
+          ...current.parts,
+          {
+            productId: selectedProduct.id,
+            description: selectedProduct.name,
+            quantity: String(Math.min(normalizedQuantity, selectedProduct.stock)),
+            costPrice: selectedProduct.costPrice.toString(),
+            salePrice: selectedProduct.salePrice.toString(),
+          },
+        ],
+      };
+    });
+
+    setPartSelectionError('');
+    setSelectedPartQuantity('1');
   };
 
   const removePart = (index: number) => {
@@ -215,6 +360,9 @@ export const ServicesView = ({
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
+    if (!isPhoneValid) {
+      return;
+    }
     if (editingServiceId) {
       await onUpdateService(editingServiceId, formData);
       closeModal();
@@ -427,6 +575,7 @@ export const ServicesView = ({
                   <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">Telefone</label>
                   <input
                     required
+                    type="tel"
                     value={formData.customerPhone}
                     onChange={(event) =>
                       setFormData((current) => ({
@@ -437,11 +586,16 @@ export const ServicesView = ({
                     inputMode="numeric"
                     autoComplete="tel"
                     placeholder="(00) 00000-0000"
-                    pattern="\\(\\d{2}\\) \\d{4,8}-\\d{4}"
+                    pattern="\\(\\d{2}\\)\\s\\d{4,5}-\\d{4}"
                     title="Use o formato (XX) 0000-0000 até (XX) 00000000-0000"
-                    maxLength={18}
+                    maxLength={15}
                     className={inputClass}
                   />
+                  {!isPhoneValid && (
+                    <p className="text-xs font-medium text-rose-600 dark:text-rose-400">
+                      Use o formato (XX) 0000-0000 ou (XX) 00000-0000.
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-1">
                   <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">Marca do Aparelho</label>
@@ -474,8 +628,89 @@ export const ServicesView = ({
                       onClick={addPart}
                       className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
                     >
-                      Adicionar item
+                      Adicionar item manual
                     </button>
+                  </div>
+                  <div className="grid grid-cols-1 gap-4 rounded-2xl border border-slate-200 p-3 dark:border-slate-800 sm:grid-cols-2">
+                    <div className="space-y-1 sm:col-span-2">
+                      <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                        Buscar produto de conserto
+                      </label>
+                      <input
+                        value={partSearchTerm}
+                        onChange={(event) => setPartSearchTerm(event.target.value)}
+                        placeholder="Nome, marca, modelo, SKU ou categoria"
+                        className={inputClass}
+                      />
+                    </div>
+                    <div className="space-y-1 sm:col-span-2">
+                      <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                        Produtos disponiveis
+                      </label>
+                      <div className="max-h-52 space-y-2 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-2.5 dark:border-slate-800 dark:bg-slate-950">
+                        {filteredRepairProducts.length === 0 && (
+                          <p className="px-2 py-3 text-sm text-slate-500 dark:text-slate-400">
+                            Nenhum produto de conserto encontrado.
+                          </p>
+                        )}
+                        {filteredRepairProducts.map((product) => {
+                          const isSelected = selectedPartProductId === product.id;
+                          return (
+                            <button
+                              key={product.id}
+                              type="button"
+                              onClick={() => {
+                                setSelectedPartProductId(product.id);
+                                setPartSelectionError('');
+                              }}
+                              className={`w-full rounded-lg border px-3 py-2 text-left transition-colors ${
+                                isSelected
+                                  ? 'border-blue-500 bg-blue-50 text-blue-800 dark:bg-blue-500/20 dark:text-blue-200'
+                                  : 'border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-blue-50/40 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-blue-500/40 dark:hover:bg-blue-500/10'
+                              }`}
+                            >
+                              <p className="text-sm font-semibold">{product.name}</p>
+                              <p className="text-xs opacity-80">
+                                {formatCurrency(product.salePrice)} • Estoque: {product.stock}
+                                {product.categoryName ? ` • ${product.categoryName}` : ''}
+                              </p>
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {selectedRepairProduct && (
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          Selecionado:{' '}
+                          <span className="font-semibold">{selectedRepairProduct.name}</span>
+                        </p>
+                      )}
+                      {partSelectionError && (
+                        <p className="text-xs font-medium text-rose-600 dark:text-rose-400">
+                          {partSelectionError}
+                        </p>
+                      )}
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                        Quantidade
+                      </label>
+                      <input
+                        min="1"
+                        type="number"
+                        value={selectedPartQuantity}
+                        onChange={(event) => setSelectedPartQuantity(event.target.value)}
+                        className={inputClass}
+                      />
+                    </div>
+                    <div className="flex items-end">
+                      <button
+                        type="button"
+                        onClick={addSelectedPart}
+                        className="w-full rounded-xl bg-slate-800 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-700 dark:bg-slate-200 dark:text-slate-900 dark:hover:bg-slate-300"
+                      >
+                        Adicionar produto
+                      </button>
+                    </div>
                   </div>
                   <div className="space-y-3">
                     {formData.parts.length === 0 && (
@@ -490,7 +725,7 @@ export const ServicesView = ({
                           <select
                             value={part.productId}
                             onChange={(event) => {
-                              const selectedProduct = products.find(
+                              const selectedProduct = repairProducts.find(
                                 (product) => product.id === event.target.value,
                               );
                               updatePart(index, (current) => ({
@@ -508,7 +743,7 @@ export const ServicesView = ({
                             className={inputClass}
                           >
                             <option value="">Item manual</option>
-                            {products.map((product) => (
+                            {repairProducts.map((product) => (
                               <option key={product.id} value={product.id}>
                                 {product.name} - {formatCurrency(product.salePrice)} (Estoque: {product.stock})
                               </option>

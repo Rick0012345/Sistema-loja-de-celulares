@@ -63,6 +63,9 @@ export type Product = {
   brand: string;
   compatibleModel: string;
   sku: string;
+  categoryId: string | null;
+  categoryName: string;
+  inventoryType: 'repair' | 'sales' | 'uncategorized';
   costPrice: number;
   salePrice: number;
   stock: number;
@@ -206,6 +209,7 @@ export type ProductFormValues = {
   brand: string;
   compatibleModel: string;
   sku: string;
+  inventoryType: 'repair' | 'sales';
   costPrice: string;
   salePrice: string;
   stock: string;
