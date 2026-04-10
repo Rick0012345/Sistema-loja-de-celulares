@@ -26,7 +26,10 @@ const EMPTY_SERVICE_FORM: ServiceFormValues = {
   parts: [],
 };
 
-const PHONE_PATTERN = /^\(\d{2}\)\s\d{4,5}-\d{4}$/;
+const hasValidPhoneDigits = (value: string) => {
+  const digits = value.replace(/\D/g, '');
+  return digits.length === 10 || digits.length === 11;
+};
 
 const REPAIR_CATEGORY_KEYWORDS = [
   'conserto',
@@ -164,7 +167,7 @@ export const ServicesView = ({
 
   const isPhoneValid =
     formData.customerPhone.trim().length === 0 ||
-    PHONE_PATTERN.test(formData.customerPhone.trim());
+    hasValidPhoneDigits(formData.customerPhone);
 
   const closeModal = () => {
     setIsModalOpen(false);
@@ -586,7 +589,6 @@ export const ServicesView = ({
                     inputMode="numeric"
                     autoComplete="tel"
                     placeholder="(00) 00000-0000"
-                    pattern="\\(\\d{2}\\)\\s\\d{4,5}-\\d{4}"
                     title="Use o formato (XX) 0000-0000 até (XX) 00000000-0000"
                     maxLength={15}
                     className={inputClass}

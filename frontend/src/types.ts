@@ -23,9 +23,9 @@ export type StoreSettings = {
   storePhone: string;
   evolutionInstanceName: string;
   evolutionApiBaseUrl: string;
-  evolutionApiKey: string;
+  evolutionApiKeyConfigured: boolean;
   ordemProntaWebhookUrl: string;
-  ordemProntaWebhookToken: string;
+  ordemProntaWebhookTokenConfigured: boolean;
 };
 
 export type EvolutionInstanceOverview = {

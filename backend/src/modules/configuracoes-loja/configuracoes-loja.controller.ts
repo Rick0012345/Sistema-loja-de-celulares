@@ -15,7 +15,7 @@ export class ConfiguracoesLojaController {
 
   @Get()
   get() {
-    return this.configuracoesLojaService.get();
+    return this.configuracoesLojaService.getPublic();
   }
 
   @Patch()

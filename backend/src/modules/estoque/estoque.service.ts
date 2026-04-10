@@ -293,7 +293,8 @@ export class EstoqueService {
     tx: Prisma.TransactionClient,
     tipo: TipoEstoqueProdutoDto,
   ) {
-    const nomeCategoria = tipo === TipoEstoqueProdutoDto.venda ? 'venda' : 'manutencao';
+    const nomeCategoria =
+      tipo === TipoEstoqueProdutoDto.venda ? 'venda' : 'manutencao';
     const categoriaExistente = await tx.categorias_produto.findFirst({
       where: {
         nome: {

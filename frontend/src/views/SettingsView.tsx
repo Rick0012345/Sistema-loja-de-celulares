@@ -71,9 +71,16 @@ export const SettingsView = ({ currentUser }: SettingsViewProps) => {
   const [storePhone, setStorePhone] = useState('');
   const [evolutionInstanceName, setEvolutionInstanceName] = useState('');
   const [evolutionApiBaseUrl, setEvolutionApiBaseUrl] = useState('');
-  const [evolutionApiKey, setEvolutionApiKey] = useState('');
+  const [evolutionApiKeyInput, setEvolutionApiKeyInput] = useState('');
+  const [isEvolutionApiKeyConfigured, setIsEvolutionApiKeyConfigured] =
+    useState(false);
   const [ordemProntaWebhookUrl, setOrdemProntaWebhookUrl] = useState('');
-  const [ordemProntaWebhookToken, setOrdemProntaWebhookToken] = useState('');
+  const [ordemProntaWebhookTokenInput, setOrdemProntaWebhookTokenInput] =
+    useState('');
+  const [
+    isOrdemProntaWebhookTokenConfigured,
+    setIsOrdemProntaWebhookTokenConfigured,
+  ] = useState(false);
   const [evolutionOverview, setEvolutionOverview] =
     useState<EvolutionInstanceOverview | null>(null);
   const [qrCodeImageUrl, setQrCodeImageUrl] = useState<string | null>(null);
@@ -122,9 +129,13 @@ export const SettingsView = ({ currentUser }: SettingsViewProps) => {
       setStorePhone(response.storePhone);
       setEvolutionInstanceName(response.evolutionInstanceName);
       setEvolutionApiBaseUrl(response.evolutionApiBaseUrl);
-      setEvolutionApiKey(response.evolutionApiKey);
+      setEvolutionApiKeyInput('');
+      setIsEvolutionApiKeyConfigured(response.evolutionApiKeyConfigured);
       setOrdemProntaWebhookUrl(response.ordemProntaWebhookUrl);
-      setOrdemProntaWebhookToken(response.ordemProntaWebhookToken);
+      setOrdemProntaWebhookTokenInput('');
+      setIsOrdemProntaWebhookTokenConfigured(
+        response.ordemProntaWebhookTokenConfigured,
+      );
       setMessage(null);
     } catch (error) {
       setMessage(
@@ -169,16 +180,24 @@ export const SettingsView = ({ currentUser }: SettingsViewProps) => {
         storePhone,
         evolutionInstanceName,
         evolutionApiBaseUrl,
-        evolutionApiKey,
         ordemProntaWebhookUrl,
-        ordemProntaWebhookToken,
+        ...(evolutionApiKeyInput.trim()
+          ? { evolutionApiKey: evolutionApiKeyInput }
+          : {}),
+        ...(ordemProntaWebhookTokenInput.trim()
+          ? { ordemProntaWebhookToken: ordemProntaWebhookTokenInput }
+          : {}),
       });
       setStorePhone(response.storePhone);
       setEvolutionInstanceName(response.evolutionInstanceName);
       setEvolutionApiBaseUrl(response.evolutionApiBaseUrl);
-      setEvolutionApiKey(response.evolutionApiKey);
+      setEvolutionApiKeyInput('');
+      setIsEvolutionApiKeyConfigured(response.evolutionApiKeyConfigured);
       setOrdemProntaWebhookUrl(response.ordemProntaWebhookUrl);
-      setOrdemProntaWebhookToken(response.ordemProntaWebhookToken);
+      setOrdemProntaWebhookTokenInput('');
+      setIsOrdemProntaWebhookTokenConfigured(
+        response.ordemProntaWebhookTokenConfigured,
+      );
       setMessage('Configuracoes da loja salvas com sucesso.');
     } catch (error) {
       setMessage(
@@ -196,22 +215,30 @@ export const SettingsView = ({ currentUser }: SettingsViewProps) => {
       storePhone,
       evolutionInstanceName,
       evolutionApiBaseUrl,
-      evolutionApiKey,
       ordemProntaWebhookUrl,
-      ordemProntaWebhookToken,
+      ...(evolutionApiKeyInput.trim()
+        ? { evolutionApiKey: evolutionApiKeyInput }
+        : {}),
+      ...(ordemProntaWebhookTokenInput.trim()
+        ? { ordemProntaWebhookToken: ordemProntaWebhookTokenInput }
+        : {}),
     });
 
     setStorePhone(response.storePhone);
     setEvolutionInstanceName(response.evolutionInstanceName);
     setEvolutionApiBaseUrl(response.evolutionApiBaseUrl);
-    setEvolutionApiKey(response.evolutionApiKey);
+    setEvolutionApiKeyInput('');
+    setIsEvolutionApiKeyConfigured(response.evolutionApiKeyConfigured);
     setOrdemProntaWebhookUrl(response.ordemProntaWebhookUrl);
-    setOrdemProntaWebhookToken(response.ordemProntaWebhookToken);
+    setOrdemProntaWebhookTokenInput('');
+    setIsOrdemProntaWebhookTokenConfigured(
+      response.ordemProntaWebhookTokenConfigured,
+    );
   }, [
     evolutionApiBaseUrl,
-    evolutionApiKey,
+    evolutionApiKeyInput,
     evolutionInstanceName,
-    ordemProntaWebhookToken,
+    ordemProntaWebhookTokenInput,
     ordemProntaWebhookUrl,
     storePhone,
   ]);
@@ -505,12 +532,22 @@ export const SettingsView = ({ currentUser }: SettingsViewProps) => {
           </label>
           <label className="text-sm text-slate-600 dark:text-slate-300">
             API key da Evolution
+            <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">
+              {isEvolutionApiKeyConfigured
+                ? 'Ja configurada. Preencha apenas para substituir.'
+                : 'Ainda nao configurada.'}
+            </span>
             <input
-              value={evolutionApiKey}
-              onChange={(event) => setEvolutionApiKey(event.target.value)}
-              placeholder="API key da Evolution"
+              value={evolutionApiKeyInput}
+              onChange={(event) => setEvolutionApiKeyInput(event.target.value)}
+              placeholder={
+                isEvolutionApiKeyConfigured
+                  ? 'Digite uma nova API key para substituir'
+                  : 'API key da Evolution'
+              }
               type="password"
               className={inputClass}
+              autoComplete="new-password"
             />
           </label>
           <label className="text-sm text-slate-600 dark:text-slate-300">
@@ -525,12 +562,24 @@ export const SettingsView = ({ currentUser }: SettingsViewProps) => {
           </label>
           <label className="text-sm text-slate-600 dark:text-slate-300">
             Token do webhook
+            <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">
+              {isOrdemProntaWebhookTokenConfigured
+                ? 'Ja configurado. Preencha apenas para substituir.'
+                : 'Ainda nao configurado.'}
+            </span>
             <input
-              value={ordemProntaWebhookToken}
-              onChange={(event) => setOrdemProntaWebhookToken(event.target.value)}
-              placeholder="Token do webhook"
+              value={ordemProntaWebhookTokenInput}
+              onChange={(event) =>
+                setOrdemProntaWebhookTokenInput(event.target.value)
+              }
+              placeholder={
+                isOrdemProntaWebhookTokenConfigured
+                  ? 'Digite um novo token para substituir'
+                  : 'Token do webhook'
+              }
               type="password"
               className={inputClass}
+              autoComplete="new-password"
             />
           </label>
         </div>

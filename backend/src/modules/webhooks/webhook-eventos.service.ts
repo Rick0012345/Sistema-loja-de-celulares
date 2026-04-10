@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Prisma, tipo_entrega_os } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { ConfiguracoesLojaService } from '../configuracoes-loja/configuracoes-loja.service';
 
 type OrdemServicoProntaInput = {
   ordemId: string;
@@ -15,20 +16,17 @@ type OrdemServicoProntaInput = {
 export class WebhookEventosService {
   private readonly logger = new Logger(WebhookEventosService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly configuracoesLojaService: ConfiguracoesLojaService,
+  ) {}
 
   async dispatchOrdemServicoPronta(input: OrdemServicoProntaInput) {
-    const configuracoesLoja = await this.prisma.configuracoes_loja.findUnique({
-      where: { id: '00000000-0000-0000-0000-000000000001' },
-      select: {
-        evolution_instance_name: true,
-        ordem_pronta_webhook_url: true,
-        ordem_pronta_webhook_token: true,
-      },
-    });
-    const webhookUrl = configuracoesLoja?.ordem_pronta_webhook_url?.trim() || null;
+    const configuracoesLoja = await this.configuracoesLojaService.getInternal();
+    const webhookUrl =
+      configuracoesLoja.ordem_pronta_webhook_url?.trim() || null;
     const webhookToken =
-      configuracoesLoja?.ordem_pronta_webhook_token?.trim() || null;
+      configuracoesLoja.ordem_pronta_webhook_token?.trim() || null;
 
     const payload = {
       ordemId: input.ordemId,
@@ -55,42 +53,24 @@ export class WebhookEventosService {
       return;
     }
 
-    if (!configuracoesLoja?.evolution_instance_name?.trim()) {
-      await this.saveWebhookEvent({
-        evento: 'ordem_servico_pronta',
-        referenciaId: input.ordemId,
-        payload,
-        sucesso: false,
-        resposta:
-          'Nome da instancia Evolution nao configurado em configuracoes da loja.',
-      });
-      return;
-    }
-
     try {
-      const response = await fetch(webhookUrl, {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          ...(webhookToken ? { 'x-webhook-token': webhookToken } : {}),
-        },
-        body: JSON.stringify(payload),
-        signal: AbortSignal.timeout(10000),
-      });
-
-      const responseBody = await response.text();
+      const response = await this.sendWebhookRequest(
+        webhookUrl,
+        webhookToken,
+        payload,
+      );
 
       await this.saveWebhookEvent({
         evento: 'ordem_servico_pronta',
         referenciaId: input.ordemId,
         payload,
         sucesso: response.ok,
-        resposta: `HTTP ${response.status}${responseBody ? ` - ${responseBody}` : ''}`,
+        resposta: response.summary,
       });
 
       if (!response.ok) {
         this.logger.warn(
-          `Falha ao enviar webhook da OS ${input.ordemId}: HTTP ${response.status}.`,
+          `Falha ao enviar webhook da OS ${input.ordemId}: ${response.summary}.`,
         );
       }
     } catch (error) {
@@ -123,6 +103,79 @@ export class WebhookEventosService {
 
   private normalizePhone(phone: string) {
     return phone.replace(/\D/g, '');
+  }
+
+  private async sendWebhookRequest(
+    webhookUrl: string,
+    webhookToken: string | null,
+    payload: Record<string, unknown>,
+  ) {
+    const urls = this.buildWebhookCandidateUrls(webhookUrl);
+    let lastResponse: {
+      ok: boolean;
+      status: number;
+      summary: string;
+    } | null = null;
+
+    for (const url of urls) {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          ...(webhookToken ? { 'x-webhook-token': webhookToken } : {}),
+        },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(10000),
+      });
+
+      const responseBody = await response.text();
+      const summary = `HTTP ${response.status} [${url}]${
+        responseBody ? ` - ${responseBody}` : ''
+      }`;
+
+      lastResponse = {
+        ok: response.ok,
+        status: response.status,
+        summary,
+      };
+
+      if (response.ok) {
+        return lastResponse;
+      }
+    }
+
+    return (
+      lastResponse ?? {
+        ok: false,
+        status: 0,
+        summary: 'Nenhuma tentativa de envio do webhook foi executada.',
+      }
+    );
+  }
+
+  private buildWebhookCandidateUrls(webhookUrl: string) {
+    const candidates = [webhookUrl];
+
+    try {
+      const parsedUrl = new URL(webhookUrl);
+      const isLocalHost =
+        parsedUrl.hostname === 'localhost' ||
+        parsedUrl.hostname === '127.0.0.1';
+
+      if (isLocalHost) {
+        const n8nUrl = new URL(webhookUrl);
+        n8nUrl.hostname = 'n8n';
+        candidates.push(n8nUrl.toString());
+
+        const dockerHostUrl = new URL(webhookUrl);
+        dockerHostUrl.hostname = 'host.docker.internal';
+        candidates.push(dockerHostUrl.toString());
+      }
+    } catch {
+      return candidates;
+    }
+
+    return [...new Set(candidates)];
   }
 
   private async saveWebhookEvent(input: {

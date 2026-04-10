@@ -2,8 +2,10 @@ import {
   BadGatewayException,
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ConfiguracoesLojaService } from './configuracoes-loja.service';
 
 type EvolutionConfig = {
@@ -36,8 +38,11 @@ type EvolutionActionResult = {
 
 @Injectable()
 export class EvolutionInstanceService {
+  private readonly logger = new Logger(EvolutionInstanceService.name);
+
   constructor(
     private readonly configuracoesLojaService: ConfiguracoesLojaService,
+    private readonly configService: ConfigService,
   ) {}
 
   async getOverview() {
@@ -73,11 +78,12 @@ export class EvolutionInstanceService {
       return {
         configured: true,
         exists: true,
-        instanceName: this.extractString(instance, [
-          'name',
-          'instanceName',
-          'instance.instanceName',
-        ]) ?? config.instanceName,
+        instanceName:
+          this.extractString(instance, [
+            'name',
+            'instanceName',
+            'instance.instanceName',
+          ]) ?? config.instanceName,
         connectionStatus,
         ownerJid:
           this.extractString(instance, [
@@ -105,7 +111,7 @@ export class EvolutionInstanceService {
 
   async create(): Promise<EvolutionInstanceSyncResult> {
     const config = await this.getValidatedConfig();
-    const settings = await this.configuracoesLojaService.get();
+    const settings = await this.configuracoesLojaService.getInternal();
     const storePhoneDigits = (settings.telefone_loja ?? '').replace(/\D/g, '');
 
     try {
@@ -210,8 +216,11 @@ export class EvolutionInstanceService {
       );
 
       const qrCode =
-        response.base64?.trim() || this.extractString(response, ['code']) || null;
-      const attempts = typeof response.count === 'number' ? response.count : null;
+        response.base64?.trim() ||
+        this.extractString(response, ['code']) ||
+        null;
+      const attempts =
+        typeof response.count === 'number' ? response.count : null;
 
       if (!qrCode) {
         throw new BadGatewayException(
@@ -342,7 +351,7 @@ export class EvolutionInstanceService {
   }
 
   private async getOptionalConfig(): Promise<EvolutionConfig | null> {
-    const settings = await this.configuracoesLojaService.get();
+    const settings = await this.configuracoesLojaService.getInternal();
     const instanceName = settings.evolution_instance_name?.trim();
     const apiBaseUrl = settings.evolution_api_base_url?.trim();
     const apiKey = settings.evolution_api_key?.trim();
@@ -358,25 +367,44 @@ export class EvolutionInstanceService {
     };
   }
 
-  private async findInstance(config: EvolutionConfig) {
-    const response = await this.evolutionRequest<unknown>(
-      '/instance/fetchInstances',
-      {
-        method: 'GET',
-      },
-    );
+  private extractInstances(response: unknown): unknown[] {
+    if (Array.isArray(response)) {
+      return response;
+    }
 
-    const instances = Array.isArray(response)
-      ? response
-      : Array.isArray((response as { value?: unknown[] })?.value)
-        ? (response as { value: unknown[] }).value
-      : Array.isArray((response as { instance?: unknown[] })?.instance)
-        ? (response as { instance: unknown[] }).instance
-        : Array.isArray((response as { instances?: unknown[] })?.instances)
-          ? (response as { instances: unknown[] }).instances
-          : [];
+    if (!response || typeof response !== 'object') {
+      return [];
+    }
 
-    return instances.find((item) => {
+    const candidates = response as {
+      value?: unknown;
+      instance?: unknown;
+      instances?: unknown;
+    };
+
+    if (Array.isArray(candidates.value)) {
+      return candidates.value;
+    }
+
+    if (Array.isArray(candidates.instance)) {
+      return candidates.instance;
+    }
+
+    if (Array.isArray(candidates.instances)) {
+      return candidates.instances;
+    }
+
+    return [];
+  }
+
+  private async findInstance(config: EvolutionConfig): Promise<object | null> {
+    const response = await this.evolutionRequest('/instance/fetchInstances', {
+      method: 'GET',
+    });
+
+    const instances = this.extractInstances(response);
+
+    const matchedInstance = instances.find((item) => {
       const name = this.extractString(item, [
         'name',
         'instanceName',
@@ -385,6 +413,10 @@ export class EvolutionInstanceService {
 
       return name?.toLowerCase() === config.instanceName.toLowerCase();
     });
+
+    return matchedInstance && typeof matchedInstance === 'object'
+      ? matchedInstance
+      : null;
   }
 
   private async evolutionRequest<T>(
@@ -410,9 +442,10 @@ export class EvolutionInstanceService {
         });
 
         if (!response.ok) {
-          const payload = (await response.json().catch(() => null)) as
-            | { message?: string | string[]; response?: { message?: string } }
-            | null;
+          const payload = (await response.json().catch(() => null)) as {
+            message?: string | string[];
+            response?: { message?: string };
+          } | null;
 
           const errorMessage = Array.isArray(payload?.message)
             ? payload?.message.join(', ')
@@ -430,6 +463,10 @@ export class EvolutionInstanceService {
         return (await response.json().catch(() => ({}))) as T;
       } catch (error) {
         lastError = error;
+
+        this.logger.warn(
+          `Falha ao conectar na Evolution API via ${baseUrl}${path}.`,
+        );
 
         if (
           error instanceof NotFoundException ||
@@ -481,19 +518,16 @@ export class EvolutionInstanceService {
   private buildCandidateBaseUrls(apiBaseUrl: string) {
     const normalized = apiBaseUrl.replace(/\/+$/, '');
     const urls = new Set<string>([normalized]);
-    const internalUrl = process.env.EVOLUTION_API_INTERNAL_URL?.trim()?.replace(
-      /\/+$/,
-      '',
-    );
+    const internalUrl = this.configService
+      .get<string>('EVOLUTION_API_INTERNAL_URL')
+      ?.trim()
+      ?.replace(/\/+$/, '');
 
     if (internalUrl) {
       urls.add(internalUrl);
     }
 
-    if (
-      normalized.includes('localhost') ||
-      normalized.includes('127.0.0.1')
-    ) {
+    if (normalized.includes('localhost') || normalized.includes('127.0.0.1')) {
       urls.add(
         normalized
           .replace('localhost', 'evolution-api')
@@ -563,8 +597,7 @@ export class EvolutionInstanceService {
     const message = this.getExceptionMessage(error);
 
     return (
-      message.includes('nao gerou QR Code') ||
-      message.includes('sem QR Code')
+      message.includes('nao gerou QR Code') || message.includes('sem QR Code')
     );
   }
 }
