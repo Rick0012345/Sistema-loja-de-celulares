@@ -233,11 +233,40 @@ export const ServiceOrderDetailsModal = ({
                       {formatCurrency(service.estimatedProfit)}
                     </span>
                   </div>
+                  <div className="flex items-center justify-between text-slate-600 dark:text-slate-300">
+                    <span>Saldo pendente</span>
+                    <span className="font-semibold text-slate-900 dark:text-slate-100">
+                      {formatCurrency(service.pendingBalance)}
+                    </span>
+                  </div>
                   <div className="flex items-center justify-between border-t border-slate-200 pt-3 text-slate-900 dark:border-slate-800 dark:text-slate-100">
                     <span className="font-semibold">Total da OS</span>
                     <span className="text-lg font-black">
                       {formatCurrency(service.totalPrice)}
                     </span>
+                  </div>
+                </div>
+              </section>
+
+              <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950/60">
+                <div className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                  Webhook OS pronta
+                </div>
+                <div className="mt-4 space-y-3 text-sm">
+                  <div className="flex items-center justify-between text-slate-600 dark:text-slate-300">
+                    <span>Status</span>
+                    <span className="font-semibold text-slate-900 dark:text-slate-100">
+                      {service.webhookPronto?.status ?? 'nao_enviado'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-slate-600 dark:text-slate-300">
+                    <span>Tentativas</span>
+                    <span className="font-semibold text-slate-900 dark:text-slate-100">
+                      {service.webhookPronto?.attempts ?? 0}
+                    </span>
+                  </div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400">
+                    {service.webhookPronto?.latestResponse || 'Sem historico de envio.'}
                   </div>
                 </div>
               </section>

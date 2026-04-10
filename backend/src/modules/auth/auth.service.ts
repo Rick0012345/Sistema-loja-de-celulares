@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
   OnModuleInit,
   UnauthorizedException,
@@ -14,6 +15,8 @@ import { CreateUserDto, LoginDto, UpdateUserDto } from './auth.dto';
 
 @Injectable()
 export class AuthService implements OnModuleInit {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
@@ -50,8 +53,29 @@ export class AuthService implements OnModuleInit {
     };
   }
 
+  private getOptionalAdminConfig() {
+    try {
+      return this.getAdminConfig();
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Configuracao de admin ausente.';
+      this.logger.warn(
+        `Bootstrap do admin ignorado: ${message} Configure ADMIN_EMAIL e ADMIN_PASSWORD para seed automatico.`,
+      );
+      return null;
+    }
+  }
+
   private async syncAdminFromEnv() {
-    const { adminEmail, adminPassword, adminName } = this.getAdminConfig();
+    const adminConfig = this.getOptionalAdminConfig();
+
+    if (!adminConfig) {
+      return;
+    }
+
+    const { adminEmail, adminPassword, adminName } = adminConfig;
     const senha_hash = await bcrypt.hash(adminPassword, 10);
     const adminExistente = await this.prisma.usuarios.findUnique({
       where: { email: adminEmail },
@@ -165,7 +189,7 @@ export class AuthService implements OnModuleInit {
   }
 
   async updateUser(id: string, dto: UpdateUserDto) {
-    const { adminEmail } = this.getAdminConfig();
+    const adminEmail = this.getOptionalAdminConfig()?.adminEmail ?? null;
     const usuarioAtual = await this.prisma.usuarios.findUnique({
       where: { id },
       select: { id: true, email: true, perfil: true },
@@ -175,7 +199,7 @@ export class AuthService implements OnModuleInit {
       throw new NotFoundException('Usuário não encontrado.');
     }
 
-    if (usuarioAtual.email === adminEmail) {
+    if (adminEmail && usuarioAtual.email === adminEmail) {
       if (dto.email !== undefined) {
         throw new BadRequestException(
           'Não é permitido alterar o e-mail do administrador.',
@@ -233,7 +257,7 @@ export class AuthService implements OnModuleInit {
   }
 
   async disableUser(id: string) {
-    const { adminEmail } = this.getAdminConfig();
+    const adminEmail = this.getOptionalAdminConfig()?.adminEmail ?? null;
     const usuario = await this.prisma.usuarios.findUnique({
       where: { id },
       select: { id: true, email: true },
@@ -243,7 +267,7 @@ export class AuthService implements OnModuleInit {
       throw new NotFoundException('Usuário não encontrado.');
     }
 
-    if (usuario.email === adminEmail) {
+    if (adminEmail && usuario.email === adminEmail) {
       throw new BadRequestException(
         'Não é permitido desativar o administrador.',
       );

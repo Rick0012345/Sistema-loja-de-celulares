@@ -18,10 +18,11 @@ import {
   serviceStatusLabel,
   workflowColumns,
 } from '../lib/serviceStatus';
-import { ServiceOrder, ServiceStatus } from '../types';
+import { DashboardSummary, ServiceOrder, ServiceStatus } from '../types';
 
 type WorkflowViewProps = {
   services: ServiceOrder[];
+  summary: DashboardSummary | null;
   isBusy: boolean;
   onRequestPaymentMethod: (input: {
     title: string;
@@ -36,6 +37,7 @@ type WorkflowViewProps = {
     status: ServiceStatus;
     paymentMethod?: 'dinheiro' | 'pix' | 'cartao_credito' | 'cartao_debito' | 'transferencia';
   }) => Promise<void>;
+  onRetryWebhook: (serviceId: string) => Promise<void>;
 };
 
 const metricCardClass =
@@ -43,9 +45,11 @@ const metricCardClass =
 
 export const WorkflowView = ({
   services,
+  summary,
   isBusy,
   onRequestPaymentMethod,
   onUpdateServiceStatus,
+  onRetryWebhook,
 }: WorkflowViewProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'kanban' | 'lista'>('kanban');
@@ -118,6 +122,10 @@ export const WorkflowView = ({
       readyOrders: readyOrders.length,
       inProgressOrders: inProgressOrders.length,
       deliveredRevenue,
+      pendingBalances: readyOrders.filter((service) => service.pendingBalance > 0).length,
+      webhookFailures: readyOrders.filter(
+        (service) => service.webhookPronto?.status === 'pendente_reenvio',
+      ).length,
     };
   }, [visibleServices]);
 
@@ -208,6 +216,38 @@ export const WorkflowView = ({
           </div>
         </div>
       </div>
+
+      {summary && summary.operationalQueue.length > 0 && (
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+          <div className="rounded-3xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-500/30 dark:bg-amber-500/10">
+            <div className="text-sm font-semibold text-amber-800 dark:text-amber-200">
+              OS prontas com saldo pendente
+            </div>
+            <div className="mt-2 text-2xl font-black text-amber-900 dark:text-amber-100">
+              {metrics.pendingBalances}
+            </div>
+          </div>
+          <div className="rounded-3xl border border-rose-200 bg-rose-50 p-4 dark:border-rose-500/30 dark:bg-rose-500/10">
+            <div className="text-sm font-semibold text-rose-800 dark:text-rose-200">
+              Webhooks com falha
+            </div>
+            <div className="mt-2 text-2xl font-black text-rose-900 dark:text-rose-100">
+              {metrics.webhookFailures}
+            </div>
+          </div>
+          <div className="rounded-3xl border border-blue-200 bg-blue-50 p-4 dark:border-blue-500/30 dark:bg-blue-500/10">
+            <div className="text-sm font-semibold text-blue-800 dark:text-blue-200">
+              OS aguardando fornecedor
+            </div>
+            <div className="mt-2 text-2xl font-black text-blue-900 dark:text-blue-100">
+              {
+                summary.operationalQueue.filter((item) => item.waitingSupplierItem)
+                  .length
+              }
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -340,12 +380,32 @@ export const WorkflowView = ({
                           <div className="mt-1 text-slate-500 dark:text-slate-400">
                             {new Date(service.updatedAt).toLocaleDateString('pt-BR')}
                           </div>
+                          {service.pendingBalance > 0 && (
+                            <div className="mt-1 font-semibold text-amber-600">
+                              Saldo pendente {formatCurrency(service.pendingBalance)}
+                            </div>
+                          )}
                         </div>
 
-                        <span className="inline-flex items-center gap-1 font-semibold text-blue-600 dark:text-blue-300">
-                          Abrir
-                          <ChevronRight size={15} />
-                        </span>
+                        <div className="flex flex-col items-end gap-2">
+                          <span className="inline-flex items-center gap-1 font-semibold text-blue-600 dark:text-blue-300">
+                            Abrir
+                            <ChevronRight size={15} />
+                          </span>
+                          {service.status === 'pronto_para_retirada' &&
+                            service.webhookPronto?.status === 'pendente_reenvio' && (
+                              <button
+                                type="button"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  void onRetryWebhook(service.id);
+                                }}
+                                className="rounded-full bg-rose-50 px-3 py-1 text-[11px] font-bold text-rose-700 dark:bg-rose-500/15 dark:text-rose-300"
+                              >
+                                Reenviar webhook
+                              </button>
+                            )}
+                        </div>
                       </div>
                     </button>
                   ))}
@@ -412,6 +472,11 @@ export const WorkflowView = ({
                           {service.deliveryType === 'delivery' ? 'Entrega' : 'Retirada'}
                         </span>
                       )}
+                      {service.readyWithoutContactSent && (
+                        <span className="rounded-full bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700 dark:bg-rose-500/10 dark:text-rose-300">
+                          Contato pendente
+                        </span>
+                      )}
                     </div>
 
                     <div className="text-sm text-slate-500 dark:text-slate-400">
@@ -428,11 +493,31 @@ export const WorkflowView = ({
 
                     <div className="text-sm font-black text-slate-900 dark:text-slate-100">
                       {formatCurrency(service.totalPrice)}
+                      {service.pendingBalance > 0 && (
+                        <div className="mt-1 text-xs font-semibold text-amber-600">
+                          Saldo {formatCurrency(service.pendingBalance)}
+                        </div>
+                      )}
                     </div>
 
-                    <div className="inline-flex items-center gap-1 text-sm font-semibold text-blue-600 dark:text-blue-300 lg:justify-end">
-                      Ver detalhes
-                      <ChevronRight size={16} />
+                    <div className="flex items-center justify-between gap-3 lg:justify-end">
+                      {service.status === 'pronto_para_retirada' &&
+                        service.webhookPronto?.status === 'pendente_reenvio' && (
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              void onRetryWebhook(service.id);
+                            }}
+                            className="rounded-full bg-rose-50 px-3 py-1 text-[11px] font-bold text-rose-700 dark:bg-rose-500/15 dark:text-rose-300"
+                          >
+                            Reenviar webhook
+                          </button>
+                        )}
+                      <span className="inline-flex items-center gap-1 text-sm font-semibold text-blue-600 dark:text-blue-300">
+                        Ver detalhes
+                        <ChevronRight size={16} />
+                      </span>
                     </div>
                   </button>
                 );

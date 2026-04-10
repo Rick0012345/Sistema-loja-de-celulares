@@ -13,7 +13,7 @@ import {
 } from 'recharts';
 import { format, subDays } from 'date-fns';
 import { serviceStatusLabel } from '../lib/serviceStatus';
-import { cn, formatCurrency } from '../lib/utils';
+import { cn, formatCurrency, formatDateTime } from '../lib/utils';
 import { StatCard } from '../components/StatCard';
 import { DashboardSummary, ServiceOrder, ServiceStatus, ThemeMode } from '../types';
 
@@ -70,12 +70,36 @@ export const DashboardView = ({
   );
 
   const statusData = [
-    { name: serviceStatusLabel.aguardando_orcamento, value: counts.aguardando_orcamento, color: '#94a3b8' },
-    { name: serviceStatusLabel.aguardando_aprovacao, value: counts.aguardando_aprovacao, color: '#f59e0b' },
-    { name: serviceStatusLabel.aguardando_peca, value: counts.aguardando_peca, color: '#f97316' },
-    { name: serviceStatusLabel.em_conserto, value: counts.em_conserto, color: '#3b82f6' },
-    { name: serviceStatusLabel.pronto_para_retirada, value: counts.pronto_para_retirada, color: '#10b981' },
-    { name: serviceStatusLabel.entregue, value: counts.entregue, color: '#6366f1' },
+    {
+      name: serviceStatusLabel.aguardando_orcamento,
+      value: counts.aguardando_orcamento,
+      color: '#94a3b8',
+    },
+    {
+      name: serviceStatusLabel.aguardando_aprovacao,
+      value: counts.aguardando_aprovacao,
+      color: '#f59e0b',
+    },
+    {
+      name: serviceStatusLabel.aguardando_peca,
+      value: counts.aguardando_peca,
+      color: '#f97316',
+    },
+    {
+      name: serviceStatusLabel.em_conserto,
+      value: counts.em_conserto,
+      color: '#3b82f6',
+    },
+    {
+      name: serviceStatusLabel.pronto_para_retirada,
+      value: counts.pronto_para_retirada,
+      color: '#10b981',
+    },
+    {
+      name: serviceStatusLabel.entregue,
+      value: counts.entregue,
+      color: '#6366f1',
+    },
   ].filter((item) => item.value > 0);
 
   const overview = summary?.indicators ?? {
@@ -116,25 +140,25 @@ export const DashboardView = ({
     <div className="space-y-6">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title="Faturamento do Mes"
+          title="Faturamento do mes"
           value={formatCurrency(overview.faturamentoMes)}
           icon={DollarSign}
           color="blue"
         />
         <StatCard
-          title="Lucro do Mes"
+          title="Lucro do mes"
           value={formatCurrency(overview.lucroMes)}
           icon={TrendingUp}
           color="emerald"
         />
         <StatCard
-          title="Servicos em Aberto"
+          title="Servicos em aberto"
           value={overview.totalOrdensAbertas.toString()}
           icon={Clock}
           color="amber"
         />
         <StatCard
-          title="Estoque Baixo"
+          title="Estoque baixo"
           value={overview.totalProdutosBaixoEstoque.toString()}
           icon={AlertTriangle}
           color="rose"
@@ -151,22 +175,50 @@ export const DashboardView = ({
           <div className="h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartTheme.grid} />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: chartTheme.tick, fontSize: 12 }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: chartTheme.tick, fontSize: 12 }} tickFormatter={(value) => `R$${value}`} />
-                <Tooltip cursor={{ fill: chartTheme.tooltipCursor }} contentStyle={chartTheme.tooltipStyle} />
-                <Bar dataKey="revenue" fill="#3b82f6" radius={[6, 6, 0, 0]} barSize={40} />
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  vertical={false}
+                  stroke={chartTheme.grid}
+                />
+                <XAxis
+                  dataKey="name"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: chartTheme.tick, fontSize: 12 }}
+                />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: chartTheme.tick, fontSize: 12 }}
+                  tickFormatter={(value) => `R$${value}`}
+                />
+                <Tooltip
+                  cursor={{ fill: chartTheme.tooltipCursor }}
+                  contentStyle={chartTheme.tooltipStyle}
+                />
+                <Bar
+                  dataKey="revenue"
+                  fill="#3b82f6"
+                  radius={[6, 6, 0, 0]}
+                  barSize={40}
+                />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         <div className={cn('rounded-2xl p-5', panelClass)}>
-          <h3 className="mb-4 text-base font-bold">Status dos Servicos</h3>
+          <h3 className="mb-4 text-base font-bold">Status dos servicos</h3>
           <div className="h-60 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={statusData} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
+                <Pie
+                  data={statusData}
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
                   {statusData.map((entry) => (
                     <Cell key={entry.name} fill={entry.color} />
                   ))}
@@ -177,10 +229,18 @@ export const DashboardView = ({
           </div>
           <div className="mt-4 space-y-2">
             {statusData.map((item) => (
-              <div key={item.name} className="flex items-center justify-between text-sm">
+              <div
+                key={item.name}
+                className="flex items-center justify-between text-sm"
+              >
                 <div className="flex items-center gap-2">
-                  <div className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }} />
-                  <span className="text-slate-600 dark:text-slate-300">{item.name}</span>
+                  <div
+                    className="h-3 w-3 rounded-full"
+                    style={{ backgroundColor: item.color }}
+                  />
+                  <span className="text-slate-600 dark:text-slate-300">
+                    {item.name}
+                  </span>
                 </div>
                 <span className="font-bold">{item.value}</span>
               </div>
@@ -192,17 +252,22 @@ export const DashboardView = ({
       {summary && (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <div className={cn('rounded-2xl p-5', panelClass)}>
-            <h3 className="mb-4 text-base font-bold">Ordens Recentes</h3>
+            <h3 className="mb-4 text-base font-bold">Ordens recentes</h3>
             <div className="space-y-3">
               {summary.recentOrders.length === 0 && (
-                <p className="text-sm text-slate-500 dark:text-slate-400">Nenhuma OS recente.</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  Nenhuma OS recente.
+                </p>
               )}
               {summary.recentOrders.map((order) => (
-                <div key={order.id} className="flex items-center justify-between gap-4 rounded-xl border border-slate-100 bg-slate-50 p-3.5 dark:border-slate-800 dark:bg-slate-950">
+                <div
+                  key={order.id}
+                  className="flex items-center justify-between gap-4 rounded-xl border border-slate-100 bg-slate-50 p-3.5 dark:border-slate-800 dark:bg-slate-950"
+                >
                   <div>
                     <p className="font-semibold">{order.deviceLabel}</p>
                     <p className="text-sm text-slate-500 dark:text-slate-400">
-                      {order.customerName} • {format(new Date(order.createdAt), 'dd/MM/yyyy HH:mm')}
+                      {order.customerName} • {formatDateTime(order.createdAt)}
                     </p>
                   </div>
                   <div className="text-right">
@@ -210,6 +275,11 @@ export const DashboardView = ({
                     <p className="text-xs text-slate-500 dark:text-slate-400">
                       {order.statusLabel}
                     </p>
+                    {order.pendingBalance > 0 && (
+                      <p className="text-xs font-semibold text-amber-600">
+                        Saldo {formatCurrency(order.pendingBalance)}
+                      </p>
+                    )}
                   </div>
                 </div>
               ))}
@@ -217,18 +287,28 @@ export const DashboardView = ({
           </div>
 
           <div className={cn('rounded-2xl p-5', panelClass)}>
-            <h3 className="mb-4 text-base font-bold">Produtos com Estoque Baixo</h3>
+            <h3 className="mb-4 text-base font-bold">Produtos com estoque baixo</h3>
             <div className="space-y-3">
               {summary.lowStockProducts.length === 0 && (
-                <p className="text-sm text-slate-500 dark:text-slate-400">Nenhum item com estoque baixo.</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  Nenhum item com estoque baixo.
+                </p>
               )}
               {summary.lowStockProducts.map((product) => (
-                <div key={product.id} className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 p-3.5 dark:border-slate-800 dark:bg-slate-950">
+                <div
+                  key={product.id}
+                  className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 p-3.5 dark:border-slate-800 dark:bg-slate-950"
+                >
                   <div>
                     <p className="font-semibold">{product.name}</p>
                     <p className="text-sm text-slate-500 dark:text-slate-400">
                       Minimo recomendado: {product.minStock}
                     </p>
+                    {product.supplierName && (
+                      <p className="text-xs text-slate-400 dark:text-slate-500">
+                        Fornecedor: {product.supplierName}
+                      </p>
+                    )}
                   </div>
                   <span className="rounded-full bg-rose-100 px-3 py-1 text-xs font-bold text-rose-600 dark:bg-rose-500/15 dark:text-rose-300">
                     {product.stock} em estoque
@@ -236,6 +316,54 @@ export const DashboardView = ({
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      )}
+
+      {summary && summary.operationalQueue.length > 0 && (
+        <div className={cn('rounded-2xl p-5', panelClass)}>
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <h3 className="text-base font-bold">Fila operacional critica</h3>
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+              {summary.operationalQueue.length} em acompanhamento
+            </span>
+          </div>
+          <div className="space-y-3">
+            {summary.operationalQueue.slice(0, 6).map((item) => (
+              <div
+                key={item.id}
+                className="flex flex-col gap-3 rounded-xl border border-slate-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950 lg:flex-row lg:items-center lg:justify-between"
+              >
+                <div>
+                  <p className="font-semibold text-slate-900 dark:text-slate-100">
+                    {item.customerName} • {item.deviceLabel}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                    {serviceStatusLabel[item.status]}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
+                    Atualizado em {formatDateTime(item.updatedAt)}
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  {item.pendingBalance > 0 && (
+                    <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
+                      Saldo {formatCurrency(item.pendingBalance)}
+                    </span>
+                  )}
+                  {item.readyWithoutContactSent && (
+                    <span className="rounded-full bg-rose-50 px-3 py-1 text-xs font-bold text-rose-700 dark:bg-rose-500/10 dark:text-rose-300">
+                      Contato pendente
+                    </span>
+                  )}
+                  {item.waitingSupplierItem && (
+                    <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
+                      Aguardando fornecedor
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}

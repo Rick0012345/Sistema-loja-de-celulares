@@ -35,10 +35,17 @@ export class OrdensServicoService {
       include: {
         clientes: true,
         itens_os: true,
+        pagamentos_os: true,
       },
     });
 
-    return ordens.map((ordem) => this.serializeOrdem(ordem));
+    const webhookStateMap = await this.webhookEventosService.getWebhookStateMap(
+      ordens.map((ordem) => ordem.id),
+    );
+
+    return ordens.map((ordem) =>
+      this.serializeOrdem(ordem, webhookStateMap.get(ordem.id)),
+    );
   }
 
   async findOne(id: string) {
@@ -60,13 +67,17 @@ export class OrdensServicoService {
       throw new NotFoundException('Ordem de serviço não encontrada.');
     }
 
+    const webhookState =
+      await this.webhookEventosService.getOrderWebhookState(id);
+
     return {
-      ...this.serializeOrdem(ordem),
+      ...this.serializeOrdem(ordem, webhookState),
       historico_status_os: ordem.historico_status_os,
       pagamentos_os: ordem.pagamentos_os.map((pagamento) => ({
         ...pagamento,
         valor: toNumber(pagamento.valor),
       })),
+      webhook_pronto: webhookState,
     };
   }
 
@@ -372,7 +383,9 @@ export class OrdensServicoService {
       });
     }
 
-    return this.serializeOrdem(updated);
+    const webhookState =
+      await this.webhookEventosService.getOrderWebhookState(id);
+    return this.serializeOrdem(updated, webhookState);
   }
 
   private serializeOrdem<
@@ -387,13 +400,48 @@ export class OrdensServicoService {
         subtotal: Prisma.Decimal | number | string | null;
       }>;
     },
-  >(ordem: T) {
+  >(
+    ordem: T,
+    webhookState?: {
+      configured: boolean;
+      status:
+        | 'nunca_configurado'
+        | 'nao_enviado'
+        | 'enviado'
+        | 'pendente_reenvio';
+      attempts: number;
+      latestAttemptAt: Date | null;
+      latestResponse: string | null;
+      sentSuccessfully: boolean;
+    },
+  ) {
+    const saldoPendente =
+      'pagamentos_os' in ordem && Array.isArray(ordem.pagamentos_os)
+        ? this.getSaldoPendente(
+            ordem as {
+              valor_total: Prisma.Decimal | number | string | null;
+              pagamentos_os: Array<{
+                valor: Prisma.Decimal | number | string | null;
+                status: status_pagamento;
+              }>;
+            },
+          )
+        : 0;
+
     return {
       ...ordem,
       valor_mao_de_obra: toNumber(ordem.valor_mao_de_obra),
       desconto: toNumber(ordem.desconto),
       valor_total: toNumber(ordem.valor_total),
       lucro_estimado: toNumber(ordem.lucro_estimado),
+      saldo_pendente: saldoPendente,
+      pronto_sem_contato_enviado:
+        ('status' in ordem &&
+          ordem.status === status_ordem_servico.pronto_para_retirada &&
+          webhookState &&
+          webhookState.status !== 'enviado') ||
+        false,
+      webhook_pronto: webhookState ?? null,
       itens_os: (ordem.itens_os ?? []).map((item) => ({
         ...item,
         custo_unitario: toNumber(item.custo_unitario),

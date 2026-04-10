@@ -3,6 +3,7 @@ import {
   AuthenticatedUser,
   Customer,
   DashboardSummary,
+  FinancialReport,
   NotificationItem,
   NotificationSeverity,
   NotificationType,
@@ -10,6 +11,8 @@ import {
   Product,
   Sale,
   ServiceOrder,
+  ServiceOrderWebhook,
+  Supplier,
   ServiceStatus,
 } from '../types';
 
@@ -31,6 +34,14 @@ type ApiProduct = {
   quantidade_estoque: number;
   estoque_minimo: number;
   estoque_baixo?: boolean;
+  fornecedor_preferencial?: {
+    id: string;
+    nome: string;
+    telefone?: string | null;
+    whatsapp?: string | null;
+    cidade?: string | null;
+    ativo: boolean;
+  } | null;
 };
 
 type ApiCustomer = {
@@ -64,10 +75,37 @@ type ApiServiceOrder = {
   valor_mao_de_obra: number;
   valor_total: number;
   lucro_estimado: number;
+  saldo_pendente?: number;
+  pronto_sem_contato_enviado?: boolean;
+  webhook_pronto?: ApiWebhookState | null;
   created_at: string;
   updated_at: string;
   itens?: ApiServiceItem[];
   itens_os?: ApiServiceItem[];
+};
+
+type ApiWebhookState = {
+  configured: boolean;
+  status:
+    | 'nunca_configurado'
+    | 'nao_enviado'
+    | 'enviado'
+    | 'pendente_reenvio';
+  attempts: number;
+  latestAttemptAt?: string | null;
+  latest_attempt_at?: string | null;
+  latestResponse?: string | null;
+  latest_response?: string | null;
+  sentSuccessfully?: boolean;
+  sent_successfully?: boolean;
+  history?: Array<{
+    id: string;
+    evento: string;
+    referencia_id: string;
+    sucesso: boolean;
+    resposta?: string | null;
+    created_at: string;
+  }>;
 };
 
 type ApiDashboardSummary = {
@@ -85,6 +123,7 @@ type ApiDashboardSummary = {
     aparelho: string;
     status: string;
     valor_total: number;
+    saldo_pendente?: number;
     created_at: string;
   }>;
   produtosBaixoEstoque: Array<{
@@ -92,6 +131,76 @@ type ApiDashboardSummary = {
     nome: string;
     quantidade_estoque: number;
     estoque_minimo: number;
+    fornecedor_nome?: string | null;
+  }>;
+  filaOperacional?: Array<{
+    id: string;
+    cliente: {
+      nome: string;
+      telefone: string;
+    };
+    aparelho: string;
+    status: string;
+    valor_total: number;
+    saldo_pendente: number;
+    item_aguardando_fornecedor: boolean;
+    pronto_sem_contato_enviado: boolean;
+    updated_at: string;
+    webhook_pronto?: ApiWebhookState | null;
+  }>;
+};
+
+type ApiSupplier = {
+  id: string;
+  nome: string;
+  telefone?: string | null;
+  whatsapp?: string | null;
+  email?: string | null;
+  documento?: string | null;
+  cidade?: string | null;
+  observacoes?: string | null;
+  ativo: boolean;
+  created_at: string;
+  updated_at: string;
+  _count?: {
+    produtos_pecas?: number;
+    contas_financeiras?: number;
+  };
+};
+
+type ApiFinancialReport = {
+  periodo: {
+    dias: number;
+    inicio: string;
+    origem: 'todas' | 'ordem_servico' | 'venda';
+  };
+  resumo: {
+    faturamento_total: number;
+    lucro_total: number;
+  };
+  porOrigem: {
+    ordem_servico: {
+      faturamento: number;
+      lucro: number;
+      quantidade: number;
+    };
+    venda: {
+      faturamento: number;
+      lucro: number;
+      quantidade: number;
+    };
+  };
+  porFormaPagamento: Record<string, number>;
+  itens: Array<{
+    id: string;
+    origem: 'ordem_servico' | 'venda';
+    referencia: string;
+    cliente: string;
+    descricao: string;
+    valor: number;
+    lucro: number;
+    data: string;
+    meio_pagamento?: PaymentMethod | null;
   }>;
 };
 
@@ -192,6 +301,16 @@ export const mapProductFromApi = (product: ApiProduct): Product => ({
   minStock: product.estoque_minimo,
   isLowStock:
     product.estoque_baixo ?? product.quantidade_estoque <= product.estoque_minimo,
+  preferredSupplier: product.fornecedor_preferencial
+    ? {
+        id: product.fornecedor_preferencial.id,
+        name: product.fornecedor_preferencial.nome,
+        phone: product.fornecedor_preferencial.telefone ?? null,
+        whatsapp: product.fornecedor_preferencial.whatsapp ?? null,
+        city: product.fornecedor_preferencial.cidade ?? null,
+        isActive: product.fornecedor_preferencial.ativo,
+      }
+    : null,
 });
 
 export const mapCustomerFromApi = (customer: ApiCustomer): Customer => ({
@@ -229,8 +348,38 @@ export const mapServiceFromApi = (service: ApiServiceOrder): ServiceOrder => {
     laborCost: service.valor_mao_de_obra,
     totalPrice: service.valor_total,
     estimatedProfit: service.lucro_estimado,
+    pendingBalance: service.saldo_pendente ?? 0,
+    readyWithoutContactSent: Boolean(service.pronto_sem_contato_enviado),
+    webhookPronto: mapWebhookStateFromApi(service.webhook_pronto),
     createdAt: service.created_at,
     updatedAt: service.updated_at,
+  };
+};
+
+export const mapWebhookStateFromApi = (
+  webhook: ApiWebhookState | null | undefined,
+): ServiceOrderWebhook | null => {
+  if (!webhook) {
+    return null;
+  }
+
+  return {
+    configured: webhook.configured,
+    status: webhook.status,
+    attempts: webhook.attempts,
+    latestAttemptAt:
+      webhook.latestAttemptAt ?? webhook.latest_attempt_at ?? null,
+    latestResponse: webhook.latestResponse ?? webhook.latest_response ?? null,
+    sentSuccessfully:
+      webhook.sentSuccessfully ?? webhook.sent_successfully ?? false,
+    history: webhook.history?.map((item) => ({
+      id: item.id,
+      event: item.evento,
+      referenceId: item.referencia_id,
+      success: item.sucesso,
+      response: item.resposta ?? null,
+      createdAt: item.created_at,
+    })),
   };
 };
 
@@ -245,6 +394,7 @@ export const mapDashboardSummaryFromApi = (
     statusLabel:
       STATUS_LABELS[STATUS_FROM_API[order.status] ?? 'aguardando_orcamento'],
     totalPrice: order.valor_total,
+    pendingBalance: order.saldo_pendente ?? 0,
     createdAt: order.created_at,
   })),
   lowStockProducts: summary.produtosBaixoEstoque.map((product) => ({
@@ -252,6 +402,20 @@ export const mapDashboardSummaryFromApi = (
     name: product.nome,
     stock: product.quantidade_estoque,
     minStock: product.estoque_minimo,
+    supplierName: product.fornecedor_nome ?? null,
+  })),
+  operationalQueue: (summary.filaOperacional ?? []).map((item) => ({
+    id: item.id,
+    customerName: item.cliente.nome,
+    customerPhone: item.cliente.telefone,
+    deviceLabel: item.aparelho,
+    status: STATUS_FROM_API[item.status] ?? 'aguardando_orcamento',
+    totalPrice: item.valor_total,
+    pendingBalance: item.saldo_pendente,
+    waitingSupplierItem: item.item_aguardando_fornecedor,
+    readyWithoutContactSent: item.pronto_sem_contato_enviado,
+    updatedAt: item.updated_at,
+    webhookPronto: mapWebhookStateFromApi(item.webhook_pronto),
   })),
 });
 
@@ -281,4 +445,58 @@ export const mapNotificationFromApi = (
   severity: notification.severidade,
   isRead: notification.lida,
   createdAt: notification.created_at,
+});
+
+export const mapSupplierFromApi = (supplier: ApiSupplier): Supplier => ({
+  id: supplier.id,
+  name: supplier.nome,
+  phone: supplier.telefone ?? null,
+  whatsapp: supplier.whatsapp ?? null,
+  email: supplier.email ?? null,
+  document: supplier.documento ?? null,
+  city: supplier.cidade ?? null,
+  notes: supplier.observacoes ?? null,
+  isActive: supplier.ativo,
+  linkedProductsCount: supplier._count?.produtos_pecas ?? 0,
+  linkedFinancialRecordsCount: supplier._count?.contas_financeiras ?? 0,
+  createdAt: supplier.created_at,
+  updatedAt: supplier.updated_at,
+});
+
+export const mapFinancialReportFromApi = (
+  report: ApiFinancialReport,
+): FinancialReport => ({
+  period: {
+    days: report.periodo.dias,
+    start: report.periodo.inicio,
+    origin: report.periodo.origem,
+  },
+  summary: {
+    totalRevenue: report.resumo.faturamento_total,
+    totalProfit: report.resumo.lucro_total,
+  },
+  byOrigin: {
+    ordem_servico: {
+      revenue: report.porOrigem.ordem_servico.faturamento,
+      profit: report.porOrigem.ordem_servico.lucro,
+      quantity: report.porOrigem.ordem_servico.quantidade,
+    },
+    venda: {
+      revenue: report.porOrigem.venda.faturamento,
+      profit: report.porOrigem.venda.lucro,
+      quantity: report.porOrigem.venda.quantidade,
+    },
+  },
+  byPaymentMethod: report.porFormaPagamento as Partial<Record<PaymentMethod, number>>,
+  items: report.itens.map((item) => ({
+    id: item.id,
+    origin: item.origem,
+    reference: item.referencia,
+    customer: item.cliente,
+    description: item.descricao,
+    value: item.valor,
+    profit: item.lucro,
+    date: item.data,
+    paymentMethod: item.meio_pagamento ?? null,
+  })),
 });

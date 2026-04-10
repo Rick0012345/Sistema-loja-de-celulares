@@ -1,10 +1,16 @@
-import { AlertTriangle, CheckCircle2, Clock3, PackageCheck, Wrench } from 'lucide-react';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Clock3,
+  PackageCheck,
+  Wrench,
+} from 'lucide-react';
 import { ServiceStatus } from '../types';
 
 export const serviceStatusLabel: Record<ServiceStatus, string> = {
-  aguardando_orcamento: 'Aguardando orçamento',
-  aguardando_aprovacao: 'Aguardando aprovação',
-  aguardando_peca: 'Aguardando peça',
+  aguardando_orcamento: 'Aguardando orcamento',
+  aguardando_aprovacao: 'Aguardando aprovacao',
+  aguardando_peca: 'Aguardando peca',
   em_conserto: 'Em conserto',
   pronto_para_retirada: 'Pronto para retirada',
   entregue: 'Entregue',
@@ -21,9 +27,9 @@ export const serviceStatusBadgeClass: Record<ServiceStatus, string> = {
   em_conserto:
     'bg-blue-100 text-blue-600 dark:bg-blue-500/15 dark:text-blue-300',
   pronto_para_retirada:
-    'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300',
+    'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300',
   entregue:
-    'bg-indigo-100 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300',
+    'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300',
   cancelada:
     'bg-rose-100 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300',
 };
@@ -52,17 +58,17 @@ export const serviceStatusOptions: Array<{
 }> = [
   {
     id: 'aguardando_orcamento',
-    title: 'Aguardando orçamento',
+    title: 'Aguardando orcamento',
     icon: Clock3,
   },
   {
     id: 'aguardando_aprovacao',
-    title: 'Aguardando aprovação',
+    title: 'Aguardando aprovacao',
     icon: AlertTriangle,
   },
   {
     id: 'aguardando_peca',
-    title: 'Aguardando peça',
+    title: 'Aguardando peca',
     icon: PackageCheck,
   },
   {
@@ -99,13 +105,13 @@ export const isOpenServiceStatus = (status: ServiceStatus) =>
 export const getNextServiceAction = (status: ServiceStatus) => {
   if (status === 'aguardando_orcamento') {
     return {
-      label: 'Enviar para aprovação',
+      label: 'Enviar para aprovacao',
       nextStatus: 'aguardando_aprovacao' as const,
     };
   }
 
   if (status === 'aguardando_aprovacao') {
-    return { label: 'Aguardar peça', nextStatus: 'aguardando_peca' as const };
+    return { label: 'Aguardar peca', nextStatus: 'aguardando_peca' as const };
   }
 
   if (status === 'aguardando_peca') {

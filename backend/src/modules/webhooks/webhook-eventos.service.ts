@@ -1,5 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { Prisma, tipo_entrega_os } from '@prisma/client';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Prisma, status_ordem_servico, tipo_entrega_os } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { ConfiguracoesLojaService } from '../configuracoes-loja/configuracoes-loja.service';
 
@@ -10,6 +10,21 @@ type OrdemServicoProntaInput = {
   tipoEntrega: tipo_entrega_os;
   aparelhoMarca: string;
   aparelhoModelo: string;
+};
+
+type WebhookOrderStateStatus =
+  | 'nunca_configurado'
+  | 'nao_enviado'
+  | 'enviado'
+  | 'pendente_reenvio';
+
+type WebhookOrderState = {
+  configured: boolean;
+  status: WebhookOrderStateStatus;
+  attempts: number;
+  latestAttemptAt: Date | null;
+  latestResponse: string | null;
+  sentSuccessfully: boolean;
 };
 
 @Injectable()
@@ -50,7 +65,7 @@ export class WebhookEventosService {
         resposta:
           'Webhook de OS pronta nao configurado nas configuracoes da loja. Evento nao enviado.',
       });
-      return;
+      return this.getOrderWebhookState(input.ordemId);
     }
 
     try {
@@ -91,6 +106,190 @@ export class WebhookEventosService {
         `Falha ao enviar webhook da OS ${input.ordemId}: ${message}`,
       );
     }
+
+    return this.getOrderWebhookState(input.ordemId);
+  }
+
+  async listByOrder(ordemId: string) {
+    const eventos = await this.prisma.webhook_eventos.findMany({
+      where: {
+        evento: 'ordem_servico_pronta',
+        referencia_id: ordemId,
+      },
+      orderBy: { created_at: 'desc' },
+    });
+
+    return eventos.map((evento) => ({
+      id: evento.id,
+      evento: evento.evento,
+      referencia_id: evento.referencia_id,
+      sucesso: evento.sucesso,
+      resposta: evento.resposta,
+      created_at: evento.created_at,
+    }));
+  }
+
+  async getOrderWebhookState(ordemId: string) {
+    const configuracoesLoja = await this.configuracoesLojaService.getInternal();
+    const isConfigured = Boolean(
+      configuracoesLoja.ordem_pronta_webhook_url?.trim(),
+    );
+    const historico = await this.listByOrder(ordemId);
+    const latest = historico[0] ?? null;
+
+    let status: WebhookOrderStateStatus = 'nao_enviado';
+
+    if (!isConfigured) {
+      status = 'nunca_configurado';
+    } else if (!latest) {
+      status = 'nao_enviado';
+    } else if (latest.sucesso) {
+      status = 'enviado';
+    } else {
+      status = 'pendente_reenvio';
+    }
+
+    return {
+      configured: isConfigured,
+      status,
+      attempts: historico.length,
+      latestAttemptAt: latest?.created_at ?? null,
+      latestResponse: latest?.resposta ?? null,
+      sentSuccessfully: latest?.sucesso ?? false,
+      history: historico,
+    };
+  }
+
+  async getOperationalOverview() {
+    const ordensProntas = await this.prisma.ordens_servico.findMany({
+      where: {
+        status: {
+          in: [
+            status_ordem_servico.pronto_para_retirada,
+            status_ordem_servico.entregue,
+          ],
+        },
+      },
+      select: {
+        id: true,
+        status: true,
+        clientes: {
+          select: {
+            nome: true,
+          },
+        },
+      },
+      orderBy: { updated_at: 'desc' },
+      take: 50,
+    });
+
+    const states = await this.getWebhookStateMap(
+      ordensProntas.map((ordem) => ordem.id),
+    );
+
+    const items = ordensProntas.map((ordem) => ({
+      ordemId: ordem.id,
+      customerName: ordem.clientes.nome,
+      status: ordem.status,
+      webhook: states.get(ordem.id) ?? this.buildEmptyWebhookState(true),
+    }));
+
+    return {
+      totais: {
+        enviadas: items.filter((item) => item.webhook.status === 'enviado')
+          .length,
+        pendentesReenvio: items.filter(
+          (item) => item.webhook.status === 'pendente_reenvio',
+        ).length,
+        naoEnviadas: items.filter(
+          (item) => item.webhook.status === 'nao_enviado',
+        ).length,
+        nuncaConfigurado: items.filter(
+          (item) => item.webhook.status === 'nunca_configurado',
+        ).length,
+      },
+      items,
+    };
+  }
+
+  async retryOrderWebhook(ordemId: string) {
+    const ordem = await this.prisma.ordens_servico.findUnique({
+      where: { id: ordemId },
+      include: {
+        clientes: true,
+      },
+    });
+
+    if (!ordem) {
+      throw new NotFoundException('Ordem de servico nao encontrada.');
+    }
+
+    return this.dispatchOrdemServicoPronta({
+      ordemId: ordem.id,
+      clienteNome: ordem.clientes.nome,
+      clienteTelefone: ordem.clientes.telefone,
+      tipoEntrega: ordem.tipo_entrega,
+      aparelhoMarca: ordem.aparelho_marca,
+      aparelhoModelo: ordem.aparelho_modelo,
+    });
+  }
+
+  async getWebhookStateMap(ordemIds: string[]) {
+    const map = new Map<string, WebhookOrderState>();
+
+    if (!ordemIds.length) {
+      return map;
+    }
+
+    const configuracoesLoja = await this.configuracoesLojaService.getInternal();
+    const isConfigured = Boolean(
+      configuracoesLoja.ordem_pronta_webhook_url?.trim(),
+    );
+    const eventos = await this.prisma.webhook_eventos.findMany({
+      where: {
+        evento: 'ordem_servico_pronta',
+        referencia_id: { in: ordemIds },
+      },
+      orderBy: [{ referencia_id: 'asc' }, { created_at: 'desc' }],
+    });
+
+    const historicoPorOrdem = eventos.reduce<Record<string, typeof eventos>>(
+      (acc, evento) => {
+        acc[evento.referencia_id] = [
+          ...(acc[evento.referencia_id] ?? []),
+          evento,
+        ];
+        return acc;
+      },
+      {},
+    );
+
+    for (const ordemId of ordemIds) {
+      const historico = historicoPorOrdem[ordemId] ?? [];
+      const latest = historico[0] ?? null;
+      let status: WebhookOrderStateStatus = 'nao_enviado';
+
+      if (!isConfigured) {
+        status = 'nunca_configurado';
+      } else if (!latest) {
+        status = 'nao_enviado';
+      } else if (latest.sucesso) {
+        status = 'enviado';
+      } else {
+        status = 'pendente_reenvio';
+      }
+
+      map.set(ordemId, {
+        configured: isConfigured,
+        status,
+        attempts: historico.length,
+        latestAttemptAt: latest?.created_at ?? null,
+        latestResponse: latest?.resposta ?? null,
+        sentSuccessfully: latest?.sucesso ?? false,
+      });
+    }
+
+    return map;
   }
 
   buildMensagemCliente(tipoEntrega: tipo_entrega_os) {
@@ -99,6 +298,19 @@ export class WebhookEventosService {
     }
 
     return 'vc ja pode retirar na loja';
+  }
+
+  private buildEmptyWebhookState(configured: boolean): WebhookOrderState {
+    return {
+      configured,
+      status: configured
+        ? ('nao_enviado' as const)
+        : ('nunca_configurado' as const),
+      attempts: 0,
+      latestAttemptAt: null,
+      latestResponse: null,
+      sentSuccessfully: false,
+    };
   }
 
   private normalizePhone(phone: string) {

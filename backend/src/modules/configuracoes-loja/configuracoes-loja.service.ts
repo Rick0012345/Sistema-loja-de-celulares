@@ -109,12 +109,12 @@ export class ConfiguracoesLojaService {
       evolution_api_base_url: dto.evolution_api_base_url?.trim() || null,
       ordem_pronta_webhook_url: dto.ordem_pronta_webhook_url?.trim() || null,
       ...(dto.evolution_api_key !== undefined
-        ? { evolution_api_key: dto.evolution_api_key.trim() || null }
+        ? { evolution_api_key: dto.evolution_api_key?.trim() || null }
         : {}),
       ...(dto.ordem_pronta_webhook_token !== undefined
         ? {
             ordem_pronta_webhook_token:
-              dto.ordem_pronta_webhook_token.trim() || null,
+              dto.ordem_pronta_webhook_token?.trim() || null,
           }
         : {}),
     };
@@ -129,12 +129,12 @@ export class ConfiguracoesLojaService {
         evolution_api_base_url: data.evolution_api_base_url,
         evolution_api_key:
           dto.evolution_api_key !== undefined
-            ? dto.evolution_api_key.trim() || null
+            ? dto.evolution_api_key?.trim() || null
             : null,
         ordem_pronta_webhook_url: data.ordem_pronta_webhook_url,
         ordem_pronta_webhook_token:
           dto.ordem_pronta_webhook_token !== undefined
-            ? dto.ordem_pronta_webhook_token.trim() || null
+            ? dto.ordem_pronta_webhook_token?.trim() || null
             : null,
       },
     });

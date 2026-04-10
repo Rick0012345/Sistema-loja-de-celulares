@@ -1,10 +1,13 @@
 import {
   mapCustomerFromApi,
   mapDashboardSummaryFromApi,
+  mapFinancialReportFromApi,
   mapNotificationFromApi,
   mapProductFromApi,
   mapSaleFromApi,
   mapServiceFromApi,
+  mapSupplierFromApi,
+  mapWebhookStateFromApi,
   serviceStatusToApi,
 } from './adapters';
 import {
@@ -14,14 +17,17 @@ import {
   EvolutionActionResult,
   EvolutionInstanceConnectResult,
   EvolutionInstanceOverview,
+  FinancialReport,
   ManagedUser,
   NotificationItem,
   PaymentMethod,
   Product,
   Sale,
   ServiceOrder,
+  ServiceOrderWebhook,
   ServiceStatus,
   StoreSettings,
+  Supplier,
 } from '../types';
 
 const API_URL =
@@ -382,6 +388,7 @@ export const api = {
     preco_custo: number;
     preco_venda: number;
     quantidade_inicial: number;
+    fornecedor_id?: string;
   }): Promise<Product> {
     const response = await request<any>('/estoque/produtos', {
       method: 'POST',
@@ -402,6 +409,7 @@ export const api = {
       preco_custo: number;
       preco_venda: number;
       quantidade_estoque: number;
+      fornecedor_id?: string;
     },
   ): Promise<Product> {
     const response = await request<any>(`/estoque/produtos/${id}`, {
@@ -497,6 +505,101 @@ export const api = {
       },
     });
     return mapServiceFromApi(response);
+  },
+
+  async listSuppliers(): Promise<Supplier[]> {
+    const response = await request<any[]>('/fornecedores');
+    return response.map(mapSupplierFromApi);
+  },
+
+  async createSupplier(payload: {
+    nome: string;
+    telefone?: string;
+    whatsapp?: string;
+    email?: string;
+    documento?: string;
+    cidade?: string;
+    observacoes?: string;
+  }): Promise<Supplier> {
+    const response = await request<any>('/fornecedores', {
+      method: 'POST',
+      body: payload,
+    });
+    return mapSupplierFromApi(response);
+  },
+
+  async updateSupplier(
+    id: string,
+    payload: {
+      nome?: string;
+      telefone?: string | null;
+      whatsapp?: string | null;
+      email?: string | null;
+      documento?: string | null;
+      cidade?: string | null;
+      observacoes?: string | null;
+      ativo?: boolean;
+    },
+  ): Promise<Supplier> {
+    const response = await request<any>(`/fornecedores/${id}`, {
+      method: 'PATCH',
+      body: payload,
+    });
+    return mapSupplierFromApi(response);
+  },
+
+  async deleteSupplier(id: string): Promise<void> {
+    await request(`/fornecedores/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  async getWebhookOverview(): Promise<
+    Array<{
+      ordemId: string;
+      customerName: string;
+      status: string;
+      webhook: ServiceOrderWebhook;
+    }>
+  > {
+    const response = await request<{
+      items: Array<{
+        ordemId: string;
+        customerName: string;
+        status: string;
+        webhook: any;
+      }>;
+    }>('/webhooks/resumo-operacional');
+
+    return response.items.map((item) => ({
+      ordemId: item.ordemId,
+      customerName: item.customerName,
+      status: item.status,
+      webhook: mapWebhookStateFromApi(item.webhook)!,
+    }));
+  },
+
+  async retryOrderWebhook(ordemId: string): Promise<ServiceOrderWebhook> {
+    const response = await request<any>(`/webhooks/ordens-servico/${ordemId}/reenviar`, {
+      method: 'POST',
+    });
+    return mapWebhookStateFromApi(response)!;
+  },
+
+  async getFinancialReport(input?: {
+    days?: number;
+    origin?: 'todas' | 'ordem_servico' | 'venda';
+  }): Promise<FinancialReport> {
+    const searchParams = new URLSearchParams();
+    if (input?.days) {
+      searchParams.set('dias', String(input.days));
+    }
+    if (input?.origin) {
+      searchParams.set('origem', input.origin);
+    }
+    const suffix = searchParams.size > 0 ? `?${searchParams.toString()}` : '';
+    const response = await request<any>(`/dashboard/relatorios${suffix}`);
+    return mapFinancialReportFromApi(response);
   },
 
   async getDashboardSummary(): Promise<DashboardSummary> {

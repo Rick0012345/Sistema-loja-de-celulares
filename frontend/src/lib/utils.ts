@@ -27,3 +27,17 @@ export function formatPhone(value: string) {
   const suffix = rest.slice(prefixLength, prefixLength + 4);
   return `(${ddd}) ${prefix}-${suffix}`;
 }
+
+export function formatDateTime(value: string) {
+  return new Date(value).toLocaleString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+export function formatDate(value: string) {
+  return new Date(value).toLocaleDateString('pt-BR');
+}

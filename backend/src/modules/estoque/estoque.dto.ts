@@ -9,6 +9,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsUUID,
   Min,
 } from 'class-validator';
 
@@ -32,6 +33,10 @@ export class CreateProdutoDto {
   @IsOptional()
   @IsString()
   sku?: string;
+
+  @IsOptional()
+  @IsUUID()
+  fornecedor_id?: string;
 
   @IsEnum(TipoEstoqueProdutoDto)
   tipo_estoque: TipoEstoqueProdutoDto;

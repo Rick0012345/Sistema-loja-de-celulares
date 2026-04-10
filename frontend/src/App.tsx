@@ -8,6 +8,7 @@ import { ProfitAnalysisView } from './views/ProfitAnalysisView';
 import { SalesView } from './views/SalesView';
 import { SettingsView } from './views/SettingsView';
 import { ServicesView } from './views/ServicesView';
+import { SuppliersView } from './views/SuppliersView';
 import { WorkflowView } from './views/WorkflowView';
 import { useAuthSession } from './hooks/useAuthSession';
 import { useBackofficeData } from './hooks/useBackofficeData';
@@ -34,7 +35,14 @@ export default function App() {
   );
   const { theme, toggleTheme } = useThemeMode();
 
-  const repairTabs: NavItemId[] = ['dashboard', 'inventory', 'services', 'workflow', 'settings'];
+  const repairTabs: NavItemId[] = [
+    'dashboard',
+    'inventory',
+    'suppliers',
+    'services',
+    'workflow',
+    'settings',
+  ];
   const salesTabs: NavItemId[] = ['sales', 'inventory', 'profit', 'settings'];
 
   const handleSwitchMode = (mode: AppMode) => {
@@ -148,9 +156,18 @@ export default function App() {
             <InventoryView
               appMode={appMode}
               products={appMode === 'repair' ? repairInventoryProducts : salesProducts}
+              suppliers={backoffice.suppliers}
               isBusy={backoffice.isMutating}
               onDeleteProduct={backoffice.deleteProduct}
               onSaveProduct={backoffice.saveProduct}
+            />
+          )}
+          {appMode === 'repair' && activeTab === 'suppliers' && (
+            <SuppliersView
+              suppliers={backoffice.suppliers}
+              isBusy={backoffice.isMutating}
+              onDeleteSupplier={backoffice.deleteSupplier}
+              onSaveSupplier={backoffice.saveSupplier}
             />
           )}
           {appMode === 'sales' && activeTab === 'sales' && (
@@ -175,13 +192,18 @@ export default function App() {
           {appMode === 'repair' && activeTab === 'workflow' && (
             <WorkflowView
               services={backoffice.services}
+              summary={backoffice.dashboardSummary}
               isBusy={backoffice.isMutating}
               onUpdateServiceStatus={backoffice.updateServiceStatus}
               onRequestPaymentMethod={requestPaymentMethod}
+              onRetryWebhook={backoffice.retryWebhook}
             />
           )}
           {appMode === 'sales' && activeTab === 'profit' && (
-            <ProfitAnalysisView services={backoffice.services} />
+            <ProfitAnalysisView
+              report={backoffice.financialReport}
+              onRefreshReport={backoffice.refreshFinancialReport}
+            />
           )}
           {activeTab === 'settings' && <SettingsView currentUser={auth.session} />}
         </>

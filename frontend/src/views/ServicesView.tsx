@@ -456,6 +456,18 @@ export const ServicesView = ({
                     <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                       Cliente: <span className="font-semibold text-slate-700 dark:text-slate-200">{service.customerName}</span> • {service.customerPhone}
                     </p>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      {service.pendingBalance > 0 && (
+                        <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
+                          Saldo pendente {formatCurrency(service.pendingBalance)}
+                        </span>
+                      )}
+                      {service.readyWithoutContactSent && (
+                        <span className="rounded-full bg-rose-50 px-3 py-1 text-xs font-bold text-rose-700 dark:bg-rose-500/10 dark:text-rose-300">
+                          Pronta sem contato enviado
+                        </span>
+                      )}
+                    </div>
                     <div className="mt-3 flex items-center gap-4 text-xs text-slate-400 dark:text-slate-500">
                       <span className="flex items-center gap-1">
                         <Clock size={14} />

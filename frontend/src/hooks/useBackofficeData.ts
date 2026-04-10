@@ -3,6 +3,7 @@ import { api, UnauthorizedError } from '../lib/api';
 import {
   Customer,
   DashboardSummary,
+  FinancialReport,
   NotificationItem,
   PaymentMethod,
   Product,
@@ -12,6 +13,8 @@ import {
   ServiceFormValues,
   ServiceOrder,
   ServiceStatus,
+  Supplier,
+  SupplierFormValues,
 } from '../types';
 
 const getErrorMessage = (error: unknown) =>
@@ -27,6 +30,11 @@ const parseInteger = (value: string) => {
 const parseDecimal = (value: string) => {
   const parsed = Number.parseFloat(value);
   return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const normalizeOptionalString = (value: string) => {
+  const normalized = value.trim();
+  return normalized.length > 0 ? normalized : null;
 };
 
 const buildServiceItemsPayload = (values: ServiceFormValues) =>
@@ -53,7 +61,9 @@ export const useBackofficeData = ({
   const [services, setServices] = useState<ServiceOrder[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [dashboardSummary, setDashboardSummary] = useState<DashboardSummary | null>(null);
+  const [financialReport, setFinancialReport] = useState<FinancialReport | null>(null);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isMutating, setIsMutating] = useState(false);
@@ -64,8 +74,10 @@ export const useBackofficeData = ({
     setServices([]);
     setCustomers([]);
     setSales([]);
+    setSuppliers([]);
     setNotifications([]);
     setDashboardSummary(null);
+    setFinancialReport(null);
     setIsLoading(false);
     onAfterUnauthorizedReset?.();
   }, [onAfterUnauthorizedReset]);
@@ -83,6 +95,8 @@ export const useBackofficeData = ({
           nextCustomers,
           nextDashboardSummary,
           nextSales,
+          nextSuppliers,
+          nextFinancialReport,
           nextNotifications,
         ] =
           await Promise.all([
@@ -91,6 +105,8 @@ export const useBackofficeData = ({
             api.listCustomers(),
             api.getDashboardSummary(),
             api.listSales(),
+            api.listSuppliers(),
+            api.getFinancialReport(),
             api.listNotifications(),
           ]);
 
@@ -99,6 +115,8 @@ export const useBackofficeData = ({
         setCustomers(nextCustomers);
         setDashboardSummary(nextDashboardSummary);
         setSales(nextSales);
+        setSuppliers(nextSuppliers);
+        setFinancialReport(nextFinancialReport);
         setNotifications(nextNotifications);
         setErrorMessage(null);
       } catch (error) {
@@ -150,6 +168,7 @@ export const useBackofficeData = ({
         modelo_compatavel: values.compatibleModel.trim() || undefined,
         sku: values.sku.trim() || undefined,
         tipo_estoque: inventoryType,
+        fornecedor_id: values.supplierId || undefined,
         estoque_minimo: parseInteger(values.minStock),
         preco_custo: parseDecimal(values.costPrice),
         preco_venda: parseDecimal(values.salePrice),
@@ -315,6 +334,70 @@ export const useBackofficeData = ({
     });
   }, [runMutation]);
 
+  const saveSupplier = useCallback(
+    async (values: SupplierFormValues, supplier?: Supplier | null) => {
+      await runMutation(async () => {
+        const payload = {
+          nome: values.name.trim(),
+          telefone: normalizeOptionalString(values.phone),
+          whatsapp: normalizeOptionalString(values.whatsapp),
+          email: normalizeOptionalString(values.email),
+          documento: normalizeOptionalString(values.document),
+          cidade: normalizeOptionalString(values.city),
+          observacoes: normalizeOptionalString(values.notes),
+          ativo: values.isActive,
+        };
+
+        if (supplier) {
+          await api.updateSupplier(supplier.id, payload);
+          return;
+        }
+
+        await api.createSupplier(payload);
+      });
+    },
+    [runMutation],
+  );
+
+  const deleteSupplier = useCallback(
+    async (supplier: Supplier) => {
+      if (!window.confirm(`Deseja inativar o fornecedor "${supplier.name}"?`)) {
+        return;
+      }
+
+      await runMutation(async () => {
+        await api.deleteSupplier(supplier.id);
+      });
+    },
+    [runMutation],
+  );
+
+  const retryWebhook = useCallback(
+    async (serviceId: string) => {
+      await runMutation(async () => {
+        await api.retryOrderWebhook(serviceId);
+      });
+    },
+    [runMutation],
+  );
+
+  const refreshFinancialReport = useCallback(
+    async (input?: { days?: number; origin?: 'todas' | 'ordem_servico' | 'venda' }) => {
+      try {
+        const report = await api.getFinancialReport(input);
+        setFinancialReport(report);
+      } catch (error) {
+        if (error instanceof UnauthorizedError) {
+          await onUnauthorized(error.message);
+          return;
+        }
+
+        setErrorMessage(getErrorMessage(error));
+      }
+    },
+    [onUnauthorized],
+  );
+
   const stats = useMemo(() => {
     const deliveredServices = services.filter((service) => service.status === 'entregue');
     const totalRevenue = deliveredServices.reduce((acc, service) => acc + service.totalPrice, 0);
@@ -343,8 +426,10 @@ export const useBackofficeData = ({
     products,
     services,
     sales,
+    suppliers,
     customers,
     dashboardSummary,
+    financialReport,
     notifications,
     isLoading,
     isMutating,
@@ -355,11 +440,15 @@ export const useBackofficeData = ({
     resetData,
     saveProduct,
     deleteProduct,
+    saveSupplier,
+    deleteSupplier,
     createService,
     updateService,
     createSale,
     markNotificationAsRead,
     markAllNotificationsAsRead,
     updateServiceStatus,
+    retryWebhook,
+    refreshFinancialReport,
   };
 };

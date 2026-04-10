@@ -71,6 +71,32 @@ export type Product = {
   stock: number;
   minStock: number;
   isLowStock: boolean;
+  preferredSupplier: SupplierSummary | null;
+};
+
+export type Supplier = {
+  id: string;
+  name: string;
+  phone: string | null;
+  whatsapp: string | null;
+  email: string | null;
+  document: string | null;
+  city: string | null;
+  notes: string | null;
+  isActive: boolean;
+  linkedProductsCount: number;
+  linkedFinancialRecordsCount: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type SupplierSummary = {
+  id: string;
+  name: string;
+  phone: string | null;
+  whatsapp: string | null;
+  city: string | null;
+  isActive: boolean;
 };
 
 export type ServiceStatus =
@@ -108,8 +134,36 @@ export type ServiceOrder = {
   laborCost: number;
   totalPrice: number;
   estimatedProfit: number;
+  pendingBalance: number;
+  readyWithoutContactSent: boolean;
+  webhookPronto: ServiceOrderWebhook | null;
   createdAt: string;
   updatedAt: string;
+};
+
+export type ServiceOrderWebhookStatus =
+  | 'nunca_configurado'
+  | 'nao_enviado'
+  | 'enviado'
+  | 'pendente_reenvio';
+
+export type ServiceOrderWebhookHistoryItem = {
+  id: string;
+  event: string;
+  referenceId: string;
+  success: boolean;
+  response: string | null;
+  createdAt: string;
+};
+
+export type ServiceOrderWebhook = {
+  configured: boolean;
+  status: ServiceOrderWebhookStatus;
+  attempts: number;
+  latestAttemptAt: string | null;
+  latestResponse: string | null;
+  sentSuccessfully: boolean;
+  history?: ServiceOrderWebhookHistoryItem[];
 };
 
 export type PaymentMethod =
@@ -179,6 +233,7 @@ export type DashboardOrder = {
   deviceLabel: string;
   statusLabel: string;
   totalPrice: number;
+  pendingBalance: number;
   createdAt: string;
 };
 
@@ -187,12 +242,64 @@ export type DashboardLowStockProduct = {
   name: string;
   stock: number;
   minStock: number;
+  supplierName: string | null;
+};
+
+export type OperationalQueueItem = {
+  id: string;
+  customerName: string;
+  customerPhone: string;
+  deviceLabel: string;
+  status: ServiceStatus;
+  totalPrice: number;
+  pendingBalance: number;
+  waitingSupplierItem: boolean;
+  readyWithoutContactSent: boolean;
+  updatedAt: string;
+  webhookPronto: ServiceOrderWebhook | null;
+};
+
+export type FinancialReportOrigin = 'todas' | 'ordem_servico' | 'venda';
+
+export type FinancialReportItem = {
+  id: string;
+  origin: Exclude<FinancialReportOrigin, 'todas'>;
+  reference: string;
+  customer: string;
+  description: string;
+  value: number;
+  profit: number;
+  date: string;
+  paymentMethod: PaymentMethod | null;
+};
+
+export type FinancialReport = {
+  period: {
+    days: number;
+    start: string;
+    origin: FinancialReportOrigin;
+  };
+  summary: {
+    totalRevenue: number;
+    totalProfit: number;
+  };
+  byOrigin: Record<
+    Exclude<FinancialReportOrigin, 'todas'>,
+    {
+      revenue: number;
+      profit: number;
+      quantity: number;
+    }
+  >;
+  byPaymentMethod: Partial<Record<PaymentMethod, number>>;
+  items: FinancialReportItem[];
 };
 
 export type DashboardSummary = {
   indicators: DashboardIndicators;
   recentOrders: DashboardOrder[];
   lowStockProducts: DashboardLowStockProduct[];
+  operationalQueue: OperationalQueueItem[];
 };
 
 export type ServicePartFormValue = {
@@ -210,10 +317,22 @@ export type ProductFormValues = {
   compatibleModel: string;
   sku: string;
   inventoryType: 'repair' | 'sales';
+  supplierId: string;
   costPrice: string;
   salePrice: string;
   stock: string;
   minStock: string;
+};
+
+export type SupplierFormValues = {
+  name: string;
+  phone: string;
+  whatsapp: string;
+  email: string;
+  document: string;
+  city: string;
+  notes: string;
+  isActive: boolean;
 };
 
 export type ServiceFormValues = {

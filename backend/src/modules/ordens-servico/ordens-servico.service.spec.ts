@@ -15,6 +15,15 @@ const createNotificationServiceMock = () => ({
 
 const createWebhookServiceMock = () => ({
   dispatchOrdemServicoPronta: jest.fn(),
+  getOrderWebhookState: jest.fn().mockResolvedValue({
+    configured: false,
+    status: 'nunca_configurado',
+    attempts: 0,
+    latestAttemptAt: null,
+    latestResponse: null,
+    sentSuccessfully: false,
+  }),
+  getWebhookStateMap: jest.fn().mockResolvedValue(new Map()),
 });
 
 const currentUser = {

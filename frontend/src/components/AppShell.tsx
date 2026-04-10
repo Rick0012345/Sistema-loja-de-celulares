@@ -15,33 +15,35 @@ import {
   Store,
   Sun,
   TrendingUp,
+  Truck,
   Wrench,
 } from 'lucide-react';
-import { format } from 'date-fns';
-import { formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '../lib/utils';
 import { NotificationItem, ThemeMode } from '../types';
 
 const repairNavItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'inventory', label: 'Estoque de Manutenção', icon: Package },
-  { id: 'services', label: 'Ordens de Serviço', icon: Wrench },
+  { id: 'inventory', label: 'Estoque de Manutencao', icon: Package },
+  { id: 'suppliers', label: 'Fornecedores', icon: Truck },
+  { id: 'services', label: 'Ordens de Servico', icon: Wrench },
   { id: 'workflow', label: 'Fluxo de Trabalho', icon: BriefcaseBusiness },
-  { id: 'settings', label: 'Configurações', icon: Settings },
+  { id: 'settings', label: 'Configuracoes', icon: Settings },
 ] as const;
 
 const salesNavItems = [
   { id: 'sales', label: 'Registrar Vendas', icon: ShoppingCart },
   { id: 'inventory', label: 'Produtos para Venda', icon: Store },
-  { id: 'profit', label: 'Análise de Vendas', icon: TrendingUp },
-  { id: 'settings', label: 'Configurações', icon: Settings },
+  { id: 'profit', label: 'Analise de Vendas', icon: TrendingUp },
+  { id: 'settings', label: 'Configuracoes', icon: Settings },
 ] as const;
 
 export type AppMode = 'repair' | 'sales';
 export type NavItemId =
   | 'dashboard'
   | 'inventory'
+  | 'suppliers'
   | 'services'
   | 'workflow'
   | 'profit'
@@ -119,7 +121,9 @@ export const AppShell = ({
           <div className="rounded-lg bg-blue-600 p-2 text-white">
             <Smartphone size={22} />
           </div>
-          {isSidebarOpen && <h1 className="text-lg font-bold tracking-tight">ConsertaSmart</h1>}
+          {isSidebarOpen && (
+            <h1 className="text-lg font-bold tracking-tight">ConsertaSmart</h1>
+          )}
         </div>
 
         <nav className="flex-1 space-y-1.5 p-3">
@@ -156,7 +160,9 @@ export const AppShell = ({
         <header className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h2 className="text-2xl font-bold tracking-tight">{currentLabel}</h2>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{currentUserName}</p>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+              {currentUserName}
+            </p>
           </div>
           <div className="flex flex-wrap items-center gap-4">
             <div className="inline-flex rounded-full border border-slate-200 bg-white p-1 shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -243,7 +249,9 @@ export const AppShell = ({
                         )}
                       >
                         <div className="mb-1 flex items-start justify-between gap-3">
-                          <p className="text-sm font-semibold">{notification.title}</p>
+                          <p className="text-sm font-semibold">
+                            {notification.title}
+                          </p>
                           <span className="whitespace-nowrap text-xs opacity-70">
                             {formatDistanceToNow(new Date(notification.createdAt), {
                               addSuffix: true,

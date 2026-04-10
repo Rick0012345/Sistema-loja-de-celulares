@@ -40,6 +40,9 @@ export class EstoqueService {
       preco_custo: toNumber(produto.preco_custo),
       preco_venda: toNumber(produto.preco_venda),
       estoque_baixo: produto.quantidade_estoque <= produto.estoque_minimo,
+      fornecedor_preferencial: this.serializeFornecedorPreferencial(
+        produto.fornecedores,
+      ),
     }));
   }
 
@@ -47,6 +50,7 @@ export class EstoqueService {
     const produto = await this.prisma.produtos_pecas.findUnique({
       where: { id },
       include: {
+        fornecedores: true,
         movimentacoes_estoque: {
           orderBy: { created_at: 'desc' },
           take: 10,
@@ -55,13 +59,16 @@ export class EstoqueService {
     });
 
     if (!produto) {
-      throw new NotFoundException('Produto não encontrado.');
+      throw new NotFoundException('Produto nao encontrado.');
     }
 
     return {
       ...produto,
       preco_custo: toNumber(produto.preco_custo),
       preco_venda: toNumber(produto.preco_venda),
+      fornecedor_preferencial: this.serializeFornecedorPreferencial(
+        produto.fornecedores,
+      ),
       movimentacoes_estoque: produto.movimentacoes_estoque.map((item) => ({
         ...item,
         custo_unitario: toNumber(item.custo_unitario),
@@ -71,12 +78,17 @@ export class EstoqueService {
 
   async create(dto: CreateProdutoDto) {
     const produto = await this.prisma.$transaction(async (tx) => {
+      if (dto.fornecedor_id) {
+        await this.ensureFornecedorExists(tx, dto.fornecedor_id);
+      }
+
       const created = await tx.produtos_pecas.create({
         data: {
           nome: dto.nome,
           marca: dto.marca,
           modelo_compatavel: dto.modelo_compatavel,
           categoria_id: await this.resolveCategoriaId(tx, dto.tipo_estoque),
+          fornecedor_id: dto.fornecedor_id ?? null,
           sku: dto.sku,
           estoque_minimo: dto.estoque_minimo,
           quantidade_estoque: dto.quantidade_inicial ?? 0,
@@ -131,14 +143,18 @@ export class EstoqueService {
       });
 
       if (!atual || !atual.ativo) {
-        throw new NotFoundException('Produto não encontrado.');
+        throw new NotFoundException('Produto nao encontrado.');
+      }
+
+      if (dto.fornecedor_id) {
+        await this.ensureFornecedorExists(tx, dto.fornecedor_id);
       }
 
       const quantidadeEstoque =
         dto.quantidade_estoque ?? atual.quantidade_estoque;
       const deltaEstoque = quantidadeEstoque - atual.quantidade_estoque;
 
-      const produto = await tx.produtos_pecas.update({
+      const produtoAtualizado = await tx.produtos_pecas.update({
         where: { id },
         data: {
           nome: dto.nome,
@@ -149,6 +165,10 @@ export class EstoqueService {
             dto.tipo_estoque ??
               this.getTipoEstoqueFromCategoria(atual.categorias_produto?.nome),
           ),
+          fornecedor_id:
+            dto.fornecedor_id !== undefined
+              ? dto.fornecedor_id || null
+              : undefined,
           sku: dto.sku,
           estoque_minimo: dto.estoque_minimo,
           preco_custo: dto.preco_custo,
@@ -160,20 +180,20 @@ export class EstoqueService {
       if (deltaEstoque !== 0) {
         await tx.movimentacoes_estoque.create({
           data: {
-            produto_id: produto.id,
+            produto_id: produtoAtualizado.id,
             tipo: tipo_movimentacao_estoque.ajuste,
             origem: origem_movimentacao_estoque.ajuste_manual,
             quantidade: deltaEstoque,
             custo_unitario: dto.preco_custo ?? atual.preco_custo,
-            observacao: 'Ajuste automático de estoque via edição de produto.',
+            observacao: 'Ajuste automatico de estoque via edicao de produto.',
           },
         });
       }
 
       return {
-        ...produto,
-        preco_custo: toNumber(produto.preco_custo),
-        preco_venda: toNumber(produto.preco_venda),
+        ...produtoAtualizado,
+        preco_custo: toNumber(produtoAtualizado.preco_custo),
+        preco_venda: toNumber(produtoAtualizado.preco_venda),
       };
     });
 
@@ -194,7 +214,7 @@ export class EstoqueService {
     });
 
     if (!produto || !produto.ativo) {
-      throw new NotFoundException('Produto não encontrado.');
+      throw new NotFoundException('Produto nao encontrado.');
     }
 
     await this.prisma.produtos_pecas.update({
@@ -212,7 +232,7 @@ export class EstoqueService {
       });
 
       if (!produto) {
-        throw new NotFoundException('Produto não encontrado.');
+        throw new NotFoundException('Produto nao encontrado.');
       }
 
       const estoqueDelta = this.getEstoqueDelta(dto.tipo, dto.quantidade);
@@ -220,7 +240,7 @@ export class EstoqueService {
 
       if (novoEstoque < 0) {
         throw new BadRequestException(
-          'Estoque insuficiente para a movimentação.',
+          'Estoque insuficiente para a movimentacao.',
         );
       }
 
@@ -278,14 +298,17 @@ export class EstoqueService {
     return quantidade;
   }
 
-  private async ensureExists(id: string) {
-    const produto = await this.prisma.produtos_pecas.findUnique({
-      where: { id },
+  private async ensureFornecedorExists(
+    tx: Prisma.TransactionClient,
+    fornecedorId: string,
+  ) {
+    const fornecedor = await tx.fornecedores.findUnique({
+      where: { id: fornecedorId },
       select: { id: true, ativo: true },
     });
 
-    if (!produto || !produto.ativo) {
-      throw new NotFoundException('Produto não encontrado.');
+    if (!fornecedor || !fornecedor.ativo) {
+      throw new NotFoundException('Fornecedor nao encontrado ou inativo.');
     }
   }
 
@@ -322,10 +345,33 @@ export class EstoqueService {
       return TipoEstoqueProdutoDto.venda;
     }
 
-    if (!categoriaNome) {
-      return TipoEstoqueProdutoDto.manutencao;
+    return TipoEstoqueProdutoDto.manutencao;
+  }
+
+  private serializeFornecedorPreferencial(
+    fornecedor:
+      | {
+          id: string;
+          nome: string;
+          telefone: string | null;
+          whatsapp?: string | null;
+          cidade?: string | null;
+          ativo: boolean;
+        }
+      | null
+      | undefined,
+  ) {
+    if (!fornecedor) {
+      return null;
     }
 
-    return TipoEstoqueProdutoDto.manutencao;
+    return {
+      id: fornecedor.id,
+      nome: fornecedor.nome,
+      telefone: fornecedor.telefone,
+      whatsapp: fornecedor.whatsapp ?? null,
+      cidade: fornecedor.cidade ?? null,
+      ativo: fornecedor.ativo,
+    };
   }
 }

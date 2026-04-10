@@ -1,7 +1,7 @@
 import { type FormEvent, useMemo, useState } from 'react';
 import { AlertTriangle, Edit2, Plus, Search, Trash2, X } from 'lucide-react';
 import { cn, formatCurrency } from '../lib/utils';
-import { Product, ProductFormValues } from '../types';
+import { Product, ProductFormValues, Supplier } from '../types';
 
 const panelClass =
   'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm';
@@ -14,6 +14,7 @@ const EMPTY_PRODUCT_FORM: ProductFormValues = {
   compatibleModel: '',
   sku: '',
   inventoryType: 'repair',
+  supplierId: '',
   costPrice: '',
   salePrice: '',
   stock: '',
@@ -23,6 +24,7 @@ const EMPTY_PRODUCT_FORM: ProductFormValues = {
 type InventoryViewProps = {
   appMode: 'repair' | 'sales';
   products: Product[];
+  suppliers: Supplier[];
   isBusy: boolean;
   onDeleteProduct: (product: Product) => Promise<void>;
   onSaveProduct: (
@@ -34,6 +36,7 @@ type InventoryViewProps = {
 export const InventoryView = ({
   appMode,
   products,
+  suppliers,
   isBusy,
   onDeleteProduct,
   onSaveProduct,
@@ -70,6 +73,7 @@ export const InventoryView = ({
           product.inventoryType === 'uncategorized'
             ? appMode
             : product.inventoryType,
+        supplierId: product.preferredSupplier?.id ?? '',
         costPrice: product.costPrice.toString(),
         salePrice: product.salePrice.toString(),
         stock: product.stock.toString(),
@@ -124,6 +128,7 @@ export const InventoryView = ({
             <tr className="border-b border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-950">
               <th className="p-3.5 font-semibold text-slate-600 dark:text-slate-300">Produto</th>
               <th className="p-3.5 font-semibold text-slate-600 dark:text-slate-300">Marca / Modelo</th>
+              <th className="p-3.5 font-semibold text-slate-600 dark:text-slate-300">Fornecedor</th>
               <th className="p-3.5 font-semibold text-slate-600 dark:text-slate-300">Preco Custo</th>
               <th className="p-3.5 font-semibold text-slate-600 dark:text-slate-300">Preco Venda</th>
               <th className="p-3.5 font-semibold text-slate-600 dark:text-slate-300">Estoque</th>
@@ -133,7 +138,7 @@ export const InventoryView = ({
           <tbody>
             {filteredProducts.length === 0 && (
               <tr>
-                <td colSpan={6} className="p-5 text-center text-slate-500 dark:text-slate-400">
+                <td colSpan={7} className="p-5 text-center text-slate-500 dark:text-slate-400">
                   Nenhum produto encontrado com os filtros atuais.
                 </td>
               </tr>
@@ -150,6 +155,12 @@ export const InventoryView = ({
                   <div>{product.brand || 'Sem marca'}</div>
                   <div className="text-xs text-slate-400 dark:text-slate-500">
                     {product.compatibleModel || 'Modelo nao informado'}
+                  </div>
+                </td>
+                <td className="p-3.5 text-sm text-slate-600 dark:text-slate-300">
+                  <div>{product.preferredSupplier?.name || 'Nao definido'}</div>
+                  <div className="text-xs text-slate-400 dark:text-slate-500">
+                    {product.preferredSupplier?.phone || 'Sem contato'}
                   </div>
                 </td>
                 <td className="p-3.5 font-medium text-slate-600 dark:text-slate-300">{formatCurrency(product.costPrice)}</td>
@@ -234,6 +245,29 @@ export const InventoryView = ({
                 <div className="space-y-1">
                   <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">SKU</label>
                   <input value={formData.sku} onChange={(event) => setFormData((current) => ({ ...current, sku: event.target.value }))} className={inputClass} />
+                </div>
+                <div className="space-y-1 sm:col-span-2">
+                  <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">Fornecedor preferencial</label>
+                  <select
+                    value={formData.supplierId}
+                    onChange={(event) =>
+                      setFormData((current) => ({
+                        ...current,
+                        supplierId: event.target.value,
+                      }))
+                    }
+                    className={inputClass}
+                  >
+                    <option value="">Nenhum fornecedor vinculado</option>
+                    {suppliers
+                      .filter((supplier) => supplier.isActive)
+                      .map((supplier) => (
+                        <option key={supplier.id} value={supplier.id}>
+                          {supplier.name}
+                          {supplier.phone ? ` - ${supplier.phone}` : ''}
+                        </option>
+                      ))}
+                  </select>
                 </div>
                 <div className="space-y-1">
                   <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">Estoque Atual</label>

@@ -8,6 +8,7 @@ import { ClientesModule } from './modules/clientes/clientes.module';
 import { ConfiguracoesLojaModule } from './modules/configuracoes-loja/configuracoes-loja.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { EstoqueModule } from './modules/estoque/estoque.module';
+import { FornecedoresModule } from './modules/fornecedores/fornecedores.module';
 import { NotificacoesModule } from './modules/notificacoes/notificacoes.module';
 import { OrdensServicoModule } from './modules/ordens-servico/ordens-servico.module';
 import { VendasModule } from './modules/vendas/vendas.module';
@@ -22,6 +23,7 @@ import { VendasModule } from './modules/vendas/vendas.module';
     AuthModule,
     ClientesModule,
     ConfiguracoesLojaModule,
+    FornecedoresModule,
     EstoqueModule,
     NotificacoesModule,
     OrdensServicoModule,
