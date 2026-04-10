@@ -99,6 +99,23 @@ export type SupplierSummary = {
   isActive: boolean;
 };
 
+export type ServiceOrderActor = {
+  id: string;
+  nome: string;
+  email: string;
+  perfil: UserProfile;
+};
+
+export type ServiceOrderTimelineItem = {
+  id: string;
+  type: string;
+  title: string;
+  description: string | null;
+  createdAt: string;
+  actor: ServiceOrderActor | null;
+  metadata?: Record<string, unknown> | null;
+};
+
 export type ServiceStatus =
   | 'aguardando_orcamento'
   | 'aguardando_aprovacao'
@@ -137,6 +154,13 @@ export type ServiceOrder = {
   pendingBalance: number;
   readyWithoutContactSent: boolean;
   webhookPronto: ServiceOrderWebhook | null;
+  audit?: {
+    createdBy: ServiceOrderActor | null;
+    attendant: ServiceOrderActor | null;
+    technician: ServiceOrderActor | null;
+    deliveredBy: ServiceOrderActor | null;
+  };
+  timeline?: ServiceOrderTimelineItem[];
   createdAt: string;
   updatedAt: string;
 };
@@ -300,6 +324,64 @@ export type DashboardSummary = {
   recentOrders: DashboardOrder[];
   lowStockProducts: DashboardLowStockProduct[];
   operationalQueue: OperationalQueueItem[];
+};
+
+export type ProfessionalOperationPanel = {
+  alerts: {
+    stalledOrders: Array<{
+      id: string;
+      customer: string;
+      device: string;
+      status: ServiceStatus;
+      updatedAt: string;
+    }>;
+    criticalStock: Array<{
+      id: string;
+      name: string;
+      stock: number;
+      minStock: number;
+      supplierName: string | null;
+    }>;
+    pendingPickup: Array<{
+      id: string;
+      customer: string;
+      phone: string;
+      pendingBalance: number;
+      updatedAt: string;
+    }>;
+    failingIntegrations: Array<{
+      orderId: string;
+      customer: string;
+      status: ServiceStatus;
+      webhookStatus: string;
+      attemptedAt: string | null;
+      response: string | null;
+    }>;
+  };
+  indicators: {
+    ordersByTechnician: Array<{
+      technicianId: string;
+      technicianName: string;
+      quantity: number;
+    }>;
+    overdueOrders: number;
+    mostConsumedParts: Array<{
+      productId: string;
+      name: string;
+      supplierName: string | null;
+      quantity: number;
+    }>;
+    bottlenecksByStage: Array<{
+      status: ServiceStatus;
+      quantity: number;
+    }>;
+  };
+  integrations: {
+    enviadas: number;
+    pendentesReenvio: number;
+    naoEnviadas: number;
+    nuncaConfigurado: number;
+  };
 };
 
 export type ServicePartFormValue = {

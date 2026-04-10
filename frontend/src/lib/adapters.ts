@@ -9,8 +9,10 @@ import {
   NotificationType,
   PaymentMethod,
   Product,
+  ProfessionalOperationPanel,
   Sale,
   ServiceOrder,
+  ServiceOrderActor,
   ServiceOrderWebhook,
   Supplier,
   ServiceStatus,
@@ -78,10 +80,34 @@ type ApiServiceOrder = {
   saldo_pendente?: number;
   pronto_sem_contato_enviado?: boolean;
   webhook_pronto?: ApiWebhookState | null;
+  auditoria?: {
+    criado_por?: ApiActor | null;
+    atendente?: ApiActor | null;
+    tecnico?: ApiActor | null;
+    entregue_por?: ApiActor | null;
+  };
+  timeline?: ApiTimelineItem[];
   created_at: string;
   updated_at: string;
   itens?: ApiServiceItem[];
   itens_os?: ApiServiceItem[];
+};
+
+type ApiActor = {
+  id: string;
+  nome: string;
+  email: string;
+  perfil: ServiceOrderActor['perfil'];
+};
+
+type ApiTimelineItem = {
+  id: string;
+  tipo: string;
+  titulo: string;
+  descricao?: string | null;
+  created_at: string;
+  usuario?: ApiActor | null;
+  metadados?: Record<string, unknown> | null;
 };
 
 type ApiWebhookState = {
@@ -202,6 +228,64 @@ type ApiFinancialReport = {
     data: string;
     meio_pagamento?: PaymentMethod | null;
   }>;
+};
+
+type ApiProfessionalOperation = {
+  alertas: {
+    ordens_paradas: Array<{
+      id: string;
+      cliente: string;
+      aparelho: string;
+      status: string;
+      updated_at: string;
+    }>;
+    estoque_critico: Array<{
+      id: string;
+      nome: string;
+      quantidade_estoque: number;
+      estoque_minimo: number;
+      fornecedor_nome?: string | null;
+    }>;
+    retirada_pendente: Array<{
+      id: string;
+      cliente: string;
+      telefone: string;
+      saldo_pendente: number;
+      updated_at: string;
+    }>;
+    integracoes_falhando: Array<{
+      ordem_id: string;
+      cliente: string;
+      status: string;
+      webhook_status: string;
+      tentativa_em?: string | null;
+      resposta?: string | null;
+    }>;
+  };
+  indicadores: {
+    ordens_por_tecnico: Array<{
+      tecnico_id: string;
+      tecnico_nome: string;
+      quantidade: number;
+    }>;
+    ordens_atrasadas: number;
+    pecas_mais_consumidas: Array<{
+      produto_id: string;
+      nome: string;
+      fornecedor_nome?: string | null;
+      quantidade: number;
+    }>;
+    gargalos_por_etapa: Array<{
+      status: string;
+      quantidade: number;
+    }>;
+  };
+  integracoes: {
+    enviadas: number;
+    pendentesReenvio: number;
+    naoEnviadas: number;
+    nuncaConfigurado: number;
+  };
 };
 
 type ApiSaleItem = {
@@ -351,8 +435,38 @@ export const mapServiceFromApi = (service: ApiServiceOrder): ServiceOrder => {
     pendingBalance: service.saldo_pendente ?? 0,
     readyWithoutContactSent: Boolean(service.pronto_sem_contato_enviado),
     webhookPronto: mapWebhookStateFromApi(service.webhook_pronto),
+    audit: service.auditoria
+      ? {
+          createdBy: mapActorFromApi(service.auditoria.criado_por),
+          attendant: mapActorFromApi(service.auditoria.atendente),
+          technician: mapActorFromApi(service.auditoria.tecnico),
+          deliveredBy: mapActorFromApi(service.auditoria.entregue_por),
+        }
+      : undefined,
+    timeline: service.timeline?.map((item) => ({
+      id: item.id,
+      type: item.tipo,
+      title: item.titulo,
+      description: item.descricao ?? null,
+      createdAt: item.created_at,
+      actor: mapActorFromApi(item.usuario),
+      metadata: item.metadados ?? null,
+    })),
     createdAt: service.created_at,
     updatedAt: service.updated_at,
+  };
+};
+
+const mapActorFromApi = (actor?: ApiActor | null): ServiceOrderActor | null => {
+  if (!actor) {
+    return null;
+  }
+
+  return {
+    id: actor.id,
+    nome: actor.nome,
+    email: actor.email,
+    perfil: actor.perfil,
   };
 };
 
@@ -499,4 +613,59 @@ export const mapFinancialReportFromApi = (
     date: item.data,
     paymentMethod: item.meio_pagamento ?? null,
   })),
+});
+
+export const mapProfessionalOperationFromApi = (
+  report: ApiProfessionalOperation,
+): ProfessionalOperationPanel => ({
+  alerts: {
+    stalledOrders: report.alertas.ordens_paradas.map((item) => ({
+      id: item.id,
+      customer: item.cliente,
+      device: item.aparelho,
+      status: STATUS_FROM_API[item.status] ?? 'aguardando_orcamento',
+      updatedAt: item.updated_at,
+    })),
+    criticalStock: report.alertas.estoque_critico.map((item) => ({
+      id: item.id,
+      name: item.nome,
+      stock: item.quantidade_estoque,
+      minStock: item.estoque_minimo,
+      supplierName: item.fornecedor_nome ?? null,
+    })),
+    pendingPickup: report.alertas.retirada_pendente.map((item) => ({
+      id: item.id,
+      customer: item.cliente,
+      phone: item.telefone,
+      pendingBalance: item.saldo_pendente,
+      updatedAt: item.updated_at,
+    })),
+    failingIntegrations: report.alertas.integracoes_falhando.map((item) => ({
+      orderId: item.ordem_id,
+      customer: item.cliente,
+      status: STATUS_FROM_API[item.status] ?? 'aguardando_orcamento',
+      webhookStatus: item.webhook_status,
+      attemptedAt: item.tentativa_em ?? null,
+      response: item.resposta ?? null,
+    })),
+  },
+  indicators: {
+    ordersByTechnician: report.indicadores.ordens_por_tecnico.map((item) => ({
+      technicianId: item.tecnico_id,
+      technicianName: item.tecnico_nome,
+      quantity: item.quantidade,
+    })),
+    overdueOrders: report.indicadores.ordens_atrasadas,
+    mostConsumedParts: report.indicadores.pecas_mais_consumidas.map((item) => ({
+      productId: item.produto_id,
+      name: item.nome,
+      supplierName: item.fornecedor_nome ?? null,
+      quantity: item.quantidade,
+    })),
+    bottlenecksByStage: report.indicadores.gargalos_por_etapa.map((item) => ({
+      status: STATUS_FROM_API[item.status] ?? 'aguardando_orcamento',
+      quantity: item.quantidade,
+    })),
+  },
+  integrations: report.integracoes,
 });

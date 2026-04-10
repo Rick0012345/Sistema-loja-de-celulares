@@ -3,6 +3,7 @@ import {
   mapDashboardSummaryFromApi,
   mapFinancialReportFromApi,
   mapNotificationFromApi,
+  mapProfessionalOperationFromApi,
   mapProductFromApi,
   mapSaleFromApi,
   mapServiceFromApi,
@@ -22,6 +23,7 @@ import {
   NotificationItem,
   PaymentMethod,
   Product,
+  ProfessionalOperationPanel,
   Sale,
   ServiceOrder,
   ServiceOrderWebhook,
@@ -446,6 +448,11 @@ export const api = {
     return response.map(mapServiceFromApi);
   },
 
+  async getServiceById(id: string): Promise<ServiceOrder> {
+    const response = await request<any>(`/ordens-servico/${id}`);
+    return mapServiceFromApi(response);
+  },
+
   async createService(payload: {
     cliente_id: string;
     aparelho_marca: string;
@@ -605,6 +612,11 @@ export const api = {
   async getDashboardSummary(): Promise<DashboardSummary> {
     const response = await request<any>('/dashboard/resumo');
     return mapDashboardSummaryFromApi(response);
+  },
+
+  async getProfessionalOperationPanel(): Promise<ProfessionalOperationPanel> {
+    const response = await request<any>('/dashboard/operacao-profissional');
+    return mapProfessionalOperationFromApi(response);
   },
 
   async listSales(): Promise<Sale[]> {

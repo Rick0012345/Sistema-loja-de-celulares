@@ -249,6 +249,32 @@ export const ServiceOrderDetailsModal = ({
               </section>
 
               <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950/60">
+                <div className="mb-4 text-sm font-bold text-slate-900 dark:text-slate-100">
+                  Auditoria
+                </div>
+                <div className="space-y-2 text-sm text-slate-600 dark:text-slate-300">
+                  <div>
+                    Criada por:{' '}
+                    <span className="font-semibold">
+                      {service.audit?.createdBy?.nome ?? 'Nao identificado'}
+                    </span>
+                  </div>
+                  <div>
+                    Tecnico:{' '}
+                    <span className="font-semibold">
+                      {service.audit?.technician?.nome ?? 'Nao atribuido'}
+                    </span>
+                  </div>
+                  <div>
+                    Entregue por:{' '}
+                    <span className="font-semibold">
+                      {service.audit?.deliveredBy?.nome ?? 'Ainda nao entregue'}
+                    </span>
+                  </div>
+                </div>
+              </section>
+
+              <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950/60">
                 <div className="text-sm font-bold text-slate-900 dark:text-slate-100">
                   Webhook OS pronta
                 </div>
@@ -268,6 +294,38 @@ export const ServiceOrderDetailsModal = ({
                   <div className="text-xs text-slate-500 dark:text-slate-400">
                     {service.webhookPronto?.latestResponse || 'Sem historico de envio.'}
                   </div>
+                </div>
+              </section>
+
+              <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950/60">
+                <div className="mb-4 text-sm font-bold text-slate-900 dark:text-slate-100">
+                  Timeline da OS
+                </div>
+                <div className="space-y-3">
+                  {(service.timeline ?? []).slice(0, 6).map((item) => (
+                    <div
+                      key={item.id}
+                      className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm dark:border-slate-800 dark:bg-slate-950"
+                    >
+                      <div className="font-semibold text-slate-900 dark:text-slate-100">
+                        {item.title}
+                      </div>
+                      <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                        {new Date(item.createdAt).toLocaleString('pt-BR')}
+                        {item.actor ? ` • ${item.actor.nome}` : ''}
+                      </div>
+                      {item.description && (
+                        <div className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+                          {item.description}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  {(service.timeline ?? []).length === 0 && (
+                    <div className="rounded-2xl border border-dashed border-slate-300 px-4 py-5 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                      Sem eventos operacionais detalhados para esta OS.
+                    </div>
+                  )}
                 </div>
               </section>
 

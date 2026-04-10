@@ -6,6 +6,7 @@ import {
   FinancialReport,
   NotificationItem,
   PaymentMethod,
+  ProfessionalOperationPanel,
   Product,
   ProductFormValues,
   Sale,
@@ -65,6 +66,8 @@ export const useBackofficeData = ({
   const [dashboardSummary, setDashboardSummary] = useState<DashboardSummary | null>(null);
   const [financialReport, setFinancialReport] = useState<FinancialReport | null>(null);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [professionalOperation, setProfessionalOperation] =
+    useState<ProfessionalOperationPanel | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isMutating, setIsMutating] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -76,6 +79,7 @@ export const useBackofficeData = ({
     setSales([]);
     setSuppliers([]);
     setNotifications([]);
+    setProfessionalOperation(null);
     setDashboardSummary(null);
     setFinancialReport(null);
     setIsLoading(false);
@@ -98,6 +102,7 @@ export const useBackofficeData = ({
           nextSuppliers,
           nextFinancialReport,
           nextNotifications,
+          nextProfessionalOperation,
         ] =
           await Promise.all([
             api.listProducts(),
@@ -108,6 +113,7 @@ export const useBackofficeData = ({
             api.listSuppliers(),
             api.getFinancialReport(),
             api.listNotifications(),
+            api.getProfessionalOperationPanel(),
           ]);
 
         setProducts(nextProducts);
@@ -118,6 +124,7 @@ export const useBackofficeData = ({
         setSuppliers(nextSuppliers);
         setFinancialReport(nextFinancialReport);
         setNotifications(nextNotifications);
+        setProfessionalOperation(nextProfessionalOperation);
         setErrorMessage(null);
       } catch (error) {
         if (error instanceof UnauthorizedError) {
@@ -398,6 +405,23 @@ export const useBackofficeData = ({
     [onUnauthorized],
   );
 
+  const getServiceDetails = useCallback(
+    async (serviceId: string) => {
+      try {
+        return await api.getServiceById(serviceId);
+      } catch (error) {
+        if (error instanceof UnauthorizedError) {
+          await onUnauthorized(error.message);
+          return null;
+        }
+
+        setErrorMessage(getErrorMessage(error));
+        return null;
+      }
+    },
+    [onUnauthorized],
+  );
+
   const stats = useMemo(() => {
     const deliveredServices = services.filter((service) => service.status === 'entregue');
     const totalRevenue = deliveredServices.reduce((acc, service) => acc + service.totalPrice, 0);
@@ -431,6 +455,7 @@ export const useBackofficeData = ({
     dashboardSummary,
     financialReport,
     notifications,
+    professionalOperation,
     isLoading,
     isMutating,
     errorMessage,
@@ -450,5 +475,6 @@ export const useBackofficeData = ({
     updateServiceStatus,
     retryWebhook,
     refreshFinancialReport,
+    getServiceDetails,
   };
 };

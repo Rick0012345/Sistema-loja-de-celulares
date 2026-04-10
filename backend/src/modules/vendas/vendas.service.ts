@@ -14,6 +14,7 @@ import { randomUUID } from 'crypto';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { toNumber } from '../../common/utils/serialize';
 import { NotificacoesService } from '../notificacoes/notificacoes.service';
+import type { AuthenticatedUser } from '../auth/auth.types';
 import { CreateVendaDto } from './vendas.dto';
 
 @Injectable()
@@ -101,7 +102,7 @@ export class VendasService {
     });
   }
 
-  async create(dto: CreateVendaDto) {
+  async create(dto: CreateVendaDto, currentUser?: AuthenticatedUser) {
     if (!dto.itens.length) {
       throw new BadRequestException(
         'Informe pelo menos um item para registrar a venda.',
@@ -186,6 +187,19 @@ export class VendasService {
           pago_em: new Date(),
         },
       });
+
+      if (
+        currentUser?.sub &&
+        '$executeRaw' in tx &&
+        typeof tx.$executeRaw === 'function'
+      ) {
+        await tx.$executeRaw`
+          UPDATE contas_financeiras
+          SET registrado_por = ${currentUser.sub}::uuid
+          WHERE descricao = ${descricaoConta}
+            AND registrado_por IS NULL
+        `;
+      }
 
       return updatedProducts;
     });

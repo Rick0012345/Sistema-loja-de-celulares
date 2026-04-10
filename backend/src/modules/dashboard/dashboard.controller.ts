@@ -23,6 +23,11 @@ export class DashboardController {
     return this.dashboardService.getFilaOperacional();
   }
 
+  @Get('operacao-profissional')
+  getOperacaoProfissional() {
+    return this.dashboardService.getOperacaoProfissional();
+  }
+
   @Get('relatorios')
   getRelatorios(
     @Query('dias') dias?: string,

@@ -2,6 +2,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Prisma, status_ordem_servico, tipo_entrega_os } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { ConfiguracoesLojaService } from '../configuracoes-loja/configuracoes-loja.service';
+import type { AuthenticatedUser } from '../auth/auth.types';
 
 type OrdemServicoProntaInput = {
   ordemId: string;
@@ -36,7 +37,13 @@ export class WebhookEventosService {
     private readonly configuracoesLojaService: ConfiguracoesLojaService,
   ) {}
 
-  async dispatchOrdemServicoPronta(input: OrdemServicoProntaInput) {
+  async dispatchOrdemServicoPronta(
+    input: OrdemServicoProntaInput,
+    metadata?: {
+      initiatedByUserId?: string | null;
+      source?: 'status_change' | 'manual_retry' | 'automatic';
+    },
+  ) {
     const configuracoesLoja = await this.configuracoesLojaService.getInternal();
     const webhookUrl =
       configuracoesLoja.ordem_pronta_webhook_url?.trim() || null;
@@ -65,6 +72,17 @@ export class WebhookEventosService {
         resposta:
           'Webhook de OS pronta nao configurado nas configuracoes da loja. Evento nao enviado.',
       });
+      await this.saveOperationalEvent({
+        ordemId: input.ordemId,
+        tipo: 'webhook_falhou',
+        titulo: 'Webhook nao configurado',
+        descricao:
+          'Tentativa de webhook ignorada porque a integracao nao esta configurada.',
+        usuarioId: metadata?.initiatedByUserId ?? null,
+        metadados: {
+          origem: metadata?.source ?? 'automatic',
+        },
+      });
       return this.getOrderWebhookState(input.ordemId);
     }
 
@@ -84,9 +102,30 @@ export class WebhookEventosService {
       });
 
       if (!response.ok) {
+        await this.saveOperationalEvent({
+          ordemId: input.ordemId,
+          tipo: 'webhook_falhou',
+          titulo: 'Webhook com falha',
+          descricao: response.summary,
+          usuarioId: metadata?.initiatedByUserId ?? null,
+          metadados: {
+            origem: metadata?.source ?? 'automatic',
+          },
+        });
         this.logger.warn(
           `Falha ao enviar webhook da OS ${input.ordemId}: ${response.summary}.`,
         );
+      } else {
+        await this.saveOperationalEvent({
+          ordemId: input.ordemId,
+          tipo: 'webhook_enviado',
+          titulo: 'Webhook enviado com sucesso',
+          descricao: response.summary,
+          usuarioId: metadata?.initiatedByUserId ?? null,
+          metadados: {
+            origem: metadata?.source ?? 'automatic',
+          },
+        });
       }
     } catch (error) {
       const message =
@@ -100,6 +139,17 @@ export class WebhookEventosService {
         payload,
         sucesso: false,
         resposta: message,
+      });
+
+      await this.saveOperationalEvent({
+        ordemId: input.ordemId,
+        tipo: 'webhook_falhou',
+        titulo: 'Webhook com erro de rede',
+        descricao: message,
+        usuarioId: metadata?.initiatedByUserId ?? null,
+        metadados: {
+          origem: metadata?.source ?? 'automatic',
+        },
       });
 
       this.logger.warn(
@@ -212,7 +262,7 @@ export class WebhookEventosService {
     };
   }
 
-  async retryOrderWebhook(ordemId: string) {
+  async retryOrderWebhook(ordemId: string, currentUser: AuthenticatedUser) {
     const ordem = await this.prisma.ordens_servico.findUnique({
       where: { id: ordemId },
       include: {
@@ -224,14 +274,20 @@ export class WebhookEventosService {
       throw new NotFoundException('Ordem de servico nao encontrada.');
     }
 
-    return this.dispatchOrdemServicoPronta({
-      ordemId: ordem.id,
-      clienteNome: ordem.clientes.nome,
-      clienteTelefone: ordem.clientes.telefone,
-      tipoEntrega: ordem.tipo_entrega,
-      aparelhoMarca: ordem.aparelho_marca,
-      aparelhoModelo: ordem.aparelho_modelo,
-    });
+    return this.dispatchOrdemServicoPronta(
+      {
+        ordemId: ordem.id,
+        clienteNome: ordem.clientes.nome,
+        clienteTelefone: ordem.clientes.telefone,
+        tipoEntrega: ordem.tipo_entrega,
+        aparelhoMarca: ordem.aparelho_marca,
+        aparelhoModelo: ordem.aparelho_modelo,
+      },
+      {
+        initiatedByUserId: currentUser.sub,
+        source: 'manual_retry',
+      },
+    );
   }
 
   async getWebhookStateMap(ordemIds: string[]) {
@@ -419,5 +475,38 @@ export class WebhookEventosService {
         resposta: input.resposta,
       },
     });
+  }
+
+  private async saveOperationalEvent(input: {
+    ordemId: string;
+    tipo: string;
+    titulo: string;
+    descricao?: string | null;
+    usuarioId?: string | null;
+    metadados?: Prisma.InputJsonValue;
+  }) {
+    const descricao = input.descricao ?? null;
+    const usuarioId = input.usuarioId ?? null;
+    const metadados =
+      input.metadados === undefined ? null : JSON.stringify(input.metadados);
+
+    await this.prisma.$executeRaw`
+      INSERT INTO ordem_servico_eventos (
+        ordem_servico_id,
+        tipo,
+        titulo,
+        descricao,
+        usuario_id,
+        metadados
+      )
+      VALUES (
+        ${input.ordemId}::uuid,
+        ${input.tipo},
+        ${input.titulo},
+        ${descricao},
+        ${usuarioId}::uuid,
+        ${metadados}::jsonb
+      )
+    `;
   }
 }

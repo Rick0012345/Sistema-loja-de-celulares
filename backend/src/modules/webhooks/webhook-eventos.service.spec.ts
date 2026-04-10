@@ -14,10 +14,7 @@ describe('WebhookEventosService', () => {
     const originalFetch = global.fetch;
     global.fetch = fetchMock as typeof fetch;
 
-    const service = new WebhookEventosService(
-      {} as never,
-      {} as never,
-    );
+    const service = new WebhookEventosService({} as never, {} as never);
 
     const result = await (
       service as unknown as {

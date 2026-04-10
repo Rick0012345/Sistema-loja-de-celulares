@@ -15,7 +15,13 @@ import { format, subDays } from 'date-fns';
 import { serviceStatusLabel } from '../lib/serviceStatus';
 import { cn, formatCurrency, formatDateTime } from '../lib/utils';
 import { StatCard } from '../components/StatCard';
-import { DashboardSummary, ServiceOrder, ServiceStatus, ThemeMode } from '../types';
+import {
+  DashboardSummary,
+  ProfessionalOperationPanel,
+  ServiceOrder,
+  ServiceStatus,
+  ThemeMode,
+} from '../types';
 
 const panelClass =
   'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm';
@@ -31,6 +37,7 @@ type DashboardViewProps = {
   services: ServiceOrder[];
   theme: ThemeMode;
   summary: DashboardSummary | null;
+  professionalOperation: ProfessionalOperationPanel | null;
 };
 
 export const DashboardView = ({
@@ -38,6 +45,7 @@ export const DashboardView = ({
   services,
   theme,
   summary,
+  professionalOperation,
 }: DashboardViewProps) => {
   const chartData = Array.from({ length: 7 }).map((_, index) => {
     const date = subDays(new Date(), 6 - index);
@@ -364,6 +372,73 @@ export const DashboardView = ({
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {professionalOperation && (
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div className={cn('rounded-2xl p-5', panelClass)}>
+            <h3 className="mb-4 text-base font-bold">Alertas operacionais</h3>
+            <div className="space-y-4 text-sm">
+              <div>
+                <p className="font-semibold text-slate-900 dark:text-slate-100">
+                  OS paradas ha dias: {professionalOperation.alerts.stalledOrders.length}
+                </p>
+                {professionalOperation.alerts.stalledOrders.slice(0, 3).map((item) => (
+                  <p key={item.id} className="mt-1 text-slate-500 dark:text-slate-400">
+                    {item.customer} • {item.device} • {formatDateTime(item.updatedAt)}
+                  </p>
+                ))}
+              </div>
+              <div>
+                <p className="font-semibold text-slate-900 dark:text-slate-100">
+                  Integracoes falhando: {professionalOperation.alerts.failingIntegrations.length}
+                </p>
+                {professionalOperation.alerts.failingIntegrations
+                  .slice(0, 3)
+                  .map((item) => (
+                    <p
+                      key={item.orderId}
+                      className="mt-1 text-slate-500 dark:text-slate-400"
+                    >
+                      {item.customer} • {serviceStatusLabel[item.status]}
+                    </p>
+                  ))}
+              </div>
+            </div>
+          </div>
+
+          <div className={cn('rounded-2xl p-5', panelClass)}>
+            <h3 className="mb-4 text-base font-bold">Painel operacional</h3>
+            <div className="space-y-4 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500 dark:text-slate-400">OS atrasadas</span>
+                <strong>{professionalOperation.indicators.overdueOrders}</strong>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500 dark:text-slate-400">Webhooks pendentes</span>
+                <strong>{professionalOperation.integrations.pendentesReenvio}</strong>
+              </div>
+              <div>
+                <p className="font-semibold text-slate-900 dark:text-slate-100">
+                  OS por tecnico
+                </p>
+                {professionalOperation.indicators.ordersByTechnician
+                  .slice(0, 4)
+                  .map((item) => (
+                    <div
+                      key={item.technicianId}
+                      className="mt-2 flex items-center justify-between text-slate-500 dark:text-slate-400"
+                    >
+                      <span>{item.technicianName}</span>
+                      <strong className="text-slate-900 dark:text-slate-100">
+                        {item.quantity}
+                      </strong>
+                    </div>
+                  ))}
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -238,6 +238,169 @@ export class DashboardService {
     });
   }
 
+  async getOperacaoProfissional() {
+    const seteDiasAtras = new Date();
+    seteDiasAtras.setDate(seteDiasAtras.getDate() - 7);
+
+    const [ordens, produtos, movimentos, webhooks] = await Promise.all([
+      this.prisma.ordens_servico.findMany({
+        where: {
+          status: {
+            notIn: [
+              status_ordem_servico.entregue,
+              status_ordem_servico.cancelada,
+            ],
+          },
+        },
+        include: {
+          clientes: true,
+          pagamentos_os: true,
+          usuarios_ordens_servico_tecnico_idTousuarios: {
+            select: { id: true, nome: true },
+          },
+        },
+      }),
+      this.prisma.produtos_pecas.findMany({
+        where: { ativo: true },
+        include: {
+          fornecedores: {
+            select: { nome: true },
+          },
+        },
+      }),
+      this.prisma.movimentacoes_estoque.groupBy({
+        by: ['produto_id'],
+        where: {
+          tipo: tipo_movimentacao_estoque.saida,
+          origem: origem_movimentacao_estoque.ordem_servico,
+        },
+        _sum: { quantidade: true },
+        orderBy: {
+          _sum: {
+            quantidade: 'desc',
+          },
+        },
+      }),
+      this.webhookEventosService.getOperationalOverview(),
+    ]);
+
+    const ordensParadas = ordens
+      .filter((ordem) => ordem.updated_at < seteDiasAtras)
+      .sort(
+        (a, b) =>
+          new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime(),
+      );
+
+    const retiradasPendentes = ordens.filter(
+      (ordem) => ordem.status === status_ordem_servico.pronto_para_retirada,
+    );
+
+    const estoqueCritico = produtos
+      .filter((produto) => produto.quantidade_estoque <= produto.estoque_minimo)
+      .sort((a, b) => a.quantidade_estoque - b.quantidade_estoque);
+
+    const ordensPorTecnico = ordens.reduce<
+      Array<{
+        tecnico_id: string;
+        tecnico_nome: string;
+        quantidade: number;
+      }>
+    >((acc, ordem) => {
+      const tecnico = ordem.usuarios_ordens_servico_tecnico_idTousuarios;
+      if (!tecnico) {
+        return acc;
+      }
+
+      const existing = acc.find((item) => item.tecnico_id === tecnico.id);
+      if (existing) {
+        existing.quantidade += 1;
+        return acc;
+      }
+
+      acc.push({
+        tecnico_id: tecnico.id,
+        tecnico_nome: tecnico.nome,
+        quantidade: 1,
+      });
+      return acc;
+    }, []);
+
+    const gargalosPorEtapa = Object.values(status_ordem_servico).map(
+      (status) => ({
+        status,
+        quantidade: ordens.filter((ordem) => ordem.status === status).length,
+      }),
+    );
+
+    const produtosPorId = new Map(
+      produtos.map((produto) => [produto.id, produto]),
+    );
+    const pecasMaisConsumidas = movimentos.slice(0, 10).map((item) => {
+      const produto = produtosPorId.get(item.produto_id);
+      return {
+        produto_id: item.produto_id,
+        nome: produto?.nome ?? 'Produto removido',
+        fornecedor_nome: produto?.fornecedores?.nome ?? null,
+        quantidade: item._sum.quantidade ?? 0,
+      };
+    });
+
+    return {
+      alertas: {
+        ordens_paradas: ordensParadas.map((ordem) => ({
+          id: ordem.id,
+          cliente: ordem.clientes.nome,
+          aparelho: `${ordem.aparelho_marca} ${ordem.aparelho_modelo}`,
+          status: ordem.status,
+          updated_at: ordem.updated_at,
+        })),
+        estoque_critico: estoqueCritico.slice(0, 10).map((produto) => ({
+          id: produto.id,
+          nome: produto.nome,
+          quantidade_estoque: produto.quantidade_estoque,
+          estoque_minimo: produto.estoque_minimo,
+          fornecedor_nome: produto.fornecedores?.nome ?? null,
+        })),
+        retirada_pendente: retiradasPendentes.map((ordem) => ({
+          id: ordem.id,
+          cliente: ordem.clientes.nome,
+          telefone: ordem.clientes.telefone,
+          saldo_pendente: Math.max(
+            0,
+            (toNumber(ordem.valor_total) ?? 0) -
+              ordem.pagamentos_os.reduce(
+                (acc, pagamento) =>
+                  pagamento.status === status_pagamento.pago
+                    ? acc + (toNumber(pagamento.valor) ?? 0)
+                    : acc,
+                0,
+              ),
+          ),
+          updated_at: ordem.updated_at,
+        })),
+        integracoes_falhando: webhooks.items
+          .filter((item) => item.webhook.status === 'pendente_reenvio')
+          .map((item) => ({
+            ordem_id: item.ordemId,
+            cliente: item.customerName,
+            status: item.status,
+            webhook_status: item.webhook.status,
+            tentativa_em: item.webhook.latestAttemptAt,
+            resposta: item.webhook.latestResponse,
+          })),
+      },
+      indicadores: {
+        ordens_por_tecnico: ordensPorTecnico.sort(
+          (a, b) => b.quantidade - a.quantidade,
+        ),
+        ordens_atrasadas: ordensParadas.length,
+        pecas_mais_consumidas: pecasMaisConsumidas,
+        gargalos_por_etapa: gargalosPorEtapa,
+      },
+      integracoes: webhooks.totais,
+    };
+  }
+
   async getRelatorios(input?: {
     dias?: number;
     origem?: 'todas' | 'ordem_servico' | 'venda';

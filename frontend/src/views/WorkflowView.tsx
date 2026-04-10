@@ -8,7 +8,7 @@ import {
   List,
   Search,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ServiceOrderDetailsModal } from '../components/ServiceOrderDetailsModal';
 import { cn, formatCurrency } from '../lib/utils';
 import {
@@ -24,6 +24,7 @@ type WorkflowViewProps = {
   services: ServiceOrder[];
   summary: DashboardSummary | null;
   isBusy: boolean;
+  onLoadServiceDetails: (serviceId: string) => Promise<ServiceOrder | null>;
   onRequestPaymentMethod: (input: {
     title: string;
     description: string;
@@ -47,6 +48,7 @@ export const WorkflowView = ({
   services,
   summary,
   isBusy,
+  onLoadServiceDetails,
   onRequestPaymentMethod,
   onUpdateServiceStatus,
   onRetryWebhook,
@@ -54,6 +56,9 @@ export const WorkflowView = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'kanban' | 'lista'>('kanban');
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
+  const [selectedServiceDetails, setSelectedServiceDetails] = useState<ServiceOrder | null>(
+    null,
+  );
 
   const normalizedSearch = searchTerm.trim().toLowerCase();
 
@@ -101,9 +106,30 @@ export const WorkflowView = ({
   );
 
   const selectedService = useMemo(
-    () => services.find((service) => service.id === selectedServiceId) ?? null,
-    [selectedServiceId, services],
+    () =>
+      selectedServiceDetails ??
+      services.find((service) => service.id === selectedServiceId) ??
+      null,
+    [selectedServiceDetails, selectedServiceId, services],
   );
+
+  useEffect(() => {
+    if (!selectedServiceId) {
+      setSelectedServiceDetails(null);
+      return;
+    }
+
+    let active = true;
+    void onLoadServiceDetails(selectedServiceId).then((service) => {
+      if (active) {
+        setSelectedServiceDetails(service);
+      }
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [onLoadServiceDetails, selectedServiceId]);
 
   const metrics = useMemo(() => {
     const openOrders = visibleServices.filter((service) => isOpenServiceStatus(service.status));
@@ -163,6 +189,7 @@ export const WorkflowView = ({
 
   const closeServiceDetails = () => {
     setSelectedServiceId(null);
+    setSelectedServiceDetails(null);
   };
 
   return (

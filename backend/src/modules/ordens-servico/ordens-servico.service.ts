@@ -56,6 +56,11 @@ export class OrdensServicoService {
         itens_os: true,
         historico_status_os: {
           orderBy: { created_at: 'desc' },
+          include: {
+            usuarios: {
+              select: { id: true, nome: true, email: true, perfil: true },
+            },
+          },
         },
         pagamentos_os: {
           orderBy: { created_at: 'desc' },
@@ -70,14 +75,22 @@ export class OrdensServicoService {
     const webhookState =
       await this.webhookEventosService.getOrderWebhookState(id);
 
+    const auditoria = await this.getOrderAudit(ordem.id);
+    const timeline = await this.getOrderTimeline(ordem.id);
+
     return {
       ...this.serializeOrdem(ordem, webhookState),
-      historico_status_os: ordem.historico_status_os,
+      auditoria,
+      historico_status_os: ordem.historico_status_os.map((item) => ({
+        ...item,
+        usuario: this.serializeUsuarioResumo(item.usuarios),
+      })),
       pagamentos_os: ordem.pagamentos_os.map((pagamento) => ({
         ...pagamento,
         valor: toNumber(pagamento.valor),
       })),
       webhook_pronto: webhookState,
+      timeline,
     };
   }
 
@@ -143,13 +156,34 @@ export class OrdensServicoService {
         },
       });
 
+      await this.executeRawIfAvailable(
+        tx,
+        Prisma.sql`
+          UPDATE ordens_servico
+          SET criado_por = ${currentUser.sub}::uuid
+          WHERE id = ${ordem.id}::uuid
+        `,
+      );
+
+      await this.createOperationalEvent(tx, {
+        ordemId: ordem.id,
+        tipo: 'os_criada',
+        titulo: 'OS criada',
+        descricao: 'Ordem de servico aberta no sistema.',
+        usuarioId: currentUser.sub,
+      });
+
       return ordem;
     });
 
     return this.serializeOrdem(created);
   }
 
-  async update(id: string, dto: UpdateOrdemServicoDto) {
+  async update(
+    id: string,
+    dto: UpdateOrdemServicoDto,
+    currentUser: AuthenticatedUser,
+  ) {
     const updated = await this.prisma.$transaction(async (tx) => {
       const ordem = await tx.ordens_servico.findUnique({
         where: { id },
@@ -199,7 +233,7 @@ export class OrdensServicoService {
       const valorTotal = totalPecas + valorMaoDeObra - desconto;
       const lucroEstimado = lucroPecas + valorMaoDeObra - desconto;
 
-      return tx.ordens_servico.update({
+      const saved = await tx.ordens_servico.update({
         where: { id },
         data: {
           cliente_id: dto.cliente_id ?? undefined,
@@ -233,6 +267,16 @@ export class OrdensServicoService {
           itens_os: true,
         },
       });
+
+      await this.createOperationalEvent(tx, {
+        ordemId: id,
+        tipo: 'os_editada',
+        titulo: 'OS atualizada',
+        descricao: 'Dados da ordem de servico foram atualizados.',
+        usuarioId: currentUser.sub,
+      });
+
+      return saved;
     });
 
     return this.serializeOrdem(updated);
@@ -320,6 +364,29 @@ export class OrdensServicoService {
                 dto.observacao ?? 'Pagamento registrado na entrega da OS.',
             },
           });
+
+          await this.executeRawIfAvailable(
+            tx,
+            Prisma.sql`
+              UPDATE pagamentos_os
+              SET registrado_por = ${currentUser.sub}::uuid
+              WHERE ordem_servico_id = ${ordem.id}::uuid
+                AND registrado_por IS NULL
+            `,
+          );
+
+          await this.createOperationalEvent(tx, {
+            ordemId: ordem.id,
+            tipo: 'pagamento_registrado',
+            titulo: 'Pagamento registrado',
+            descricao:
+              dto.observacao ?? 'Pagamento registrado na entrega da OS.',
+            usuarioId: currentUser.sub,
+            metadados: {
+              valor: saldoPendente,
+              meio_pagamento: dto.meio_pagamento,
+            },
+          });
         }
 
         await tx.historico_status_os.create({
@@ -329,6 +396,29 @@ export class OrdensServicoService {
             status_novo: nextStatus,
             alterado_por: dto.alterado_por ?? currentUser.sub,
             observacao: dto.observacao ?? null,
+          },
+        });
+
+        if (nextStatus === status_ordem_servico.entregue) {
+          await this.executeRawIfAvailable(
+            tx,
+            Prisma.sql`
+              UPDATE ordens_servico
+              SET entregue_por = ${currentUser.sub}::uuid
+              WHERE id = ${ordem.id}::uuid
+            `,
+          );
+        }
+
+        await this.createOperationalEvent(tx, {
+          ordemId: ordem.id,
+          tipo: 'status_alterado',
+          titulo: `Status alterado para ${nextStatus}`,
+          descricao: dto.observacao ?? null,
+          usuarioId: currentUser.sub,
+          metadados: {
+            status_anterior: previousStatus,
+            status_novo: nextStatus,
           },
         });
 
@@ -373,14 +463,20 @@ export class OrdensServicoService {
       updated.status === status_ordem_servico.pronto_para_retirada &&
       updated.clientes
     ) {
-      await this.webhookEventosService.dispatchOrdemServicoPronta({
-        ordemId: updated.id,
-        clienteNome: updated.clientes.nome,
-        clienteTelefone: updated.clientes.telefone,
-        tipoEntrega: updated.tipo_entrega,
-        aparelhoMarca: updated.aparelho_marca,
-        aparelhoModelo: updated.aparelho_modelo,
-      });
+      await this.webhookEventosService.dispatchOrdemServicoPronta(
+        {
+          ordemId: updated.id,
+          clienteNome: updated.clientes.nome,
+          clienteTelefone: updated.clientes.telefone,
+          tipoEntrega: updated.tipo_entrega,
+          aparelhoMarca: updated.aparelho_marca,
+          aparelhoModelo: updated.aparelho_modelo,
+        },
+        {
+          initiatedByUserId: currentUser.sub,
+          source: 'status_change',
+        },
+      );
     }
 
     const webhookState =
@@ -415,17 +511,19 @@ export class OrdensServicoService {
       sentSuccessfully: boolean;
     },
   ) {
+    const ordemComPagamentos = ordem as T & {
+      pagamentos_os?: Array<{
+        valor: Prisma.Decimal | number | string | null;
+        status: status_pagamento;
+      }>;
+    };
+
     const saldoPendente =
-      'pagamentos_os' in ordem && Array.isArray(ordem.pagamentos_os)
-        ? this.getSaldoPendente(
-            ordem as {
-              valor_total: Prisma.Decimal | number | string | null;
-              pagamentos_os: Array<{
-                valor: Prisma.Decimal | number | string | null;
-                status: status_pagamento;
-              }>;
-            },
-          )
+      Array.isArray(ordemComPagamentos.pagamentos_os)
+        ? this.getSaldoPendente({
+            valor_total: ordemComPagamentos.valor_total,
+            pagamentos_os: ordemComPagamentos.pagamentos_os,
+          })
         : 0;
 
     return {
@@ -449,6 +547,196 @@ export class OrdensServicoService {
         subtotal: toNumber(item.subtotal),
       })),
     };
+  }
+
+  private async createOperationalEvent(
+    tx: Prisma.TransactionClient | PrismaService,
+    input: {
+      ordemId: string;
+      tipo: string;
+      titulo: string;
+      descricao?: string | null;
+      usuarioId?: string | null;
+      metadados?: Prisma.InputJsonValue;
+    },
+  ) {
+    const descricao = input.descricao ?? null;
+    const usuarioId = input.usuarioId ?? null;
+    const metadados =
+      input.metadados === undefined ? null : JSON.stringify(input.metadados);
+
+    await this.executeRawIfAvailable(
+      tx,
+      Prisma.sql`
+        INSERT INTO ordem_servico_eventos (
+          ordem_servico_id,
+          tipo,
+          titulo,
+          descricao,
+          usuario_id,
+          metadados
+        )
+        VALUES (
+          ${input.ordemId}::uuid,
+          ${input.tipo},
+          ${input.titulo},
+          ${descricao},
+          ${usuarioId}::uuid,
+          ${metadados}::jsonb
+        )
+      `,
+    );
+  }
+
+  private serializeUsuarioResumo(
+    usuario:
+      | {
+          id: string;
+          nome: string;
+          email: string;
+          perfil: string;
+        }
+      | null
+      | undefined,
+  ) {
+    if (!usuario) {
+      return null;
+    }
+
+    return {
+      id: usuario.id,
+      nome: usuario.nome,
+      email: usuario.email,
+      perfil: usuario.perfil,
+    };
+  }
+
+  private async getOrderAudit(ordemId: string) {
+    const rows = await this.prisma.$queryRaw<
+      Array<Record<string, string | null>>
+    >`
+      SELECT
+        os.criado_por,
+        os.atendente_id,
+        os.tecnico_id,
+        os.entregue_por,
+        criado.nome AS criado_nome,
+        criado.email AS criado_email,
+        criado.perfil::text AS criado_perfil,
+        atendente.nome AS atendente_nome,
+        atendente.email AS atendente_email,
+        atendente.perfil::text AS atendente_perfil,
+        tecnico.nome AS tecnico_nome,
+        tecnico.email AS tecnico_email,
+        tecnico.perfil::text AS tecnico_perfil,
+        entregue.nome AS entregue_nome,
+        entregue.email AS entregue_email,
+        entregue.perfil::text AS entregue_perfil
+      FROM ordens_servico os
+      LEFT JOIN usuarios criado ON criado.id = os.criado_por
+      LEFT JOIN usuarios atendente ON atendente.id = os.atendente_id
+      LEFT JOIN usuarios tecnico ON tecnico.id = os.tecnico_id
+      LEFT JOIN usuarios entregue ON entregue.id = os.entregue_por
+      WHERE os.id = ${ordemId}::uuid
+    `;
+
+    const row = rows[0];
+    if (!row) {
+      return null;
+    }
+
+    return {
+      criado_por: this.mapAuditActor(
+        row.criado_por,
+        row.criado_nome,
+        row.criado_email,
+        row.criado_perfil,
+      ),
+      atendente: this.mapAuditActor(
+        row.atendente_id,
+        row.atendente_nome,
+        row.atendente_email,
+        row.atendente_perfil,
+      ),
+      tecnico: this.mapAuditActor(
+        row.tecnico_id,
+        row.tecnico_nome,
+        row.tecnico_email,
+        row.tecnico_perfil,
+      ),
+      entregue_por: this.mapAuditActor(
+        row.entregue_por,
+        row.entregue_nome,
+        row.entregue_email,
+        row.entregue_perfil,
+      ),
+    };
+  }
+
+  private async getOrderTimeline(ordemId: string) {
+    const rows = await this.prisma.$queryRaw<
+      Array<Record<string, string | null>>
+    >`
+      SELECT
+        e.id,
+        e.tipo,
+        e.titulo,
+        e.descricao,
+        e.created_at,
+        e.metadados::text AS metadados,
+        u.id AS usuario_id,
+        u.nome AS usuario_nome,
+        u.email AS usuario_email,
+        u.perfil::text AS usuario_perfil
+      FROM ordem_servico_eventos e
+      LEFT JOIN usuarios u ON u.id = e.usuario_id
+      WHERE e.ordem_servico_id = ${ordemId}::uuid
+      ORDER BY e.created_at DESC
+    `;
+
+    return rows.map((row) => ({
+      id: row.id,
+      tipo: row.tipo,
+      titulo: row.titulo,
+      descricao: row.descricao,
+      created_at: row.created_at,
+      usuario: this.mapAuditActor(
+        row.usuario_id,
+        row.usuario_nome,
+        row.usuario_email,
+        row.usuario_perfil,
+      ),
+      metadados: row.metadados
+        ? (JSON.parse(row.metadados) as Record<string, unknown>)
+        : null,
+    }));
+  }
+
+  private mapAuditActor(
+    id: string | null | undefined,
+    nome: string | null | undefined,
+    email: string | null | undefined,
+    perfil: string | null | undefined,
+  ) {
+    if (!id || !nome || !email || !perfil) {
+      return null;
+    }
+
+    return {
+      id,
+      nome,
+      email,
+      perfil,
+    };
+  }
+
+  private async executeRawIfAvailable(
+    tx: Prisma.TransactionClient | PrismaService,
+    query: Prisma.Sql,
+  ) {
+    if ('$executeRaw' in tx && typeof tx.$executeRaw === 'function') {
+      await tx.$executeRaw(query);
+    }
   }
 
   private async buildItensData(

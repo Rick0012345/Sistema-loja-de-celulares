@@ -41,8 +41,12 @@ export class OrdensServicoController {
 
   @Patch(':id')
   @Roles(perfil_usuario.administrador, perfil_usuario.atendente)
-  update(@Param('id') id: string, @Body() dto: UpdateOrdemServicoDto) {
-    return this.ordensServicoService.update(id, dto);
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateOrdemServicoDto,
+    @CurrentUser() currentUser: AuthenticatedUser,
+  ) {
+    return this.ordensServicoService.update(id, dto, currentUser);
   }
 
   @Patch(':id/status')

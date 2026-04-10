@@ -1,6 +1,8 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
 import { perfil_usuario } from '@prisma/client';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import type { AuthenticatedUser } from '../auth/auth.types';
 import { CreateVendaDto } from './vendas.dto';
 import { VendasService } from './vendas.service';
 
@@ -19,7 +21,10 @@ export class VendasController {
   }
 
   @Post()
-  create(@Body() dto: CreateVendaDto) {
-    return this.vendasService.create(dto);
+  create(
+    @Body() dto: CreateVendaDto,
+    @CurrentUser() currentUser: AuthenticatedUser,
+  ) {
+    return this.vendasService.create(dto, currentUser);
   }
 }

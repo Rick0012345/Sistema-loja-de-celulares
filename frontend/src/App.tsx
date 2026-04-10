@@ -150,6 +150,7 @@ export default function App() {
               services={backoffice.services}
               theme={theme}
               summary={backoffice.dashboardSummary}
+              professionalOperation={backoffice.professionalOperation}
             />
           )}
           {activeTab === 'inventory' && (
@@ -194,6 +195,7 @@ export default function App() {
               services={backoffice.services}
               summary={backoffice.dashboardSummary}
               isBusy={backoffice.isMutating}
+              onLoadServiceDetails={backoffice.getServiceDetails}
               onUpdateServiceStatus={backoffice.updateServiceStatus}
               onRequestPaymentMethod={requestPaymentMethod}
               onRetryWebhook={backoffice.retryWebhook}

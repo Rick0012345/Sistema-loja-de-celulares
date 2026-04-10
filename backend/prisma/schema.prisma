@@ -48,6 +48,7 @@ model contas_financeiras {
   cliente_id       String?               @db.Uuid
   fornecedor_id    String?               @db.Uuid
   ordem_servico_id String?               @db.Uuid
+  registrado_por   String?               @db.Uuid
   valor            Decimal               @db.Decimal(12, 2)
   vencimento       DateTime?             @db.Date
   status           status_pagamento      @default(pendente)
@@ -57,6 +58,7 @@ model contas_financeiras {
   clientes         clientes?             @relation(fields: [cliente_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   fornecedores     fornecedores?         @relation(fields: [fornecedor_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   ordens_servico   ordens_servico?       @relation(fields: [ordem_servico_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  usuarios         usuarios?             @relation("contas_financeiras_registrado_porTousuarios", fields: [registrado_por], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([tipo, status], map: "idx_contas_financeiras_tipo_status")
 }
@@ -148,6 +150,8 @@ model ordens_servico {
   cliente_id                                     String                @db.Uuid
   atendente_id                                   String?               @db.Uuid
   tecnico_id                                     String?               @db.Uuid
+  criado_por                                     String?               @db.Uuid
+  entregue_por                                   String?               @db.Uuid
   aparelho_marca                                 String                @db.VarChar(80)
   aparelho_modelo                                String                @db.VarChar(120)
   aparelho_cor                                   String?               @db.VarChar(50)
@@ -168,9 +172,12 @@ model ordens_servico {
   updated_at                                     DateTime              @default(now()) @db.Timestamptz(6)
   contas_financeiras                             contas_financeiras[]
   historico_status_os                            historico_status_os[]
+  eventos_operacionais                           ordem_servico_eventos[]
   itens_os                                       itens_os[]
   usuarios_ordens_servico_atendente_idTousuarios usuarios?             @relation("ordens_servico_atendente_idTousuarios", fields: [atendente_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   clientes                                       clientes              @relation(fields: [cliente_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  usuarios_ordens_servico_criado_porTousuarios   usuarios?             @relation("ordens_servico_criado_porTousuarios", fields: [criado_por], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  usuarios_ordens_servico_entregue_porTousuarios usuarios?             @relation("ordens_servico_entregue_porTousuarios", fields: [entregue_por], references: [id], onDelete: NoAction, onUpdate: NoAction)
   usuarios_ordens_servico_tecnico_idTousuarios   usuarios?             @relation("ordens_servico_tecnico_idTousuarios", fields: [tecnico_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   pagamentos_os                                  pagamentos_os[]
 
@@ -183,6 +190,7 @@ model ordens_servico {
 model pagamentos_os {
   id               String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   ordem_servico_id String           @db.Uuid
+  registrado_por   String?          @db.Uuid
   valor            Decimal          @db.Decimal(12, 2)
   meio             meio_pagamento
   status           status_pagamento @default(pago)
@@ -190,8 +198,25 @@ model pagamentos_os {
   observacao       String?
   created_at       DateTime         @default(now()) @db.Timestamptz(6)
   ordens_servico   ordens_servico   @relation(fields: [ordem_servico_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  usuarios         usuarios?        @relation("pagamentos_os_registrado_porTousuarios", fields: [registrado_por], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([ordem_servico_id], map: "idx_pagamentos_os_ordem_servico")
+}
+
+model ordem_servico_eventos {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ordem_servico_id String   @db.Uuid
+  tipo             String   @db.VarChar(60)
+  titulo           String   @db.VarChar(160)
+  descricao        String?
+  usuario_id       String?  @db.Uuid
+  metadados        Json?
+  created_at       DateTime @default(now()) @db.Timestamptz(6)
+  ordens_servico   ordens_servico @relation(fields: [ordem_servico_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  usuarios         usuarios? @relation("ordem_servico_eventos_usuario_idTousuarios", fields: [usuario_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([ordem_servico_id, created_at], map: "idx_ordem_servico_eventos_ordem_created")
+  @@index([tipo], map: "idx_ordem_servico_eventos_tipo")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -228,9 +253,14 @@ model usuarios {
   ativo                                                Boolean               @default(true)
   created_at                                           DateTime              @default(now()) @db.Timestamptz(6)
   updated_at                                           DateTime              @default(now()) @db.Timestamptz(6)
+  contas_financeiras                                   contas_financeiras[]   @relation("contas_financeiras_registrado_porTousuarios")
   historico_status_os                                  historico_status_os[]
+  ordem_servico_eventos                                ordem_servico_eventos[] @relation("ordem_servico_eventos_usuario_idTousuarios")
   ordens_servico_ordens_servico_atendente_idTousuarios ordens_servico[]      @relation("ordens_servico_atendente_idTousuarios")
+  ordens_servico_ordens_servico_criado_porTousuarios   ordens_servico[]      @relation("ordens_servico_criado_porTousuarios")
+  ordens_servico_ordens_servico_entregue_porTousuarios ordens_servico[]      @relation("ordens_servico_entregue_porTousuarios")
   ordens_servico_ordens_servico_tecnico_idTousuarios   ordens_servico[]      @relation("ordens_servico_tecnico_idTousuarios")
+  pagamentos_os_registrado_porTousuarios               pagamentos_os[]       @relation("pagamentos_os_registrado_porTousuarios")
 }
 
 model webhook_eventos {
