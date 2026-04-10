@@ -11,6 +11,7 @@ import {
   AuthenticatedUser,
   Customer,
   DashboardSummary,
+  EvolutionActionResult,
   EvolutionInstanceConnectResult,
   EvolutionInstanceOverview,
   ManagedUser,
@@ -259,6 +260,9 @@ export const api = {
       qrCode?: string | null;
       pairingCode?: string | null;
       attempts?: number | null;
+      created?: boolean | null;
+      createdNow?: boolean | null;
+      warning?: string | null;
     }>('/configuracoes/loja/evolution/instance/create', {
       method: 'POST',
     });
@@ -269,6 +273,9 @@ export const api = {
       pairingCode: response.pairingCode ?? null,
       attempts:
         typeof response.attempts === 'number' ? response.attempts : null,
+      created: response.created !== false,
+      createdNow: Boolean(response.createdNow),
+      warning: response.warning ?? null,
     };
   },
 
@@ -278,6 +285,9 @@ export const api = {
       qrCode?: string | null;
       pairingCode?: string | null;
       attempts?: number | null;
+      created?: boolean | null;
+      createdNow?: boolean | null;
+      warning?: string | null;
     }>('/configuracoes/loja/evolution/instance/connect', {
       method: 'POST',
     });
@@ -288,6 +298,62 @@ export const api = {
       pairingCode: response.pairingCode ?? null,
       attempts:
         typeof response.attempts === 'number' ? response.attempts : null,
+      created: response.created !== false,
+      createdNow: Boolean(response.createdNow),
+      warning: response.warning ?? null,
+    };
+  },
+
+  async restartEvolutionInstance(): Promise<EvolutionActionResult> {
+    const response = await request<{
+      success?: boolean | null;
+      message?: string | null;
+    }>('/configuracoes/loja/evolution/instance/restart', {
+      method: 'POST',
+    });
+
+    return {
+      success: response.success !== false,
+      message: response.message ?? 'Instancia reiniciada com sucesso.',
+    };
+  },
+
+  async logoutEvolutionInstance(): Promise<EvolutionActionResult> {
+    const response = await request<{
+      success?: boolean | null;
+      message?: string | null;
+    }>('/configuracoes/loja/evolution/instance/logout', {
+      method: 'POST',
+    });
+
+    return {
+      success: response.success !== false,
+      message: response.message ?? 'Sessao encerrada com sucesso.',
+    };
+  },
+
+  async recreateEvolutionInstance(): Promise<EvolutionInstanceConnectResult> {
+    const response = await request<{
+      instanceName?: string | null;
+      qrCode?: string | null;
+      pairingCode?: string | null;
+      attempts?: number | null;
+      created?: boolean | null;
+      createdNow?: boolean | null;
+      warning?: string | null;
+    }>('/configuracoes/loja/evolution/instance/recreate', {
+      method: 'POST',
+    });
+
+    return {
+      instanceName: response.instanceName ?? '',
+      qrCode: response.qrCode ?? null,
+      pairingCode: response.pairingCode ?? null,
+      attempts:
+        typeof response.attempts === 'number' ? response.attempts : null,
+      created: response.created !== false,
+      createdNow: Boolean(response.createdNow),
+      warning: response.warning ?? null,
     };
   },
 

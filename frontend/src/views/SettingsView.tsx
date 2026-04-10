@@ -65,6 +65,7 @@ export const SettingsView = ({ currentUser }: SettingsViewProps) => {
   const [isStoreSaving, setIsStoreSaving] = useState(false);
   const [isEvolutionLoading, setIsEvolutionLoading] = useState(false);
   const [isEvolutionSyncing, setIsEvolutionSyncing] = useState(false);
+  const [isEvolutionRecovering, setIsEvolutionRecovering] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [storePhone, setStorePhone] = useState('');
@@ -251,13 +252,20 @@ export const SettingsView = ({ currentUser }: SettingsViewProps) => {
             ? await api.createEvolutionInstance()
             : await api.connectEvolutionInstance();
 
-        await openQrModal(response.qrCode, response.pairingCode);
+        if (response.qrCode || response.pairingCode) {
+          await openQrModal(response.qrCode, response.pairingCode);
+        }
+
         await loadEvolutionOverview();
-        setMessage(
-          mode === 'create'
-            ? 'Instancia criada e QR Code gerado com sucesso.'
-            : 'QR Code atualizado com sucesso.',
-        );
+        if (response.warning) {
+          setMessage(response.warning);
+        } else {
+          setMessage(
+            mode === 'create'
+              ? 'Instancia criada e QR Code gerado com sucesso.'
+              : 'QR Code atualizado com sucesso.',
+          );
+        }
       } catch (error) {
         setMessage(
           error instanceof Error
@@ -269,6 +277,58 @@ export const SettingsView = ({ currentUser }: SettingsViewProps) => {
       }
     },
     [isAdmin, loadEvolutionOverview, openQrModal, persistCurrentStoreSettings],
+  );
+
+  const recoverEvolutionInstance = useCallback(
+    async (mode: 'restart' | 'logout' | 'recreate') => {
+      if (!isAdmin) {
+        return;
+      }
+
+      setIsEvolutionRecovering(true);
+      try {
+        await persistCurrentStoreSettings();
+
+        if (mode === 'restart') {
+          const response = await api.restartEvolutionInstance();
+          await loadEvolutionOverview();
+          setMessage(response.message);
+          return;
+        }
+
+        if (mode === 'logout') {
+          const response = await api.logoutEvolutionInstance();
+          await loadEvolutionOverview();
+          setMessage(response.message);
+          return;
+        }
+
+        const response = await api.recreateEvolutionInstance();
+
+        if (response.qrCode || response.pairingCode) {
+          await openQrModal(response.qrCode, response.pairingCode);
+        }
+
+        await loadEvolutionOverview();
+        setMessage(
+          response.warning ?? 'Instancia recriada com sucesso na Evolution API.',
+        );
+      } catch (error) {
+        setMessage(
+          error instanceof Error
+            ? error.message
+            : 'Nao foi possivel executar a recuperacao da instancia Evolution.',
+        );
+      } finally {
+        setIsEvolutionRecovering(false);
+      }
+    },
+    [
+      isAdmin,
+      loadEvolutionOverview,
+      openQrModal,
+      persistCurrentStoreSettings,
+    ],
   );
 
   const connectionStatusLabel = useMemo(() => {
@@ -507,7 +567,9 @@ export const SettingsView = ({ currentUser }: SettingsViewProps) => {
               <button
                 type="button"
                 onClick={() => void loadEvolutionOverview()}
-                disabled={isEvolutionLoading || isEvolutionSyncing}
+                disabled={
+                  isEvolutionLoading || isEvolutionSyncing || isEvolutionRecovering
+                }
                 className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
               >
                 <RefreshCcw size={16} />
@@ -519,6 +581,7 @@ export const SettingsView = ({ currentUser }: SettingsViewProps) => {
                 disabled={
                   isStoreSaving ||
                   isEvolutionSyncing ||
+                  isEvolutionRecovering ||
                   evolutionOverview?.exists === true
                 }
                 className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300 dark:hover:bg-blue-500/20"
@@ -531,6 +594,7 @@ export const SettingsView = ({ currentUser }: SettingsViewProps) => {
                 disabled={
                   isStoreSaving ||
                   isEvolutionSyncing ||
+                  isEvolutionRecovering ||
                   evolutionOverview?.exists === false
                 }
                 className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
@@ -541,6 +605,40 @@ export const SettingsView = ({ currentUser }: SettingsViewProps) => {
                   <QrCode size={16} />
                 )}
                 Conectar / gerar QR
+              </button>
+              <button
+                type="button"
+                onClick={() => void recoverEvolutionInstance('restart')}
+                disabled={
+                  isStoreSaving ||
+                  isEvolutionSyncing ||
+                  isEvolutionRecovering ||
+                  evolutionOverview?.exists === false
+                }
+                className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-700 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:bg-amber-500/20"
+              >
+                {isEvolutionRecovering ? 'Processando...' : 'Reiniciar instancia'}
+              </button>
+              <button
+                type="button"
+                onClick={() => void recoverEvolutionInstance('logout')}
+                disabled={
+                  isStoreSaving ||
+                  isEvolutionSyncing ||
+                  isEvolutionRecovering ||
+                  evolutionOverview?.exists === false
+                }
+                className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300 dark:hover:bg-rose-500/20"
+              >
+                {isEvolutionRecovering ? 'Processando...' : 'Deslogar sessao'}
+              </button>
+              <button
+                type="button"
+                onClick={() => void recoverEvolutionInstance('recreate')}
+                disabled={isStoreSaving || isEvolutionSyncing || isEvolutionRecovering}
+                className="rounded-xl border border-slate-300 bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+              >
+                {isEvolutionRecovering ? 'Processando...' : 'Recriar instancia'}
               </button>
             </div>
           </div>

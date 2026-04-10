@@ -19,6 +19,21 @@ type EvolutionConnectResponse = {
   count?: number;
 };
 
+type EvolutionInstanceSyncResult = {
+  instanceName: string;
+  qrCode: string | null;
+  pairingCode: string | null;
+  attempts: number | null;
+  created: boolean;
+  createdNow: boolean;
+  warning: string | null;
+};
+
+type EvolutionActionResult = {
+  success: boolean;
+  message: string;
+};
+
 @Injectable()
 export class EvolutionInstanceService {
   constructor(
@@ -88,7 +103,7 @@ export class EvolutionInstanceService {
     }
   }
 
-  async create() {
+  async create(): Promise<EvolutionInstanceSyncResult> {
     const config = await this.getValidatedConfig();
     const settings = await this.configuracoesLojaService.get();
     const storePhoneDigits = (settings.telefone_loja ?? '').replace(/\D/g, '');
@@ -104,8 +119,78 @@ export class EvolutionInstanceService {
         },
       });
 
-      return this.connect();
+      try {
+        const connection = await this.connect();
+
+        return {
+          ...connection,
+          created: true,
+          createdNow: true,
+          warning: null,
+        };
+      } catch (error) {
+        const normalizedError = this.normalizeEvolutionError(
+          error,
+          'Nao foi possivel gerar o QR Code da instancia.',
+        );
+
+        if (
+          normalizedError instanceof BadGatewayException &&
+          this.isQrNotGeneratedError(normalizedError)
+        ) {
+          return {
+            instanceName: config.instanceName,
+            qrCode: null,
+            pairingCode: null,
+            attempts: 0,
+            created: true,
+            createdNow: true,
+            warning:
+              'Instancia criada com sucesso, mas a Evolution API nao gerou QR Code.',
+          };
+        }
+
+        throw normalizedError;
+      }
     } catch (error) {
+      if (
+        error instanceof BadGatewayException &&
+        this.getExceptionMessage(error).toLowerCase().includes('already in use')
+      ) {
+        try {
+          const connection = await this.connect();
+
+          return {
+            ...connection,
+            created: true,
+            createdNow: false,
+          };
+        } catch (connectError) {
+          const normalizedError = this.normalizeEvolutionError(
+            connectError,
+            'Nao foi possivel gerar o QR Code da instancia.',
+          );
+
+          if (
+            normalizedError instanceof BadGatewayException &&
+            this.isQrNotGeneratedError(normalizedError)
+          ) {
+            return {
+              instanceName: config.instanceName,
+              qrCode: null,
+              pairingCode: null,
+              attempts: 0,
+              created: true,
+              createdNow: false,
+              warning:
+                'A instancia ja existia e foi localizada, mas a Evolution API nao gerou QR Code.',
+            };
+          }
+
+          throw normalizedError;
+        }
+      }
+
       throw this.normalizeEvolutionError(
         error,
         'Nao foi possivel criar a instancia na Evolution API.',
@@ -113,7 +198,7 @@ export class EvolutionInstanceService {
     }
   }
 
-  async connect() {
+  async connect(): Promise<EvolutionInstanceSyncResult> {
     const config = await this.getValidatedConfig();
 
     try {
@@ -141,6 +226,9 @@ export class EvolutionInstanceService {
         qrCode,
         pairingCode: response.pairingCode?.trim() || null,
         attempts,
+        created: true,
+        createdNow: false,
+        warning: null,
       };
     } catch (error) {
       throw this.normalizeEvolutionError(
@@ -148,6 +236,97 @@ export class EvolutionInstanceService {
         'Nao foi possivel gerar o QR Code da instancia.',
       );
     }
+  }
+
+  async restart(): Promise<EvolutionActionResult> {
+    const config = await this.getValidatedConfig();
+
+    try {
+      await this.evolutionRequest(
+        `/instance/restart/${encodeURIComponent(config.instanceName)}`,
+        {
+          method: 'PUT',
+        },
+      );
+
+      return {
+        success: true,
+        message: 'Instancia reiniciada com sucesso na Evolution API.',
+      };
+    } catch (error) {
+      throw this.normalizeEvolutionError(
+        error,
+        'Nao foi possivel reiniciar a instancia na Evolution API.',
+      );
+    }
+  }
+
+  async logout(): Promise<EvolutionActionResult> {
+    const config = await this.getValidatedConfig();
+
+    try {
+      await this.evolutionRequest(
+        `/instance/logout/${encodeURIComponent(config.instanceName)}`,
+        {
+          method: 'DELETE',
+        },
+      );
+
+      return {
+        success: true,
+        message: 'Sessao da instancia encerrada com sucesso na Evolution API.',
+      };
+    } catch (error) {
+      throw this.normalizeEvolutionError(
+        error,
+        'Nao foi possivel encerrar a sessao da instancia na Evolution API.',
+      );
+    }
+  }
+
+  async delete(): Promise<EvolutionActionResult> {
+    const config = await this.getValidatedConfig();
+
+    try {
+      await this.evolutionRequest(
+        `/instance/delete/${encodeURIComponent(config.instanceName)}`,
+        {
+          method: 'DELETE',
+        },
+      );
+
+      return {
+        success: true,
+        message: 'Instancia removida com sucesso da Evolution API.',
+      };
+    } catch (error) {
+      throw this.normalizeEvolutionError(
+        error,
+        'Nao foi possivel remover a instancia na Evolution API.',
+      );
+    }
+  }
+
+  async recreate(): Promise<EvolutionInstanceSyncResult> {
+    try {
+      await this.delete();
+    } catch (error) {
+      const normalizedError = this.normalizeEvolutionError(
+        error,
+        'Nao foi possivel remover a instancia antes de recriar.',
+      );
+
+      if (
+        normalizedError instanceof BadRequestException &&
+        normalizedError.message.includes('ainda nao existe')
+      ) {
+        return this.create();
+      }
+
+      throw normalizedError;
+    }
+
+    return this.create();
   }
 
   private async getValidatedConfig(): Promise<EvolutionConfig> {
@@ -211,7 +390,7 @@ export class EvolutionInstanceService {
   private async evolutionRequest<T>(
     path: string,
     input: {
-      method: 'GET' | 'POST';
+      method: 'GET' | 'POST' | 'PUT' | 'DELETE';
       body?: Record<string, unknown>;
     },
   ): Promise<T> {
@@ -283,15 +462,17 @@ export class EvolutionInstanceService {
     }
 
     if (error instanceof BadGatewayException) {
+      const message = this.getExceptionMessage(error);
+
       if (
-        error.message.includes('count') ||
-        error.message.includes('QRCode') ||
-        error.message.includes('QR Code')
+        message.includes('count') ||
+        message.includes('QRCode') ||
+        message.includes('QR Code')
       ) {
         return error;
       }
 
-      return new BadGatewayException(error.message || fallbackMessage);
+      return new BadGatewayException(message || fallbackMessage);
     }
 
     return new BadGatewayException(fallbackMessage);
@@ -354,5 +535,36 @@ export class EvolutionInstanceService {
 
       return undefined;
     }, value);
+  }
+
+  private getExceptionMessage(error: BadGatewayException) {
+    const response = error.getResponse();
+
+    if (typeof response === 'string' && response.trim()) {
+      return response.trim();
+    }
+
+    if (response && typeof response === 'object') {
+      const message = (response as { message?: string | string[] }).message;
+
+      if (Array.isArray(message)) {
+        return message.join(', ');
+      }
+
+      if (typeof message === 'string' && message.trim()) {
+        return message.trim();
+      }
+    }
+
+    return error.message;
+  }
+
+  private isQrNotGeneratedError(error: BadGatewayException) {
+    const message = this.getExceptionMessage(error);
+
+    return (
+      message.includes('nao gerou QR Code') ||
+      message.includes('sem QR Code')
+    );
   }
 }

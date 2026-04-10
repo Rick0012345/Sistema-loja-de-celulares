@@ -37,4 +37,19 @@ export class ConfiguracoesLojaController {
   connectEvolutionInstance() {
     return this.evolutionInstanceService.connect();
   }
+
+  @Post('evolution/instance/restart')
+  restartEvolutionInstance() {
+    return this.evolutionInstanceService.restart();
+  }
+
+  @Post('evolution/instance/logout')
+  logoutEvolutionInstance() {
+    return this.evolutionInstanceService.logout();
+  }
+
+  @Post('evolution/instance/recreate')
+  recreateEvolutionInstance() {
+    return this.evolutionInstanceService.recreate();
+  }
 }

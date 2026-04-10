@@ -20,6 +20,23 @@ services:
     networks:
       - app_network
 
+  redis:
+    image: redis:7-alpine
+    container_name: loja-celulares-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app_network
+
   backend:
     build:
       context: ./backend
@@ -84,7 +101,7 @@ services:
       - app_network
 
   evolution-api:
-    image: atendai/evolution-api:v2.1.1
+    image: ${EVOLUTION_API_IMAGE}
     container_name: loja-celulares-evolution-api
     restart: unless-stopped
     environment:
@@ -95,12 +112,16 @@ services:
       DATABASE_PROVIDER: postgresql
       DATABASE_CONNECTION_URI: ${EVOLUTION_API_DATABASE_URL}
       DATABASE_CONNECTION_CLIENT_NAME: ${EVOLUTION_API_DATABASE_CLIENT_NAME}
-      CACHE_REDIS_ENABLED: "false"
-      CACHE_LOCAL_ENABLED: "true"
+      CACHE_REDIS_ENABLED: ${EVOLUTION_API_CACHE_REDIS_ENABLED}
+      CACHE_REDIS_URI: ${EVOLUTION_API_CACHE_REDIS_URI}
+      CACHE_REDIS_PREFIX_KEY: ${EVOLUTION_API_CACHE_REDIS_PREFIX_KEY}
+      CACHE_LOCAL_ENABLED: ${EVOLUTION_API_CACHE_LOCAL_ENABLED}
       AUTHENTICATION_API_KEY: ${EVOLUTION_API_AUTHENTICATION_API_KEY}
       TZ: ${GENERIC_TIMEZONE}
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     ports:
       - "127.0.0.1:${EVOLUTION_API_PORT}:8080"
@@ -114,6 +135,7 @@ volumes:
   backend_node_modules:
   frontend_node_modules:
   n8n_data:
+  redis_data:
   evolution_instances_data:
 
 networks:

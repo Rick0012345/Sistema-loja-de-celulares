@@ -42,6 +42,14 @@ export type EvolutionInstanceConnectResult = {
   qrCode: string | null;
   pairingCode: string | null;
   attempts: number | null;
+  created: boolean;
+  createdNow: boolean;
+  warning: string | null;
+};
+
+export type EvolutionActionResult = {
+  success: boolean;
+  message: string;
 };
 
 export type AuthStatus = {
