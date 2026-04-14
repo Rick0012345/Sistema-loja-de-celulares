@@ -443,7 +443,7 @@ export const ServicesView = ({
                 <div key={service.id} className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-blue-200 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-blue-500/30">
               <div className="flex justify-between gap-4">
                 <div className="flex gap-4">
-                  <div className="rounded-2xl bg-slate-50 p-3 text-slate-400 transition-colors group-hover:text-blue-500 dark:bg-slate-950 dark:text-slate-500">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center self-start rounded-2xl bg-slate-50 p-3 text-slate-400 transition-colors group-hover:text-blue-500 dark:bg-slate-950 dark:text-slate-500">
                     <Smartphone size={28} />
                   </div>
                   <div>
