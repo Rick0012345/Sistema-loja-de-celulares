@@ -531,11 +531,13 @@ export const SalesView = ({
             Nenhuma venda registrada ainda.
           </div>
         )}
-        {sales.map((sale) => (
-          <div
-            key={sale.id}
-            className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900"
-          >
+        {sales.length > 0 && (
+          <div className="max-h-[min(60vh,720px)] space-y-4 overflow-y-auto pr-1">
+            {sales.map((sale) => (
+              <div
+                key={sale.id}
+                className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900"
+              >
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <div className="flex items-center gap-2 text-slate-900 dark:text-slate-100">
@@ -580,8 +582,10 @@ export const SalesView = ({
                 Emitir recibo (PDF)
               </button>
             </div>
+              </div>
+            ))}
           </div>
-        ))}
+        )}
       </div>
 
       {isModalOpen && (

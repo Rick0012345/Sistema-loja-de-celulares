@@ -434,11 +434,13 @@ export const ServicesView = ({
           </div>
         )}
 
-        {filteredServices.map((service) => {
-          const nextAction = getNextServiceAction(service.status);
+        {filteredServices.length > 0 && (
+          <div className="max-h-[min(62vh,760px)] space-y-4 overflow-y-auto pr-1">
+            {filteredServices.map((service) => {
+              const nextAction = getNextServiceAction(service.status);
 
-          return (
-            <div key={service.id} className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-blue-200 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-blue-500/30">
+              return (
+                <div key={service.id} className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-blue-200 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-blue-500/30">
               <div className="flex justify-between gap-4">
                 <div className="flex gap-4">
                   <div className="rounded-2xl bg-slate-50 p-3 text-slate-400 transition-colors group-hover:text-blue-500 dark:bg-slate-950 dark:text-slate-500">
@@ -560,9 +562,11 @@ export const ServicesView = ({
                   </div>
                 )}
               </div>
-            </div>
-          );
-        })}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {isModalOpen && (

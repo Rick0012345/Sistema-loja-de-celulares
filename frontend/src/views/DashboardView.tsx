@@ -261,7 +261,7 @@ export const DashboardView = ({
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <div className={cn('rounded-2xl p-5', panelClass)}>
             <h3 className="mb-4 text-base font-bold">Ordens recentes</h3>
-            <div className="space-y-3">
+            <div className="max-h-80 space-y-3 overflow-y-auto pr-1">
               {summary.recentOrders.length === 0 && (
                 <p className="text-sm text-slate-500 dark:text-slate-400">
                   Nenhuma OS recente.
@@ -296,7 +296,7 @@ export const DashboardView = ({
 
           <div className={cn('rounded-2xl p-5', panelClass)}>
             <h3 className="mb-4 text-base font-bold">Produtos com estoque baixo</h3>
-            <div className="space-y-3">
+            <div className="max-h-80 space-y-3 overflow-y-auto pr-1">
               {summary.lowStockProducts.length === 0 && (
                 <p className="text-sm text-slate-500 dark:text-slate-400">
                   Nenhum item com estoque baixo.
@@ -336,7 +336,7 @@ export const DashboardView = ({
               {summary.operationalQueue.length} em acompanhamento
             </span>
           </div>
-          <div className="space-y-3">
+          <div className="max-h-96 space-y-3 overflow-y-auto pr-1">
             {summary.operationalQueue.slice(0, 6).map((item) => (
               <div
                 key={item.id}

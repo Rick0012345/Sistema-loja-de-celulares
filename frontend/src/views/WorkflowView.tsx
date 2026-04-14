@@ -457,7 +457,7 @@ export const WorkflowView = ({
               Nenhuma ordem de serviço encontrada para os filtros atuais.
             </div>
           ) : (
-            <div className="divide-y divide-slate-200 dark:divide-slate-800">
+            <div className="max-h-[min(70vh,760px)] overflow-y-auto divide-y divide-slate-200 dark:divide-slate-800">
               {sortedServices.map((service) => {
                 return (
                   <button
