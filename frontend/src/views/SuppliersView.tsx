@@ -151,8 +151,8 @@ export const SuppliersView = ({
       <div className={cn('overflow-hidden rounded-2xl', panelClass)}>
         <div className="max-h-[min(60vh,640px)] overflow-auto">
           <table className="w-full border-collapse text-left">
-          <thead>
-            <tr className="border-b border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-950">
+          <thead className="sticky top-0 z-10">
+            <tr className="border-b border-slate-200 bg-slate-50/95 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
               <th className="p-3.5 font-semibold text-slate-600 dark:text-slate-300">
                 Fornecedor
               </th>

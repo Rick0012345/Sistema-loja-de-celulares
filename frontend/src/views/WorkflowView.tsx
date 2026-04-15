@@ -331,6 +331,17 @@ export const WorkflowView = ({
             </label>
           </div>
         </div>
+        <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+            Total: {visibleServices.length}
+          </span>
+          <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
+            Prontas: {visibleServices.filter((service) => service.status === 'pronto_para_retirada').length}
+          </span>
+          <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">
+            Em conserto: {visibleServices.filter((service) => service.status === 'em_conserto').length}
+          </span>
+        </div>
       </div>
 
       {viewMode === 'kanban' ? (
@@ -374,7 +385,7 @@ export const WorkflowView = ({
                       type="button"
                       onClick={() => openServiceDetails(service.id)}
                       aria-haspopup="dialog"
-                      className="rounded-2xl border border-slate-200 bg-white p-3.5 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md dark:border-slate-800 dark:bg-slate-950/80 dark:hover:border-blue-500/30"
+                      className="rounded-2xl border border-slate-200 bg-white p-3 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md dark:border-slate-800 dark:bg-slate-950/80 dark:hover:border-blue-500/30"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
@@ -395,11 +406,11 @@ export const WorkflowView = ({
                         </span>
                       </div>
 
-                      <p className="mt-3 line-clamp-2 text-sm text-slate-500 dark:text-slate-400">
+                      <p className="mt-2 line-clamp-2 text-sm text-slate-500 dark:text-slate-400">
                         {service.issueDescription}
                       </p>
 
-                      <div className="mt-4 flex items-center justify-between gap-3 text-xs">
+                      <div className="mt-3 flex items-center justify-between gap-3 text-xs">
                         <div>
                           <div className="font-semibold text-slate-900 dark:text-slate-100">
                             {formatCurrency(service.totalPrice)}

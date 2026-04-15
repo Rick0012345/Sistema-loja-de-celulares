@@ -14,6 +14,8 @@ const inputClass =
   'w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500';
 const secondaryButtonClass =
   'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3.5 py-2 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors';
+const infoChipClass =
+  'inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold';
 
 const EMPTY_SERVICE_FORM: ServiceFormValues = {
   customerName: '',
@@ -436,29 +438,56 @@ export const ServicesView = ({
 
         {filteredServices.length > 0 && (
           <div className="max-h-[min(62vh,760px)] space-y-4 overflow-y-auto pr-1">
+            <div className="sticky top-0 z-10 flex items-center justify-between rounded-2xl border border-slate-200 bg-white/95 px-4 py-3 text-sm shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-900/95">
+              <div>
+                <p className="font-semibold text-slate-900 dark:text-slate-100">
+                  {filteredServices.length} ordens encontradas
+                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Use esta fila para triagem, acompanhamento e entrega.
+                </p>
+              </div>
+              <div className="hidden items-center gap-2 md:flex">
+                <span className={cn(infoChipClass, 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300')}>
+                  Prontas: {filteredServices.filter((service) => service.status === 'pronto_para_retirada').length}
+                </span>
+                <span className={cn(infoChipClass, 'bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300')}>
+                  Saldos: {filteredServices.filter((service) => service.pendingBalance > 0).length}
+                </span>
+              </div>
+            </div>
             {filteredServices.map((service) => {
               const nextAction = getNextServiceAction(service.status);
 
               return (
-                <div key={service.id} className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-blue-200 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-blue-500/30">
-              <div className="flex justify-between gap-4">
+                <div key={service.id} className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:border-blue-200 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-blue-500/30">
+              <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                 <div className="flex gap-4">
                   <div className="flex h-14 w-14 shrink-0 items-center justify-center self-start rounded-2xl bg-slate-50 p-3 text-slate-400 transition-colors group-hover:text-blue-500 dark:bg-slate-950 dark:text-slate-500">
                     <Smartphone size={28} />
                   </div>
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-3">
-                      <h4 className="text-base font-bold text-slate-900 dark:text-slate-100">
-                        {service.deviceBrand} {service.deviceModel}
+                      <h4 className="truncate text-base font-bold text-slate-900 dark:text-slate-100">
+                        {service.customerName}
                       </h4>
                       <span className={cn('rounded-full px-3 py-1 text-xs font-bold', serviceStatusBadgeClass[service.status])}>
                         {serviceStatusLabel[service.status]}
                       </span>
+                      <span className={cn(infoChipClass, 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300')}>
+                        {service.deliveryType === 'delivery' ? 'Entrega' : 'Retirada'}
+                      </span>
                     </div>
-                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                      Cliente: <span className="font-semibold text-slate-700 dark:text-slate-200">{service.customerName}</span> • {service.customerPhone}
+                    <p className="mt-1 truncate text-sm font-medium text-slate-700 dark:text-slate-200">
+                      {service.deviceBrand} {service.deviceModel}
+                    </p>
+                    <p className="mt-1 line-clamp-2 text-sm text-slate-500 dark:text-slate-400">
+                      {service.issueDescription}
                     </p>
                     <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <span className={cn(infoChipClass, 'bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300')}>
+                        {service.customerPhone}
+                      </span>
                       {service.pendingBalance > 0 && (
                         <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
                           Saldo pendente {formatCurrency(service.pendingBalance)}
@@ -470,7 +499,7 @@ export const ServicesView = ({
                         </span>
                       )}
                     </div>
-                    <div className="mt-3 flex items-center gap-4 text-xs text-slate-400 dark:text-slate-500">
+                    <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-400 dark:text-slate-500">
                       <span className="flex items-center gap-1">
                         <Clock size={14} />
                         {new Date(service.createdAt).toLocaleString('pt-BR')}
@@ -480,11 +509,16 @@ export const ServicesView = ({
                   </div>
                 </div>
 
-                <div className="text-right">
-                  <div className="text-xl font-black text-slate-900 dark:text-slate-100">
-                    {formatCurrency(service.totalPrice)}
+                <div className="flex w-full flex-col gap-3 xl:w-auto xl:min-w-[310px]">
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left xl:text-right dark:border-slate-800 dark:bg-slate-950">
+                    <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
+                      Total da OS
+                    </div>
+                    <div className="mt-1 text-2xl font-black text-slate-900 dark:text-slate-100">
+                      {formatCurrency(service.totalPrice)}
+                    </div>
                   </div>
-                  <div className="mt-4 flex justify-end gap-2">
+                  <div className="flex flex-wrap gap-2 xl:justify-end">
                     <button
                       type="button"
                       onClick={() => openEditModal(service)}
@@ -495,22 +529,6 @@ export const ServicesView = ({
                         Editar OS
                       </span>
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => handleEmitServiceReceipt(service)}
-                      className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-bold text-blue-700 transition-colors hover:bg-blue-100 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300 dark:hover:bg-blue-500/20"
-                    >
-                      Emitir recibo OS (PDF)
-                    </button>
-                    {service.status !== 'entregue' && service.status !== 'cancelada' && (
-                      <button
-                        type="button"
-                        onClick={() => void handleStatusUpdate(service, 'cancelada')}
-                        className="rounded-xl bg-rose-50 px-4 py-2 text-xs font-bold text-rose-600 transition-colors hover:bg-rose-100 dark:bg-rose-500/15 dark:text-rose-300 dark:hover:bg-rose-500/20"
-                      >
-                        Cancelar OS
-                      </button>
-                    )}
                     {nextAction && (
                       <button
                         type="button"
@@ -532,6 +550,22 @@ export const ServicesView = ({
                         {nextAction.label}
                       </button>
                     )}
+                    <button
+                      type="button"
+                      onClick={() => handleEmitServiceReceipt(service)}
+                      className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-bold text-blue-700 transition-colors hover:bg-blue-100 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300 dark:hover:bg-blue-500/20"
+                    >
+                      Emitir recibo
+                    </button>
+                    {service.status !== 'entregue' && service.status !== 'cancelada' && (
+                      <button
+                        type="button"
+                        onClick={() => void handleStatusUpdate(service, 'cancelada')}
+                        className="rounded-xl bg-rose-50 px-4 py-2 text-xs font-bold text-rose-600 transition-colors hover:bg-rose-100 dark:bg-rose-500/15 dark:text-rose-300 dark:hover:bg-rose-500/20"
+                      >
+                        Cancelar OS
+                      </button>
+                    )}
                     <select
                       value={service.status}
                       onChange={(event) =>
@@ -549,9 +583,9 @@ export const ServicesView = ({
                 </div>
               </div>
 
-              <div className="mt-5 -mx-5 -mb-5 flex items-center justify-between rounded-b-2xl border-t border-slate-50 bg-slate-50/50 px-5 py-3.5 dark:border-slate-800 dark:bg-slate-950/70">
-                <div className="text-sm italic text-slate-600 dark:text-slate-300">
-                  "{service.issueDescription}"
+              <div className="mt-4 -mx-4 -mb-4 flex items-center justify-between rounded-b-2xl border-t border-slate-100 bg-slate-50/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-950/70">
+                <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                  OS {service.id}
                 </div>
                 {service.status === 'pronto_para_retirada' && (
                   <div className="flex items-center gap-2 text-xs font-bold text-emerald-600">

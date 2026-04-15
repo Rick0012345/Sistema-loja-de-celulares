@@ -260,7 +260,12 @@ export const DashboardView = ({
       {summary && (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <div className={cn('rounded-2xl p-5', panelClass)}>
-            <h3 className="mb-4 text-base font-bold">Ordens recentes</h3>
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h3 className="text-base font-bold">Ordens recentes</h3>
+              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                {summary.recentOrders.length} itens
+              </span>
+            </div>
             <div className="max-h-80 space-y-3 overflow-y-auto pr-1">
               {summary.recentOrders.length === 0 && (
                 <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -295,7 +300,12 @@ export const DashboardView = ({
           </div>
 
           <div className={cn('rounded-2xl p-5', panelClass)}>
-            <h3 className="mb-4 text-base font-bold">Produtos com estoque baixo</h3>
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h3 className="text-base font-bold">Produtos com estoque baixo</h3>
+              <span className="rounded-full bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700 dark:bg-rose-500/15 dark:text-rose-300">
+                {summary.lowStockProducts.length} alertas
+              </span>
+            </div>
             <div className="max-h-80 space-y-3 overflow-y-auto pr-1">
               {summary.lowStockProducts.length === 0 && (
                 <p className="text-sm text-slate-500 dark:text-slate-400">

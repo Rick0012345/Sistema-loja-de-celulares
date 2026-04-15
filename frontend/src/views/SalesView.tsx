@@ -533,10 +533,23 @@ export const SalesView = ({
         )}
         {sales.length > 0 && (
           <div className="max-h-[min(60vh,720px)] space-y-4 overflow-y-auto pr-1">
+            <div className="sticky top-0 z-10 flex items-center justify-between rounded-2xl border border-slate-200 bg-white/95 px-4 py-3 text-sm shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-900/95">
+              <div>
+                <p className="font-semibold text-slate-900 dark:text-slate-100">
+                  {sales.length} vendas registradas
+                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Histórico pronto para consulta rápida e emissão de recibo.
+                </p>
+              </div>
+              <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
+                Ticket médio: {formatCurrency(salesDashboard.avgTicket)}
+              </span>
+            </div>
             {sales.map((sale) => (
               <div
                 key={sale.id}
-                className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900"
+                className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:shadow-md dark:border-slate-800 dark:bg-slate-900"
               >
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
