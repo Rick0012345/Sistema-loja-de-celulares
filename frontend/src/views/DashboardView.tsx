@@ -1,4 +1,5 @@
 import { AlertTriangle, Clock, DollarSign, TrendingUp } from 'lucide-react';
+import { motion } from 'motion/react';
 import {
   Bar,
   BarChart,
@@ -24,7 +25,7 @@ import {
 } from '../types';
 
 const panelClass =
-  'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm';
+  'border border-slate-200/90 bg-white shadow-[0_18px_45px_-32px_rgba(15,23,42,0.55)] dark:border-slate-800/90 dark:bg-slate-900';
 
 type DashboardViewProps = {
   stats: {
@@ -146,6 +147,76 @@ export const DashboardView = ({
 
   return (
     <div className="space-y-6">
+      <motion.section
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.18, ease: 'easeOut' }}
+        className={cn('rounded-[30px] p-6 lg:p-7', panelClass)}
+      >
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
+          <div className="space-y-4">
+            <div className="inline-flex rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-500/15 dark:text-blue-300">
+              Panorama operacional
+            </div>
+            <div>
+              <h3 className="text-2xl font-extrabold text-slate-950 dark:text-white">
+                A oficina de hoje em uma leitura rapida
+              </h3>
+              <p className="mt-2 max-w-2xl text-sm text-slate-500 dark:text-slate-400">
+                Acompanhe faturamento, ordens em aberto e pontos que merecem atencao imediata sem precisar navegar entre telas.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-950">
+                <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
+                  Receita acumulada
+                </p>
+                <p className="mt-1 text-lg font-extrabold text-slate-950 dark:text-white">
+                  {formatCurrency(overview.faturamentoMes)}
+                </p>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-950">
+                <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
+                  OS abertas
+                </p>
+                <p className="mt-1 text-lg font-extrabold text-slate-950 dark:text-white">
+                  {overview.totalOrdensAbertas}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+            <div className="rounded-[24px] border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-500/20 dark:bg-emerald-500/10">
+              <p className="text-xs font-semibold uppercase text-emerald-700 dark:text-emerald-300">
+                Lucro do mes
+              </p>
+              <p className="mt-2 text-2xl font-extrabold tabular-nums text-emerald-900 dark:text-emerald-100">
+                {formatCurrency(overview.lucroMes)}
+              </p>
+            </div>
+            <div className="rounded-[24px] border border-amber-200 bg-amber-50 p-4 dark:border-amber-500/20 dark:bg-amber-500/10">
+              <p className="text-xs font-semibold uppercase text-amber-700 dark:text-amber-300">
+                Atencao imediata
+              </p>
+              <p className="mt-2 text-sm font-semibold text-amber-900 dark:text-amber-100">
+                {overview.totalProdutosBaixoEstoque > 0
+                  ? `${overview.totalProdutosBaixoEstoque} item(ns) com estoque baixo`
+                  : 'Sem alerta de estoque no momento'}
+              </p>
+            </div>
+            <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
+              <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
+                Servicos entregues
+              </p>
+              <p className="mt-2 text-2xl font-extrabold tabular-nums text-slate-950 dark:text-white">
+                {counts.entregue}
+              </p>
+            </div>
+          </div>
+        </div>
+      </motion.section>
+
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Faturamento do mes"
@@ -175,7 +246,7 @@ export const DashboardView = ({
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className={cn('rounded-2xl p-5 lg:col-span-2', panelClass)}>
+        <div className={cn('rounded-[28px] p-5 lg:col-span-2', panelClass)}>
           <h3 className="mb-4 flex items-center gap-2 text-base font-bold">
             <TrendingUp size={20} className="text-blue-600" />
             Valor de OS entregues nos ultimos 7 dias
@@ -215,7 +286,7 @@ export const DashboardView = ({
           </div>
         </div>
 
-        <div className={cn('rounded-2xl p-5', panelClass)}>
+        <div className={cn('rounded-[28px] p-5', panelClass)}>
           <h3 className="mb-4 text-base font-bold">Status dos servicos</h3>
           <div className="h-60 w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -259,7 +330,7 @@ export const DashboardView = ({
 
       {summary && (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <div className={cn('rounded-2xl p-5', panelClass)}>
+          <div className={cn('rounded-[28px] p-5', panelClass)}>
             <div className="mb-4 flex items-center justify-between gap-3">
               <h3 className="text-base font-bold">Ordens recentes</h3>
               <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
@@ -299,7 +370,7 @@ export const DashboardView = ({
             </div>
           </div>
 
-          <div className={cn('rounded-2xl p-5', panelClass)}>
+          <div className={cn('rounded-[28px] p-5', panelClass)}>
             <div className="mb-4 flex items-center justify-between gap-3">
               <h3 className="text-base font-bold">Produtos com estoque baixo</h3>
               <span className="rounded-full bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700 dark:bg-rose-500/15 dark:text-rose-300">
@@ -339,7 +410,7 @@ export const DashboardView = ({
       )}
 
       {summary && summary.operationalQueue.length > 0 && (
-        <div className={cn('rounded-2xl p-5', panelClass)}>
+        <div className={cn('rounded-[28px] p-5', panelClass)}>
           <div className="mb-4 flex items-center justify-between gap-3">
             <h3 className="text-base font-bold">Fila operacional critica</h3>
             <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
@@ -388,7 +459,7 @@ export const DashboardView = ({
 
       {professionalOperation && (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <div className={cn('rounded-2xl p-5', panelClass)}>
+          <div className={cn('rounded-[28px] p-5', panelClass)}>
             <h3 className="mb-4 text-base font-bold">Alertas operacionais</h3>
             <div className="space-y-4 text-sm">
               <div>
@@ -419,7 +490,7 @@ export const DashboardView = ({
             </div>
           </div>
 
-          <div className={cn('rounded-2xl p-5', panelClass)}>
+          <div className={cn('rounded-[28px] p-5', panelClass)}>
             <h3 className="mb-4 text-base font-bold">Painel operacional</h3>
             <div className="space-y-4 text-sm">
               <div className="flex items-center justify-between">

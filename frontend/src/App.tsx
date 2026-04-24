@@ -102,8 +102,10 @@ export default function App() {
 
   if (auth.isCheckingAuth) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50 text-slate-500 dark:bg-slate-950 dark:text-slate-400">
-        Carregando...
+      <div className="flex min-h-dvh items-center justify-center bg-slate-100 text-slate-500 dark:bg-slate-950 dark:text-slate-400">
+        <div className="rounded-[28px] border border-slate-200 bg-white px-6 py-5 text-sm font-semibold shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          Carregando ambiente...
+        </div>
       </div>
     );
   }
@@ -139,7 +141,7 @@ export default function App() {
       theme={theme}
     >
       {backoffice.isLoading ? (
-        <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center text-slate-500 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
+        <div className="rounded-[30px] border border-slate-200 bg-white p-10 text-center text-slate-500 shadow-[0_18px_45px_-32px_rgba(15,23,42,0.55)] dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
           Carregando dados do sistema...
         </div>
       ) : (
