@@ -1,5 +1,4 @@
 import { AlertTriangle, Clock, DollarSign, TrendingUp } from 'lucide-react';
-import { motion } from 'motion/react';
 import {
   Bar,
   BarChart,
@@ -24,8 +23,7 @@ import {
   ThemeMode,
 } from '../types';
 
-const panelClass =
-  'border border-slate-200/90 bg-white shadow-[0_18px_45px_-32px_rgba(15,23,42,0.55)] dark:border-slate-800/90 dark:bg-slate-900';
+const panelClass = 'rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900';
 
 type DashboardViewProps = {
   stats: {
@@ -125,97 +123,62 @@ export const DashboardView = ({
           tick: '#94a3b8',
           tooltipCursor: '#172033',
           tooltipStyle: {
-            borderRadius: '12px',
+            borderRadius: '8px',
             border: '1px solid #1e293b',
             backgroundColor: '#0f172a',
             color: '#e2e8f0',
-            boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.35)',
           },
         }
       : {
-          grid: '#f1f5f9',
+          grid: '#e2e8f0',
           tick: '#64748b',
           tooltipCursor: '#f8fafc',
           tooltipStyle: {
-            borderRadius: '12px',
-            border: 'none',
+            borderRadius: '8px',
+            border: '1px solid #e2e8f0',
             backgroundColor: '#ffffff',
             color: '#0f172a',
-            boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
           },
         };
 
   return (
-    <div className="space-y-6">
-      <motion.section
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.18, ease: 'easeOut' }}
-        className={cn('rounded-[30px] p-6 lg:p-7', panelClass)}
-      >
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
-          <div className="space-y-4">
-            <div className="inline-flex rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-500/15 dark:text-blue-300">
+    <div className="space-y-4">
+      <section className={cn(panelClass, 'p-5 lg:p-6')}>
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <div>
+            <p className="text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400">
+              Visao geral
+            </p>
+            <h3 className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">
               Panorama operacional
-            </div>
-            <div>
-              <h3 className="text-2xl font-extrabold text-slate-950 dark:text-white">
-                A oficina de hoje em uma leitura rapida
-              </h3>
-              <p className="mt-2 max-w-2xl text-sm text-slate-500 dark:text-slate-400">
-                Acompanhe faturamento, ordens em aberto e pontos que merecem atencao imediata sem precisar navegar entre telas.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-950">
-                <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
-                  Receita acumulada
-                </p>
-                <p className="mt-1 text-lg font-extrabold text-slate-950 dark:text-white">
-                  {formatCurrency(overview.faturamentoMes)}
-                </p>
-              </div>
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-950">
-                <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
-                  OS abertas
-                </p>
-                <p className="mt-1 text-lg font-extrabold text-slate-950 dark:text-white">
-                  {overview.totalOrdensAbertas}
-                </p>
-              </div>
-            </div>
+            </h3>
+            <p className="mt-2 max-w-2xl text-sm text-slate-500 dark:text-slate-400">
+              Resumo do faturamento, volume de ordens e pontos que exigem atencao da equipe.
+            </p>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-            <div className="rounded-[24px] border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-500/20 dark:bg-emerald-500/10">
-              <p className="text-xs font-semibold uppercase text-emerald-700 dark:text-emerald-300">
-                Lucro do mes
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+            <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-950">
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                Receita acumulada
               </p>
-              <p className="mt-2 text-2xl font-extrabold tabular-nums text-emerald-900 dark:text-emerald-100">
-                {formatCurrency(overview.lucroMes)}
+              <p className="mt-1 text-xl font-bold tabular-nums text-slate-950 dark:text-white">
+                {formatCurrency(overview.faturamentoMes)}
               </p>
             </div>
-            <div className="rounded-[24px] border border-amber-200 bg-amber-50 p-4 dark:border-amber-500/20 dark:bg-amber-500/10">
-              <p className="text-xs font-semibold uppercase text-amber-700 dark:text-amber-300">
-                Atencao imediata
+            <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-950">
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                Itens com atencao
               </p>
-              <p className="mt-2 text-sm font-semibold text-amber-900 dark:text-amber-100">
+              <p className="mt-1 text-sm font-semibold text-slate-950 dark:text-white">
                 {overview.totalProdutosBaixoEstoque > 0
-                  ? `${overview.totalProdutosBaixoEstoque} item(ns) com estoque baixo`
+                  ? `${overview.totalProdutosBaixoEstoque} produtos com estoque baixo`
                   : 'Sem alerta de estoque no momento'}
-              </p>
-            </div>
-            <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
-              <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
-                Servicos entregues
-              </p>
-              <p className="mt-2 text-2xl font-extrabold tabular-nums text-slate-950 dark:text-white">
-                {counts.entregue}
               </p>
             </div>
           </div>
         </div>
-      </motion.section>
+      </section>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
@@ -245,20 +208,20 @@ export const DashboardView = ({
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className={cn('rounded-[28px] p-5 lg:col-span-2', panelClass)}>
-          <h3 className="mb-4 flex items-center gap-2 text-base font-bold">
-            <TrendingUp size={20} className="text-blue-600" />
-            Valor de OS entregues nos ultimos 7 dias
-          </h3>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className={cn(panelClass, 'lg:col-span-2')}>
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <h3 className="text-base font-semibold text-slate-950 dark:text-white">
+              Valor de OS entregues nos ultimos 7 dias
+            </h3>
+            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+              Atualizacao diaria
+            </span>
+          </div>
           <div className="h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData}>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  vertical={false}
-                  stroke={chartTheme.grid}
-                />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartTheme.grid} />
                 <XAxis
                   dataKey="name"
                   axisLine={false}
@@ -275,27 +238,24 @@ export const DashboardView = ({
                   cursor={{ fill: chartTheme.tooltipCursor }}
                   contentStyle={chartTheme.tooltipStyle}
                 />
-                <Bar
-                  dataKey="revenue"
-                  fill="#3b82f6"
-                  radius={[6, 6, 0, 0]}
-                  barSize={40}
-                />
+                <Bar dataKey="revenue" fill="#334155" radius={[4, 4, 0, 0]} barSize={34} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className={cn('rounded-[28px] p-5', panelClass)}>
-          <h3 className="mb-4 text-base font-bold">Status dos servicos</h3>
+        <div className={cn(panelClass)}>
+          <h3 className="mb-4 text-base font-semibold text-slate-950 dark:text-white">
+            Status dos servicos
+          </h3>
           <div className="h-60 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={statusData}
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={5}
+                  innerRadius={54}
+                  outerRadius={76}
+                  paddingAngle={3}
                   dataKey="value"
                 >
                   {statusData.map((entry) => (
@@ -308,20 +268,12 @@ export const DashboardView = ({
           </div>
           <div className="mt-4 space-y-2">
             {statusData.map((item) => (
-              <div
-                key={item.name}
-                className="flex items-center justify-between text-sm"
-              >
+              <div key={item.name} className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2">
-                  <div
-                    className="h-3 w-3 rounded-full"
-                    style={{ backgroundColor: item.color }}
-                  />
-                  <span className="text-slate-600 dark:text-slate-300">
-                    {item.name}
-                  </span>
+                  <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                  <span className="text-slate-600 dark:text-slate-300">{item.name}</span>
                 </div>
-                <span className="font-bold">{item.value}</span>
+                <span className="font-semibold tabular-nums">{item.value}</span>
               </div>
             ))}
           </div>
@@ -329,15 +281,17 @@ export const DashboardView = ({
       </div>
 
       {summary && (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <div className={cn('rounded-[28px] p-5', panelClass)}>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div className={cn(panelClass)}>
             <div className="mb-4 flex items-center justify-between gap-3">
-              <h3 className="text-base font-bold">Ordens recentes</h3>
-              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+              <h3 className="text-base font-semibold text-slate-950 dark:text-white">
+                Ordens recentes
+              </h3>
+              <span className="rounded-md bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
                 {summary.recentOrders.length} itens
               </span>
             </div>
-            <div className="max-h-80 space-y-3 overflow-y-auto pr-1">
+            <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
               {summary.recentOrders.length === 0 && (
                 <p className="text-sm text-slate-500 dark:text-slate-400">
                   Nenhuma OS recente.
@@ -346,21 +300,23 @@ export const DashboardView = ({
               {summary.recentOrders.map((order) => (
                 <div
                   key={order.id}
-                  className="flex items-center justify-between gap-4 rounded-xl border border-slate-100 bg-slate-50 p-3.5 dark:border-slate-800 dark:bg-slate-950"
+                  className="flex items-center justify-between gap-4 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950"
                 >
                   <div>
-                    <p className="font-semibold">{order.deviceLabel}</p>
+                    <p className="font-medium text-slate-950 dark:text-white">
+                      {order.deviceLabel}
+                    </p>
                     <p className="text-sm text-slate-500 dark:text-slate-400">
                       {order.customerName} • {formatDateTime(order.createdAt)}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="font-bold">{formatCurrency(order.totalPrice)}</p>
+                    <p className="font-semibold tabular-nums">{formatCurrency(order.totalPrice)}</p>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
                       {order.statusLabel}
                     </p>
                     {order.pendingBalance > 0 && (
-                      <p className="text-xs font-semibold text-amber-600">
+                      <p className="text-xs font-medium text-amber-600">
                         Saldo {formatCurrency(order.pendingBalance)}
                       </p>
                     )}
@@ -370,14 +326,16 @@ export const DashboardView = ({
             </div>
           </div>
 
-          <div className={cn('rounded-[28px] p-5', panelClass)}>
+          <div className={cn(panelClass)}>
             <div className="mb-4 flex items-center justify-between gap-3">
-              <h3 className="text-base font-bold">Produtos com estoque baixo</h3>
-              <span className="rounded-full bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700 dark:bg-rose-500/15 dark:text-rose-300">
+              <h3 className="text-base font-semibold text-slate-950 dark:text-white">
+                Produtos com estoque baixo
+              </h3>
+              <span className="rounded-md bg-rose-50 px-2.5 py-1 text-xs font-medium text-rose-700 dark:bg-rose-500/15 dark:text-rose-300">
                 {summary.lowStockProducts.length} alertas
               </span>
             </div>
-            <div className="max-h-80 space-y-3 overflow-y-auto pr-1">
+            <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
               {summary.lowStockProducts.length === 0 && (
                 <p className="text-sm text-slate-500 dark:text-slate-400">
                   Nenhum item com estoque baixo.
@@ -386,10 +344,10 @@ export const DashboardView = ({
               {summary.lowStockProducts.map((product) => (
                 <div
                   key={product.id}
-                  className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 p-3.5 dark:border-slate-800 dark:bg-slate-950"
+                  className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950"
                 >
                   <div>
-                    <p className="font-semibold">{product.name}</p>
+                    <p className="font-medium text-slate-950 dark:text-white">{product.name}</p>
                     <p className="text-sm text-slate-500 dark:text-slate-400">
                       Minimo recomendado: {product.minStock}
                     </p>
@@ -399,7 +357,7 @@ export const DashboardView = ({
                       </p>
                     )}
                   </div>
-                  <span className="rounded-full bg-rose-100 px-3 py-1 text-xs font-bold text-rose-600 dark:bg-rose-500/15 dark:text-rose-300">
+                  <span className="rounded-md bg-rose-100 px-2.5 py-1 text-xs font-medium text-rose-700 dark:bg-rose-500/15 dark:text-rose-300">
                     {product.stock} em estoque
                   </span>
                 </div>
@@ -410,21 +368,23 @@ export const DashboardView = ({
       )}
 
       {summary && summary.operationalQueue.length > 0 && (
-        <div className={cn('rounded-[28px] p-5', panelClass)}>
+        <div className={cn(panelClass)}>
           <div className="mb-4 flex items-center justify-between gap-3">
-            <h3 className="text-base font-bold">Fila operacional critica</h3>
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+            <h3 className="text-base font-semibold text-slate-950 dark:text-white">
+              Fila operacional critica
+            </h3>
+            <span className="rounded-md bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
               {summary.operationalQueue.length} em acompanhamento
             </span>
           </div>
-          <div className="max-h-96 space-y-3 overflow-y-auto pr-1">
+          <div className="max-h-96 space-y-2 overflow-y-auto pr-1">
             {summary.operationalQueue.slice(0, 6).map((item) => (
               <div
                 key={item.id}
-                className="flex flex-col gap-3 rounded-xl border border-slate-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950 lg:flex-row lg:items-center lg:justify-between"
+                className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950 lg:flex-row lg:items-center lg:justify-between"
               >
                 <div>
-                  <p className="font-semibold text-slate-900 dark:text-slate-100">
+                  <p className="font-medium text-slate-950 dark:text-white">
                     {item.customerName} • {item.deviceLabel}
                   </p>
                   <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
@@ -436,17 +396,17 @@ export const DashboardView = ({
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   {item.pendingBalance > 0 && (
-                    <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
+                    <span className="rounded-md bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
                       Saldo {formatCurrency(item.pendingBalance)}
                     </span>
                   )}
                   {item.readyWithoutContactSent && (
-                    <span className="rounded-full bg-rose-50 px-3 py-1 text-xs font-bold text-rose-700 dark:bg-rose-500/10 dark:text-rose-300">
+                    <span className="rounded-md bg-rose-50 px-2.5 py-1 text-xs font-medium text-rose-700 dark:bg-rose-500/10 dark:text-rose-300">
                       Contato pendente
                     </span>
                   )}
                   {item.waitingSupplierItem && (
-                    <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
+                    <span className="rounded-md bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
                       Aguardando fornecedor
                     </span>
                   )}
@@ -458,12 +418,14 @@ export const DashboardView = ({
       )}
 
       {professionalOperation && (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <div className={cn('rounded-[28px] p-5', panelClass)}>
-            <h3 className="mb-4 text-base font-bold">Alertas operacionais</h3>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div className={cn(panelClass)}>
+            <h3 className="mb-4 text-base font-semibold text-slate-950 dark:text-white">
+              Alertas operacionais
+            </h3>
             <div className="space-y-4 text-sm">
               <div>
-                <p className="font-semibold text-slate-900 dark:text-slate-100">
+                <p className="font-medium text-slate-950 dark:text-white">
                   OS paradas ha dias: {professionalOperation.alerts.stalledOrders.length}
                 </p>
                 {professionalOperation.alerts.stalledOrders.slice(0, 3).map((item) => (
@@ -473,51 +435,46 @@ export const DashboardView = ({
                 ))}
               </div>
               <div>
-                <p className="font-semibold text-slate-900 dark:text-slate-100">
+                <p className="font-medium text-slate-950 dark:text-white">
                   Integracoes falhando: {professionalOperation.alerts.failingIntegrations.length}
                 </p>
-                {professionalOperation.alerts.failingIntegrations
-                  .slice(0, 3)
-                  .map((item) => (
-                    <p
-                      key={item.orderId}
-                      className="mt-1 text-slate-500 dark:text-slate-400"
-                    >
-                      {item.customer} • {serviceStatusLabel[item.status]}
-                    </p>
-                  ))}
+                {professionalOperation.alerts.failingIntegrations.slice(0, 3).map((item) => (
+                  <p key={item.orderId} className="mt-1 text-slate-500 dark:text-slate-400">
+                    {item.customer} • {serviceStatusLabel[item.status]}
+                  </p>
+                ))}
               </div>
             </div>
           </div>
 
-          <div className={cn('rounded-[28px] p-5', panelClass)}>
-            <h3 className="mb-4 text-base font-bold">Painel operacional</h3>
+          <div className={cn(panelClass)}>
+            <h3 className="mb-4 text-base font-semibold text-slate-950 dark:text-white">
+              Painel operacional
+            </h3>
             <div className="space-y-4 text-sm">
               <div className="flex items-center justify-between">
                 <span className="text-slate-500 dark:text-slate-400">OS atrasadas</span>
-                <strong>{professionalOperation.indicators.overdueOrders}</strong>
+                <strong className="tabular-nums">{professionalOperation.indicators.overdueOrders}</strong>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-slate-500 dark:text-slate-400">Webhooks pendentes</span>
-                <strong>{professionalOperation.integrations.pendentesReenvio}</strong>
+                <strong className="tabular-nums">
+                  {professionalOperation.integrations.pendentesReenvio}
+                </strong>
               </div>
               <div>
-                <p className="font-semibold text-slate-900 dark:text-slate-100">
-                  OS por tecnico
-                </p>
-                {professionalOperation.indicators.ordersByTechnician
-                  .slice(0, 4)
-                  .map((item) => (
-                    <div
-                      key={item.technicianId}
-                      className="mt-2 flex items-center justify-between text-slate-500 dark:text-slate-400"
-                    >
-                      <span>{item.technicianName}</span>
-                      <strong className="text-slate-900 dark:text-slate-100">
-                        {item.quantity}
-                      </strong>
-                    </div>
-                  ))}
+                <p className="font-medium text-slate-950 dark:text-white">OS por tecnico</p>
+                {professionalOperation.indicators.ordersByTechnician.slice(0, 4).map((item) => (
+                  <div
+                    key={item.technicianId}
+                    className="mt-2 flex items-center justify-between text-slate-500 dark:text-slate-400"
+                  >
+                    <span>{item.technicianName}</span>
+                    <strong className="tabular-nums text-slate-950 dark:text-white">
+                      {item.quantity}
+                    </strong>
+                  </div>
+                ))}
               </div>
             </div>
           </div>

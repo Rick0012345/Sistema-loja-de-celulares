@@ -1,12 +1,5 @@
 import { FormEvent, useState } from 'react';
-import {
-  Banknote,
-  LockKeyhole,
-  Moon,
-  ShieldCheck,
-  Sun,
-  Wrench,
-} from 'lucide-react';
+import { LockKeyhole, Moon, ShieldCheck, Sun } from 'lucide-react';
 import { motion } from 'motion/react';
 import { ThemeMode } from '../types';
 
@@ -19,25 +12,7 @@ type AuthScreenProps = {
 };
 
 const inputClass =
-  'w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500';
-
-const highlights = [
-  {
-    title: 'Atendimento com contexto',
-    description: 'A equipe encontra rapido o que esta em bancada, aguardando peca ou pronto para retirada.',
-    icon: Wrench,
-  },
-  {
-    title: 'Estoque mais previsivel',
-    description: 'Reposicao e giro ficam mais visiveis para evitar correria e ruptura.',
-    icon: ShieldCheck,
-  },
-  {
-    title: 'Financeiro mais legivel',
-    description: 'Venda, servico e recebimento aparecem em um fluxo mais direto e confiavel.',
-    icon: Banknote,
-  },
-] as const;
+  'w-full rounded-lg border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-slate-400 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-slate-600';
 
 export const AuthScreen = ({
   errorMessage,
@@ -57,131 +32,130 @@ export const AuthScreen = ({
   };
 
   return (
-    <div className="relative flex min-h-dvh overflow-hidden bg-slate-100 text-slate-900 transition-colors dark:bg-slate-950 dark:text-slate-100">
-      <div className="pointer-events-none absolute inset-0 opacity-60 dark:opacity-35">
-        <div className="absolute left-[-10rem] top-[-8rem] h-64 w-64 rounded-full border border-blue-200 dark:border-blue-500/10" />
-        <div className="absolute bottom-[-6rem] right-[-4rem] h-52 w-52 rounded-full border border-emerald-200 dark:border-emerald-500/10" />
-      </div>
-
-      <div className="relative hidden flex-1 px-8 py-10 lg:flex xl:px-12">
-        <div className="flex w-full flex-col justify-between rounded-[36px] border border-slate-200 bg-white/80 p-8 shadow-[0_30px_80px_-45px_rgba(15,23,42,0.55)] backdrop-blur dark:border-slate-800 dark:bg-slate-900/70">
+    <div className="flex min-h-dvh bg-slate-100 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+      <div className="hidden flex-1 border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950 lg:flex">
+        <div className="flex w-full flex-col justify-between px-10 py-10 xl:px-14">
           <div className="flex items-center gap-3">
-            <div className="flex size-14 items-center justify-center rounded-[20px] bg-blue-600 text-white shadow-lg shadow-blue-600/20">
-              <ShieldCheck size={28} />
+            <div className="flex size-11 items-center justify-center rounded-lg bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-950">
+              <ShieldCheck size={20} />
             </div>
             <div>
-              <div className="text-xs font-semibold uppercase text-blue-600 dark:text-blue-300">
-                Plataforma operacional
-              </div>
-              <h1 className="text-3xl font-extrabold text-slate-950 dark:text-white">
+              <p className="text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400">
+                Sistema de gestao
+              </p>
+              <h1 className="text-2xl font-bold text-slate-950 dark:text-white">
                 ConsertaSmart
               </h1>
             </div>
           </div>
 
-          <div className="max-w-3xl space-y-8">
-            <div className="space-y-4">
-              <p className="max-w-2xl text-5xl font-extrabold leading-[1.02] text-slate-950 dark:text-white">
-                Um sistema que ajuda a loja a trabalhar com mais ritmo e menos improviso.
+          <div className="max-w-2xl space-y-6">
+            <div className="space-y-3">
+              <p className="text-4xl font-bold leading-tight text-slate-950 dark:text-white">
+                Controle a operacao da loja com mais confiabilidade e menos ruido visual.
               </p>
               <p className="max-w-xl text-base leading-7 text-slate-600 dark:text-slate-300">
-                Organize ordens de servico, estoque e vendas em uma experiencia mais clara para quem atende, executa e entrega.
+                Acompanhe atendimento, ordens de servico, estoque e vendas em um ambiente direto, legivel e preparado para uso continuo.
               </p>
             </div>
 
-            <div className="grid gap-4 xl:grid-cols-3">
-              {highlights.map((item, index) => {
-                const Icon = item.icon;
-
-                return (
-                  <motion.div
-                    key={item.title}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.18, ease: 'easeOut', delay: index * 0.04 }}
-                    className="rounded-[28px] border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-950"
-                  >
-                    <div className="mb-4 inline-flex rounded-2xl bg-blue-50 p-3 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300">
-                      <Icon size={20} />
-                    </div>
-                    <h3 className="text-lg font-bold text-slate-950 dark:text-white">
-                      {item.title}
-                    </h3>
-                    <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
-                      {item.description}
-                    </p>
-                  </motion.div>
-                );
-              })}
+            <div className="grid gap-3 md:grid-cols-3">
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900">
+                <p className="text-sm font-semibold text-slate-950 dark:text-white">
+                  Confiabilidade
+                </p>
+                <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                  Informacoes mais claras para reduzir erro operacional.
+                </p>
+              </div>
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900">
+                <p className="text-sm font-semibold text-slate-950 dark:text-white">
+                  Controle
+                </p>
+                <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                  Leitura rapida do que precisa de acao imediata.
+                </p>
+              </div>
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900">
+                <p className="text-sm font-semibold text-slate-950 dark:text-white">
+                  Atendimento
+                </p>
+                <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                  Menos friccao para responder e concluir servicos.
+                </p>
+              </div>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500 dark:text-slate-400">
-            <span className="rounded-full bg-slate-100 px-3 py-1 dark:bg-slate-800">
-              OS e vendas no mesmo ambiente
+          <div className="flex flex-wrap gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+            <span className="rounded-md border border-slate-200 px-2.5 py-1 dark:border-slate-800">
+              Ordens de servico
             </span>
-            <span className="rounded-full bg-slate-100 px-3 py-1 dark:bg-slate-800">
-              Fluxo mais visual
+            <span className="rounded-md border border-slate-200 px-2.5 py-1 dark:border-slate-800">
+              Estoque
             </span>
-            <span className="rounded-full bg-slate-100 px-3 py-1 dark:bg-slate-800">
-              Operacao mais previsivel
+            <span className="rounded-md border border-slate-200 px-2.5 py-1 dark:border-slate-800">
+              Vendas
             </span>
           </div>
         </div>
       </div>
 
-      <div className="relative flex w-full items-center justify-center p-5 lg:w-[520px] lg:p-8">
+      <div className="flex w-full items-center justify-center p-5 lg:w-[440px] lg:p-8">
         <motion.div
-          initial={{ opacity: 0, y: 12 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.18, ease: 'easeOut' }}
-          className="w-full max-w-md rounded-[32px] border border-slate-200 bg-white/88 p-6 shadow-[0_30px_80px_-50px_rgba(15,23,42,0.65)] backdrop-blur dark:border-slate-800 dark:bg-slate-900/84"
+          className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900"
         >
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase text-blue-600 dark:text-blue-300">
-                Acesso seguro
+              <p className="text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400">
+                Acesso
               </p>
-              <h2 className="mt-2 text-3xl font-extrabold text-slate-950 dark:text-white">
+              <h2 className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">
                 Entrar no sistema
               </h2>
-              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                Entre para acompanhar ordens, estoque e resultados com mais clareza.
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                Use suas credenciais para acessar a operacao.
               </p>
             </div>
+
             <button
               type="button"
               onClick={onToggleTheme}
               aria-label={theme === 'light' ? 'Ativar modo escuro' : 'Ativar modo claro'}
-              className="inline-flex size-12 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 shadow-sm transition-colors hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-900"
+              className="inline-flex size-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-900"
             >
-              {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+              {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
             </button>
           </div>
 
           {errorMessage && (
-            <div className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200">
+            <div className="mt-5 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200">
               {errorMessage}
             </div>
           )}
 
           <form onSubmit={(event) => void handleLogin(event)} className="mt-6 space-y-4">
-            <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
+            <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-950">
               <div className="flex items-center gap-3">
-                <div className="rounded-2xl bg-slate-900 p-3 text-white dark:bg-slate-100 dark:text-slate-950">
-                  <LockKeyhole size={20} />
+                <div className="flex size-9 items-center justify-center rounded-md bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-950">
+                  <LockKeyhole size={16} />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-950 dark:text-white">Login</h3>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">
-                    Use suas credenciais para continuar.
+                  <h3 className="text-sm font-semibold text-slate-950 dark:text-white">
+                    Login seguro
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Acesso individual por usuario.
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                 Email
               </label>
               <input
@@ -198,8 +172,8 @@ export const AuthScreen = ({
               />
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                 Senha
               </label>
               <input
@@ -220,7 +194,7 @@ export const AuthScreen = ({
             <button
               type="submit"
               disabled={isBusy}
-              className="w-full rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="w-full rounded-lg bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-slate-200"
             >
               {isBusy ? 'Entrando...' : 'Entrar'}
             </button>

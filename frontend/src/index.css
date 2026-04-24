@@ -6,13 +6,6 @@
 @theme {
   --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
-  --color-brand-50: #eff6ff;
-  --color-brand-100: #dbeafe;
-  --color-brand-500: #2563eb;
-  --color-brand-600: #1d4ed8;
-  --color-ink-950: #020617;
-  --color-panel: #ffffff;
-  --color-panel-dark: #0f172a;
 }
 
 @layer base {
@@ -33,7 +26,7 @@
   }
 
   ::selection {
-    @apply bg-blue-600 text-white;
+    @apply bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-950;
   }
 
   h1,

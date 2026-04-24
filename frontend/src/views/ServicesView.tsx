@@ -11,11 +11,11 @@ import { cn, formatCurrency, formatPhone } from '../lib/utils';
 import { Product, ServiceFormValues, ServiceOrder, ServiceStatus } from '../types';
 
 const inputClass =
-  'w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500';
+  'w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-slate-400 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-slate-600';
 const secondaryButtonClass =
-  'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3.5 py-2 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors';
+  'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3.5 py-2 rounded-lg text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors';
 const infoChipClass =
-  'inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold';
+  'inline-flex items-center rounded-md px-2.5 py-1 text-[11px] font-semibold';
 
 const EMPTY_SERVICE_FORM: ServiceFormValues = {
   customerName: '',
@@ -379,7 +379,7 @@ export const ServicesView = ({
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center lg:ml-auto">
           <select
@@ -402,7 +402,7 @@ export const ServicesView = ({
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
               placeholder="Buscar por cliente, aparelho ou OS"
-              className="min-w-[280px] rounded-xl border border-slate-200 bg-white py-2 pl-10 pr-3 text-sm text-slate-700 outline-none transition-colors placeholder:text-slate-400 focus:border-blue-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500"
+              className="min-w-[280px] rounded-lg border border-slate-200 bg-white py-2 pl-10 pr-3 text-sm text-slate-700 outline-none transition-colors placeholder:text-slate-400 focus:border-slate-400 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-slate-600"
             />
           </label>
           {(statusFilter !== 'all' || normalizedSearch.length > 0) && (
@@ -421,7 +421,7 @@ export const ServicesView = ({
         <button
           type="button"
           onClick={openCreateModal}
-          className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-100 transition-colors hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 dark:shadow-blue-950/40 disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
           disabled={isBusy}
         >
           <Plus size={20} />
@@ -431,14 +431,14 @@ export const ServicesView = ({
 
       <div className="grid grid-cols-1 gap-4">
         {filteredServices.length === 0 && (
-          <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-center text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
+          <div className="rounded-xl border border-dashed border-slate-300 bg-white p-5 text-center text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
             Nenhuma ordem de servico encontrada com os filtros atuais.
           </div>
         )}
 
         {filteredServices.length > 0 && (
           <div className="max-h-[min(62vh,760px)] space-y-4 overflow-y-auto pr-1">
-            <div className="sticky top-0 z-10 flex items-center justify-between rounded-2xl border border-slate-200 bg-white/95 px-4 py-3 text-sm shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-900/95">
+            <div className="sticky top-0 z-10 flex items-center justify-between rounded-xl border border-slate-200 bg-white/95 px-4 py-3 text-sm backdrop-blur dark:border-slate-800 dark:bg-slate-900/95">
               <div>
                 <p className="font-semibold text-slate-900 dark:text-slate-100">
                   {filteredServices.length} ordens encontradas
@@ -460,18 +460,18 @@ export const ServicesView = ({
               const nextAction = getNextServiceAction(service.status);
 
               return (
-                <div key={service.id} className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:border-blue-200 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-blue-500/30">
+                <div key={service.id} className="group rounded-xl border border-slate-200 bg-white p-4 transition-colors hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700">
               <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                 <div className="flex gap-4">
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center self-start rounded-2xl bg-slate-50 p-3 text-slate-400 transition-colors group-hover:text-blue-500 dark:bg-slate-950 dark:text-slate-500">
-                    <Smartphone size={28} />
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center self-start rounded-lg bg-slate-50 p-3 text-slate-400 dark:bg-slate-950 dark:text-slate-500">
+                    <Smartphone size={20} />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-3">
                       <h4 className="truncate text-base font-bold text-slate-900 dark:text-slate-100">
                         {service.customerName}
                       </h4>
-                      <span className={cn('rounded-full px-3 py-1 text-xs font-bold', serviceStatusBadgeClass[service.status])}>
+                      <span className={cn('rounded-md px-2.5 py-1 text-xs font-semibold', serviceStatusBadgeClass[service.status])}>
                         {serviceStatusLabel[service.status]}
                       </span>
                       <span className={cn(infoChipClass, 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300')}>
@@ -485,16 +485,16 @@ export const ServicesView = ({
                       {service.issueDescription}
                     </p>
                     <div className="mt-2 flex flex-wrap items-center gap-2">
-                      <span className={cn(infoChipClass, 'bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300')}>
+                      <span className={cn(infoChipClass, 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300')}>
                         {service.customerPhone}
                       </span>
                       {service.pendingBalance > 0 && (
-                        <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
+                        <span className="rounded-md bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
                           Saldo pendente {formatCurrency(service.pendingBalance)}
                         </span>
                       )}
                       {service.readyWithoutContactSent && (
-                        <span className="rounded-full bg-rose-50 px-3 py-1 text-xs font-bold text-rose-700 dark:bg-rose-500/10 dark:text-rose-300">
+                        <span className="rounded-md bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700 dark:bg-rose-500/10 dark:text-rose-300">
                           Pronta sem contato enviado
                         </span>
                       )}
@@ -510,11 +510,11 @@ export const ServicesView = ({
                 </div>
 
                 <div className="flex w-full flex-col gap-3 xl:w-auto xl:min-w-[310px]">
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left xl:text-right dark:border-slate-800 dark:bg-slate-950">
-                    <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-left xl:text-right dark:border-slate-800 dark:bg-slate-950">
+                    <div className="text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400">
                       Total da OS
                     </div>
-                    <div className="mt-1 text-2xl font-black text-slate-900 dark:text-slate-100">
+                    <div className="mt-1 text-xl font-bold text-slate-900 dark:text-slate-100">
                       {formatCurrency(service.totalPrice)}
                     </div>
                   </div>
@@ -522,7 +522,7 @@ export const ServicesView = ({
                     <button
                       type="button"
                       onClick={() => openEditModal(service)}
-                      className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                      className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
                     >
                       <span className="flex items-center gap-1.5">
                         <Pencil size={13} />
@@ -534,9 +534,9 @@ export const ServicesView = ({
                         type="button"
                         onClick={() => void handleStatusUpdate(service, nextAction.nextStatus)}
                         className={cn(
-                          'rounded-xl px-4 py-2 text-xs font-bold transition-colors',
+                          'rounded-lg px-4 py-2 text-xs font-semibold transition-colors',
                           service.status === 'aguardando_orcamento' &&
-                            'bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-500/15 dark:text-blue-300 dark:hover:bg-blue-500/20',
+                            'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700',
                           service.status === 'aguardando_aprovacao' &&
                             'bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-500/15 dark:text-amber-300 dark:hover:bg-amber-500/20',
                           service.status === 'aguardando_peca' &&
@@ -544,7 +544,7 @@ export const ServicesView = ({
                           service.status === 'em_conserto' &&
                             'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-500/15 dark:text-emerald-300 dark:hover:bg-emerald-500/20',
                           service.status === 'pronto_para_retirada' &&
-                            'bg-indigo-600 text-white hover:bg-indigo-700',
+                            'bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-slate-200',
                         )}
                       >
                         {nextAction.label}
@@ -553,7 +553,7 @@ export const ServicesView = ({
                     <button
                       type="button"
                       onClick={() => handleEmitServiceReceipt(service)}
-                      className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-bold text-blue-700 transition-colors hover:bg-blue-100 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300 dark:hover:bg-blue-500/20"
+                      className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-900"
                     >
                       Emitir recibo
                     </button>
@@ -561,7 +561,7 @@ export const ServicesView = ({
                       <button
                         type="button"
                         onClick={() => void handleStatusUpdate(service, 'cancelada')}
-                        className="rounded-xl bg-rose-50 px-4 py-2 text-xs font-bold text-rose-600 transition-colors hover:bg-rose-100 dark:bg-rose-500/15 dark:text-rose-300 dark:hover:bg-rose-500/20"
+                        className="rounded-lg bg-rose-50 px-4 py-2 text-xs font-semibold text-rose-600 transition-colors hover:bg-rose-100 dark:bg-rose-500/15 dark:text-rose-300 dark:hover:bg-rose-500/20"
                       >
                         Cancelar OS
                       </button>
@@ -571,7 +571,7 @@ export const ServicesView = ({
                       onChange={(event) =>
                         void handleStatusUpdate(service, event.target.value as ServiceStatus)
                       }
-                      className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                      className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
                     >
                       {serviceStatusOptions.map((statusOption) => (
                         <option key={statusOption.id} value={statusOption.id}>
@@ -583,7 +583,7 @@ export const ServicesView = ({
                 </div>
               </div>
 
-              <div className="mt-4 -mx-4 -mb-4 flex items-center justify-between rounded-b-2xl border-t border-slate-100 bg-slate-50/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-950/70">
+              <div className="mt-4 -mx-4 -mb-4 flex items-center justify-between rounded-b-xl border-t border-slate-200 bg-slate-50/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-950/70">
                 <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
                   OS {service.id}
                 </div>
@@ -605,9 +605,9 @@ export const ServicesView = ({
 
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900">
-            <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-5 py-4 dark:border-slate-800 dark:bg-slate-950">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+          <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-xl flex-col overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-5 py-4 dark:border-slate-800 dark:bg-slate-950">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                 {editingServiceId ? 'Editar Ordem de Servico' : 'Nova Ordem de Servico'}
               </h3>
               <button
@@ -678,12 +678,12 @@ export const ServicesView = ({
                     <button
                       type="button"
                       onClick={addPart}
-                      className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                      className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
                     >
                       Adicionar item manual
                     </button>
                   </div>
-                  <div className="grid grid-cols-1 gap-4 rounded-2xl border border-slate-200 p-3 dark:border-slate-800 sm:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-4 rounded-lg border border-slate-200 p-3 dark:border-slate-800 sm:grid-cols-2">
                     <div className="space-y-1 sm:col-span-2">
                       <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                         Buscar produto de conserto
@@ -699,7 +699,7 @@ export const ServicesView = ({
                       <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                         Produtos disponiveis
                       </label>
-                      <div className="max-h-52 space-y-2 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-2.5 dark:border-slate-800 dark:bg-slate-950">
+                      <div className="max-h-52 space-y-2 overflow-y-auto rounded-lg border border-slate-200 bg-slate-50 p-2.5 dark:border-slate-800 dark:bg-slate-950">
                         {filteredRepairProducts.length === 0 && (
                           <p className="px-2 py-3 text-sm text-slate-500 dark:text-slate-400">
                             Nenhum produto de conserto encontrado.
@@ -717,8 +717,8 @@ export const ServicesView = ({
                               }}
                               className={`w-full rounded-lg border px-3 py-2 text-left transition-colors ${
                                 isSelected
-                                  ? 'border-blue-500 bg-blue-50 text-blue-800 dark:bg-blue-500/20 dark:text-blue-200'
-                                  : 'border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-blue-50/40 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-blue-500/40 dark:hover:bg-blue-500/10'
+                                  ? 'border-slate-400 bg-slate-100 text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100'
+                                  : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-slate-700 dark:hover:bg-slate-950'
                               }`}
                             >
                               <p className="text-sm font-semibold">{product.name}</p>
@@ -758,7 +758,7 @@ export const ServicesView = ({
                       <button
                         type="button"
                         onClick={addSelectedPart}
-                        className="w-full rounded-xl bg-slate-800 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-700 dark:bg-slate-200 dark:text-slate-900 dark:hover:bg-slate-300"
+                        className="w-full rounded-lg bg-slate-900 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-slate-200"
                       >
                         Adicionar produto
                       </button>
@@ -766,12 +766,12 @@ export const ServicesView = ({
                   </div>
                   <div className="space-y-3">
                     {formData.parts.length === 0 && (
-                      <div className="rounded-2xl border border-dashed border-slate-300 px-4 py-3 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                      <div className="rounded-lg border border-dashed border-slate-300 px-4 py-3 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
                         Nenhum item adicionado.
                       </div>
                     )}
                     {formData.parts.map((part, index) => (
-                      <div key={part.id ?? `part-${index}`} className="grid grid-cols-1 gap-3 rounded-2xl border border-slate-200 p-3 dark:border-slate-800 sm:grid-cols-2">
+                      <div key={part.id ?? `part-${index}`} className="grid grid-cols-1 gap-3 rounded-lg border border-slate-200 p-3 dark:border-slate-800 sm:grid-cols-2">
                         <div className="space-y-1 sm:col-span-2">
                           <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">Produto vinculado</label>
                           <select
@@ -867,7 +867,7 @@ export const ServicesView = ({
                           <button
                             type="button"
                             onClick={() => removePart(index)}
-                            className="rounded-xl bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-600 transition-colors hover:bg-rose-100 dark:bg-rose-500/15 dark:text-rose-300 dark:hover:bg-rose-500/20"
+                            className="rounded-lg bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-600 transition-colors hover:bg-rose-100 dark:bg-rose-500/15 dark:text-rose-300 dark:hover:bg-rose-500/20"
                           >
                             <span className="flex items-center gap-1.5">
                               <Trash2 size={14} />
@@ -881,10 +881,10 @@ export const ServicesView = ({
                 </div>
               </div>
               <div className="flex gap-3 pt-2">
-                <button type="button" onClick={closeModal} className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800">
+                <button type="button" onClick={closeModal} className="flex-1 rounded-lg border border-slate-200 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800">
                   Cancelar
                 </button>
-                <button type="submit" className="flex-1 rounded-xl bg-blue-600 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-100 transition-colors hover:bg-blue-700">
+                <button type="submit" className="flex-1 rounded-lg bg-slate-900 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-slate-200">
                   {editingServiceId ? 'Salvar alteracoes' : 'Gerar OS'}
                 </button>
               </div>

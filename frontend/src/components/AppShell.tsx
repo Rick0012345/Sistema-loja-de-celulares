@@ -72,7 +72,7 @@ type AppShellProps = {
 };
 
 const surfaceClass =
-  'border border-slate-200/80 bg-white/88 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.45)] backdrop-blur dark:border-slate-800/80 dark:bg-slate-900/82';
+  'border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900';
 
 export const AppShell = ({
   activeTab,
@@ -100,8 +100,8 @@ export const AppShell = ({
     [notifications],
   );
   const currentModeLabel =
-    appMode === 'repair' ? 'Assistencia tecnica' : 'Frente de vendas';
-  const sidebarWidthClass = isSidebarOpen ? 'lg:w-72' : 'lg:w-24';
+    appMode === 'repair' ? 'Assistencia tecnica' : 'Operacao de vendas';
+  const sidebarWidthClass = isSidebarOpen ? 'lg:w-64' : 'lg:w-20';
 
   const getNotificationStyle = (severity: NotificationItem['severity']) => {
     const styles = {
@@ -125,19 +125,13 @@ export const AppShell = ({
   };
 
   return (
-    <div className="relative min-h-dvh overflow-hidden bg-slate-100 text-slate-900 transition-colors dark:bg-slate-950 dark:text-slate-100">
-      <div className="pointer-events-none absolute inset-0 opacity-60 dark:opacity-40">
-        <div className="absolute left-[-8rem] top-[-10rem] h-64 w-64 rounded-full border border-blue-200/70 dark:border-blue-500/10" />
-        <div className="absolute right-[-6rem] top-24 h-52 w-52 rounded-full border border-slate-300/80 dark:border-slate-700/70" />
-        <div className="absolute bottom-[-8rem] left-1/3 h-72 w-72 rounded-full border border-emerald-200/70 dark:border-emerald-500/10" />
-      </div>
-
+    <div className="min-h-dvh bg-slate-100 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
       <AnimatePresence>
         {isSidebarOpen && (
           <motion.button
             type="button"
             aria-label="Fechar menu lateral"
-            className="fixed inset-0 z-30 bg-slate-950/45 lg:hidden"
+            className="fixed inset-0 z-30 bg-slate-950/40 lg:hidden"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -147,169 +141,150 @@ export const AppShell = ({
         )}
       </AnimatePresence>
 
-      <div className="relative flex min-h-dvh">
-        <motion.aside
-          initial={false}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.18, ease: 'easeOut' }}
+      <div className="mx-auto flex min-h-dvh max-w-[1600px]">
+        <aside
           className={cn(
-            'fixed inset-y-0 left-0 z-40 flex w-[86vw] max-w-[320px] flex-col overflow-hidden border-r border-slate-200/80 bg-white/92 backdrop-blur-xl transition-transform dark:border-slate-800/80 dark:bg-slate-950/92 lg:sticky lg:top-0 lg:h-dvh lg:max-w-none lg:translate-x-0',
+            'fixed inset-y-0 left-0 z-40 flex w-[84vw] max-w-[296px] flex-col border-r border-slate-200 bg-white transition-transform dark:border-slate-800 dark:bg-slate-950 lg:sticky lg:top-0 lg:h-dvh lg:max-w-none lg:translate-x-0',
             isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
             sidebarWidthClass,
           )}
         >
-          <div className="border-b border-slate-200/70 px-4 py-5 dark:border-slate-800/80">
+          <div className="border-b border-slate-200 px-4 py-4 dark:border-slate-800">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="flex size-12 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-600/20">
-                  <Smartphone size={22} />
+                <div className="flex size-10 items-center justify-center rounded-lg bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-950">
+                  <Smartphone size={18} />
                 </div>
                 {isSidebarOpen && (
                   <div>
-                    <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
-                      Operacao
+                    <p className="text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400">
+                      Sistema
                     </p>
-                    <h1 className="text-lg font-extrabold text-slate-950 dark:text-white">
+                    <h1 className="text-base font-bold text-slate-950 dark:text-white">
                       ConsertaSmart
                     </h1>
                   </div>
                 )}
               </div>
+
               <button
                 type="button"
                 onClick={onToggleSidebar}
                 aria-label={isSidebarOpen ? 'Recolher menu' : 'Expandir menu'}
-                className="inline-flex size-10 items-center justify-center rounded-2xl border border-slate-200 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-100"
+                className="inline-flex size-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-100"
               >
-                {isSidebarOpen ? <X size={18} /> : <Menu size={18} />}
+                {isSidebarOpen ? <X size={16} /> : <Menu size={16} />}
               </button>
             </div>
 
             {isSidebarOpen && (
-              <div className="mt-4 rounded-3xl border border-slate-200 bg-slate-50 px-4 py-4 dark:border-slate-800 dark:bg-slate-900">
-                <p className="text-xs font-semibold uppercase text-blue-600 dark:text-blue-300">
-                  Ambiente ativo
+              <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 dark:border-slate-800 dark:bg-slate-900">
+                <p className="text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400">
+                  Ambiente atual
                 </p>
-                <p className="mt-2 text-base font-bold text-slate-950 dark:text-white">
+                <p className="mt-1 text-sm font-semibold text-slate-950 dark:text-white">
                   {currentModeLabel}
-                </p>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                  Acesso rapido ao fluxo principal da equipe.
                 </p>
               </div>
             )}
           </div>
 
-          <nav className="flex-1 space-y-2 overflow-y-auto px-3 py-4">
-            {navItems.map((item, index) => (
-              <motion.button
+          <nav className="flex-1 space-y-1 px-3 py-4">
+            {navItems.map((item) => (
+              <button
                 key={item.id}
                 type="button"
                 onClick={() => handleSelectTab(item.id)}
-                initial={false}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.16, ease: 'easeOut', delay: index * 0.02 }}
                 className={cn(
-                  'group flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm transition-all',
+                  'flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left text-sm transition-colors',
                   activeTab === item.id
-                    ? 'border border-blue-200 bg-blue-50 text-blue-700 shadow-sm dark:border-blue-500/20 dark:bg-blue-500/15 dark:text-blue-200'
-                    : 'border border-transparent text-slate-600 hover:border-slate-200 hover:bg-slate-50 hover:text-slate-950 dark:text-slate-400 dark:hover:border-slate-800 dark:hover:bg-slate-900 dark:hover:text-slate-100',
+                    ? 'border-slate-300 bg-slate-100 text-slate-950 dark:border-slate-700 dark:bg-slate-900 dark:text-white'
+                    : 'border-transparent text-slate-600 hover:border-slate-200 hover:bg-slate-50 hover:text-slate-950 dark:text-slate-400 dark:hover:border-slate-800 dark:hover:bg-slate-900 dark:hover:text-slate-100',
                 )}
               >
                 <span
                   className={cn(
-                    'flex size-10 shrink-0 items-center justify-center rounded-2xl',
+                    'flex size-8 shrink-0 items-center justify-center rounded-md',
                     activeTab === item.id
-                      ? 'bg-white text-blue-600 dark:bg-slate-950 dark:text-blue-300'
-                      : 'bg-slate-100 text-slate-500 group-hover:bg-white group-hover:text-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:group-hover:bg-slate-950 dark:group-hover:text-slate-100',
+                      ? 'bg-white text-slate-900 dark:bg-slate-950 dark:text-white'
+                      : 'bg-slate-100 text-slate-500 dark:bg-slate-900 dark:text-slate-400',
                   )}
                 >
-                  <item.icon size={18} />
+                  <item.icon size={16} />
                 </span>
-                {isSidebarOpen && (
-                  <div className="min-w-0">
-                    <p className="truncate font-semibold">{item.label}</p>
-                    <p className="truncate text-xs text-slate-400 dark:text-slate-500">
-                      {activeTab === item.id ? 'Tela atual' : 'Acessar modulo'}
-                    </p>
-                  </div>
-                )}
-              </motion.button>
+                {isSidebarOpen && <span className="truncate font-medium">{item.label}</span>}
+              </button>
             ))}
           </nav>
 
-          <div className="border-t border-slate-200/70 p-3 dark:border-slate-800/80">
+          <div className="border-t border-slate-200 p-3 dark:border-slate-800">
             <div
               className={cn(
-                'rounded-3xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900',
-                !isSidebarOpen && 'flex justify-center px-2 py-3',
+                'rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 dark:border-slate-800 dark:bg-slate-900',
+                !isSidebarOpen && 'flex justify-center px-2',
               )}
             >
               {isSidebarOpen ? (
                 <>
-                  <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
-                    Usuario ativo
+                  <p className="text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400">
+                    Usuario
                   </p>
-                  <p className="mt-1 truncate font-bold text-slate-950 dark:text-white">
+                  <p className="mt-1 truncate text-sm font-semibold text-slate-950 dark:text-white">
                     {currentUserName}
                   </p>
                 </>
               ) : (
-                <div className="flex size-10 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-300">
-                  <Smartphone size={18} />
+                <div className="flex size-8 items-center justify-center rounded-md bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-950">
+                  <Smartphone size={14} />
                 </div>
               )}
             </div>
           </div>
-        </motion.aside>
+        </aside>
 
-        <main className="relative flex-1 px-4 py-4 lg:px-6 lg:py-6">
-          <div className="mx-auto flex max-w-[1600px] flex-col gap-5">
-            <header className={cn('sticky top-4 z-20 rounded-[28px] p-4 lg:p-5', surfaceClass)}>
-              <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+        <main className="flex-1 px-4 py-4 lg:px-6 lg:py-5">
+          <div className="flex flex-col gap-4">
+            <header className={cn('sticky top-4 z-20 rounded-xl px-4 py-4 lg:px-5', surfaceClass)}>
+              <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
                 <div className="flex items-start gap-3">
                   <button
                     type="button"
                     onClick={onToggleSidebar}
                     aria-label="Abrir menu lateral"
-                    className="inline-flex size-11 shrink-0 items-center justify-center rounded-2xl border border-slate-200 text-slate-600 transition-colors hover:bg-slate-100 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-900"
+                    className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition-colors hover:bg-slate-100 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-900"
                   >
-                    <Menu size={18} />
+                    <Menu size={16} />
                   </button>
-                  <div className="space-y-3">
+
+                  <div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-500/15 dark:text-blue-300">
+                      <span className="rounded-md bg-slate-100 px-2.5 py-1 text-[11px] font-semibold uppercase text-slate-600 dark:bg-slate-800 dark:text-slate-300">
                         {currentModeLabel}
                       </span>
-                      <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                        {currentLabel}
-                      </span>
                       {isMutating && (
-                        <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
-                          Sincronizando alteracoes
+                        <span className="rounded-md bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold uppercase text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
+                          Salvando
                         </span>
                       )}
                     </div>
-                    <div>
-                      <h2 className="text-2xl font-extrabold text-slate-950 dark:text-white lg:text-3xl">
-                        {currentLabel}
-                      </h2>
-                      <p className="mt-1 max-w-2xl text-sm text-slate-500 dark:text-slate-400">
-                        Painel pensado para agilizar a rotina, reduzir cliques e manter a equipe orientada.
-                      </p>
-                    </div>
+                    <h2 className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">
+                      {currentLabel}
+                    </h2>
+                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                      Interface focada em leitura rapida, controle operacional e atendimento sem friccao.
+                    </p>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:flex xl:flex-wrap xl:justify-end">
-                  <div className="inline-flex rounded-full border border-slate-200 bg-slate-100 p-1 dark:border-slate-800 dark:bg-slate-950">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:flex xl:flex-wrap xl:justify-end">
+                  <div className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-1 dark:border-slate-800 dark:bg-slate-950">
                     <button
                       type="button"
                       onClick={() => onSwitchMode('repair')}
                       className={cn(
-                        'rounded-full px-4 py-2 text-sm font-semibold transition-colors',
+                        'rounded-md px-3 py-2 text-sm font-medium transition-colors',
                         appMode === 'repair'
-                          ? 'bg-white text-slate-950 shadow-sm dark:bg-slate-900 dark:text-white'
+                          ? 'bg-white text-slate-950 dark:bg-slate-900 dark:text-white'
                           : 'text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white',
                       )}
                     >
@@ -319,9 +294,9 @@ export const AppShell = ({
                       type="button"
                       onClick={() => onSwitchMode('sales')}
                       className={cn(
-                        'rounded-full px-4 py-2 text-sm font-semibold transition-colors',
+                        'rounded-md px-3 py-2 text-sm font-medium transition-colors',
                         appMode === 'sales'
-                          ? 'bg-blue-600 text-white shadow-sm'
+                          ? 'bg-white text-slate-950 dark:bg-slate-900 dark:text-white'
                           : 'text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white',
                       )}
                     >
@@ -333,9 +308,9 @@ export const AppShell = ({
                     <button
                       type="button"
                       onClick={() => setIsNotificationsOpen((current) => !current)}
-                      className="relative flex h-12 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-950"
+                      className="relative flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-950"
                     >
-                      <Bell size={16} />
+                      <Bell size={15} />
                       <span>Notificacoes</span>
                       {unreadCount > 0 && (
                         <span className="absolute -right-1 -top-1 rounded-full bg-rose-600 px-1.5 py-0.5 text-[11px] font-semibold text-white">
@@ -343,6 +318,7 @@ export const AppShell = ({
                         </span>
                       )}
                     </button>
+
                     <AnimatePresence>
                       {isNotificationsOpen && (
                         <motion.div
@@ -350,24 +326,24 @@ export const AppShell = ({
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: -8 }}
                           transition={{ duration: 0.18, ease: 'easeOut' }}
-                          className="absolute right-0 z-30 mt-2 w-[min(92vw,380px)] rounded-[28px] border border-slate-200 bg-white p-3 shadow-2xl dark:border-slate-800 dark:bg-slate-950"
+                          className="absolute right-0 z-30 mt-2 w-[min(92vw,360px)] rounded-xl border border-slate-200 bg-white p-3 shadow-lg dark:border-slate-800 dark:bg-slate-950"
                         >
                           <div className="mb-3 flex items-center justify-between">
-                            <p className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                               Central de notificacoes
                             </p>
                             <button
                               type="button"
                               onClick={() => void onMarkAllNotificationsAsRead()}
-                              className="inline-flex items-center gap-1 rounded-xl px-2 py-1 text-xs font-semibold text-blue-600 transition-colors hover:bg-blue-50 dark:text-blue-300 dark:hover:bg-blue-500/10"
+                              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-900"
                             >
-                              <CheckCheck size={14} />
+                              <CheckCheck size={13} />
                               Marcar todas
                             </button>
                           </div>
                           <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
                             {notifications.length === 0 && (
-                              <div className="rounded-2xl border border-dashed border-slate-200 p-4 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                              <div className="rounded-lg border border-dashed border-slate-200 p-3 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
                                 Nenhuma notificacao no momento.
                               </div>
                             )}
@@ -381,11 +357,11 @@ export const AppShell = ({
                                   }
                                 }}
                                 className={cn(
-                                  'w-full rounded-2xl border p-3 text-left transition-all',
+                                  'w-full rounded-lg border p-3 text-left transition-colors',
                                   getNotificationStyle(notification.severity),
                                   notification.isRead
                                     ? 'opacity-75'
-                                    : 'ring-1 ring-blue-200 dark:ring-blue-500/20',
+                                    : 'ring-1 ring-slate-200 dark:ring-slate-700',
                                 )}
                               >
                                 <div className="mb-1 flex items-start justify-between gap-3">
@@ -411,23 +387,23 @@ export const AppShell = ({
                   <button
                     type="button"
                     onClick={onToggleTheme}
-                    className="flex h-12 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-950"
+                    className="flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-950"
                   >
-                    {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+                    {theme === 'light' ? <Moon size={15} /> : <Sun size={15} />}
                     <span>{theme === 'light' ? 'Modo escuro' : 'Modo claro'}</span>
                   </button>
 
-                  <div className="flex h-12 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
-                    <Clock3 size={16} className="text-slate-400 dark:text-slate-500" />
+                  <div className="flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+                    <Clock3 size={15} className="text-slate-400 dark:text-slate-500" />
                     <span>{format(new Date(), "eeee, d 'de' MMMM", { locale: ptBR })}</span>
                   </div>
 
                   <button
                     type="button"
                     onClick={() => void onLogout()}
-                    className="flex h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-950"
+                    className="flex h-10 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-950"
                   >
-                    <LogOut size={16} />
+                    <LogOut size={15} />
                     <span>Sair</span>
                   </button>
                 </div>
@@ -435,7 +411,7 @@ export const AppShell = ({
             </header>
 
             {errorMessage && (
-              <div className="rounded-[28px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200">
+              <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200">
                 {errorMessage}
               </div>
             )}

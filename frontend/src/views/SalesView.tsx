@@ -30,7 +30,7 @@ import { formatCurrency } from '../lib/utils';
 import { PaymentMethod, Product, Sale, SaleFormValues } from '../types';
 
 const inputClass =
-  'w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500';
+  'w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-slate-400 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-slate-600';
 
 const EMPTY_FORM: SaleFormValues = {
   customerName: '',
@@ -314,23 +314,23 @@ export const SalesView = ({
   };
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 lg:flex-row lg:items-center lg:justify-between">
+    <div className="space-y-4">
+      <div className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-            Dashboard de Vendas
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+            Vendas
           </h3>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            Painel exclusivo com performance comercial, mix de pagamento e produtos com maior giro.
+            Resumo comercial, meios de pagamento e historico recente.
           </p>
         </div>
         <button
           type="button"
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-100 transition-colors hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 dark:shadow-blue-950/40 disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
           disabled={isBusy}
         >
-          <Plus size={18} />
+          <Plus size={16} />
           Registrar Venda
         </button>
       </div>
@@ -363,8 +363,8 @@ export const SalesView = ({
       </div>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 xl:col-span-2">
-          <h4 className="mb-4 text-base font-bold text-slate-900 dark:text-slate-100">
+        <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900 xl:col-span-2">
+          <h4 className="mb-4 text-base font-semibold text-slate-900 dark:text-slate-100">
             Faturamento dos ultimos 7 dias
           </h4>
           <div className="h-72 w-full">
@@ -387,23 +387,22 @@ export const SalesView = ({
                   formatter={(value) => formatCurrency(Number(value))}
                   cursor={{ fill: '#f8fafc' }}
                   contentStyle={{
-                    borderRadius: '12px',
-                    border: 'none',
-                    boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+                    borderRadius: '8px',
+                    border: '1px solid #e2e8f0',
                   }}
                 />
-                <Bar dataKey="revenue" fill="#2563eb" radius={[8, 8, 0, 0]} barSize={36} />
+                <Bar dataKey="revenue" fill="#334155" radius={[4, 4, 0, 0]} barSize={34} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <h4 className="mb-4 text-base font-bold text-slate-900 dark:text-slate-100">
+        <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+          <h4 className="mb-4 text-base font-semibold text-slate-900 dark:text-slate-100">
             Mix por pagamento
           </h4>
           {salesDashboard.paymentData.length === 0 ? (
-            <p className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400">
+            <p className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-5 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400">
               Sem vendas para analisar.
             </p>
           ) : (
@@ -426,9 +425,8 @@ export const SalesView = ({
                     <Tooltip
                       formatter={(value) => formatCurrency(Number(value))}
                       contentStyle={{
-                        borderRadius: '12px',
-                        border: 'none',
-                        boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+                        borderRadius: '8px',
+                        border: '1px solid #e2e8f0',
                       }}
                     />
                   </PieChart>
@@ -459,12 +457,12 @@ export const SalesView = ({
       </div>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 xl:col-span-2">
-          <h4 className="mb-4 text-base font-bold text-slate-900 dark:text-slate-100">
+        <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900 xl:col-span-2">
+          <h4 className="mb-4 text-base font-semibold text-slate-900 dark:text-slate-100">
             Produtos mais vendidos
           </h4>
           {salesDashboard.topProducts.length === 0 ? (
-            <p className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400">
+            <p className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-5 text-center text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400">
               Nenhum produto vendido ainda.
             </p>
           ) : (
@@ -472,10 +470,10 @@ export const SalesView = ({
               {salesDashboard.topProducts.map((product, index) => (
                 <div
                   key={product.productId}
-                  className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-950"
+                  className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-950"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-600 dark:bg-blue-500/20 dark:text-blue-300">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-md bg-slate-200 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
                       {index + 1}
                     </span>
                     <div>
@@ -496,13 +494,13 @@ export const SalesView = ({
           )}
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <h4 className="mb-4 flex items-center gap-2 text-base font-bold text-slate-900 dark:text-slate-100">
+        <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+          <h4 className="mb-4 flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-slate-100">
             <AlertTriangle size={18} className="text-amber-500" />
             Alertas de reposicao
           </h4>
           {salesDashboard.criticalStockProducts.length === 0 ? (
-            <p className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400">
+            <p className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-5 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400">
               Estoque sob controle para os itens vendidos.
             </p>
           ) : (
@@ -510,7 +508,7 @@ export const SalesView = ({
               {salesDashboard.criticalStockProducts.map((product) => (
                 <div
                   key={product.id}
-                  className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 dark:border-amber-500/30 dark:bg-amber-500/10"
+                  className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 dark:border-amber-500/30 dark:bg-amber-500/10"
                 >
                   <p className="font-semibold text-amber-700 dark:text-amber-300">
                     {product.name}
@@ -527,13 +525,13 @@ export const SalesView = ({
 
       <div className="grid grid-cols-1 gap-4">
         {sales.length === 0 && (
-          <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-center text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
+          <div className="rounded-xl border border-dashed border-slate-300 bg-white p-5 text-center text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
             Nenhuma venda registrada ainda.
           </div>
         )}
         {sales.length > 0 && (
           <div className="max-h-[min(60vh,720px)] space-y-4 overflow-y-auto pr-1">
-            <div className="sticky top-0 z-10 flex items-center justify-between rounded-2xl border border-slate-200 bg-white/95 px-4 py-3 text-sm shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-900/95">
+            <div className="sticky top-0 z-10 flex items-center justify-between rounded-xl border border-slate-200 bg-white/95 px-4 py-3 text-sm backdrop-blur dark:border-slate-800 dark:bg-slate-900/95">
               <div>
                 <p className="font-semibold text-slate-900 dark:text-slate-100">
                   {sales.length} vendas registradas
@@ -542,14 +540,14 @@ export const SalesView = ({
                   Histórico pronto para consulta rápida e emissão de recibo.
                 </p>
               </div>
-              <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
+              <span className="rounded-md bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
                 Ticket médio: {formatCurrency(salesDashboard.avgTicket)}
               </span>
             </div>
             {sales.map((sale) => (
               <div
                 key={sale.id}
-                className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:shadow-md dark:border-slate-800 dark:bg-slate-900"
+                className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900"
               >
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
@@ -565,13 +563,13 @@ export const SalesView = ({
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                   {PAYMENT_METHOD_LABELS[sale.paymentMethod]}
                 </p>
-                <p className="text-xl font-black text-slate-900 dark:text-slate-100">
+                <p className="text-lg font-bold text-slate-900 dark:text-slate-100">
                   {formatCurrency(sale.total)}
                 </p>
               </div>
             </div>
 
-            <div className="mt-4 rounded-xl border border-slate-100 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950">
+            <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950">
               {sale.items.map((item) => (
                 <div
                   key={`${sale.id}-${item.productId}`}
@@ -590,7 +588,7 @@ export const SalesView = ({
               <button
                 type="button"
                 onClick={() => handleEmitReceipt(sale)}
-                className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-100 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300 dark:hover:bg-blue-500/20"
+                className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-900"
               >
                 Emitir recibo (PDF)
               </button>
@@ -603,9 +601,9 @@ export const SalesView = ({
 
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="flex h-[min(92vh,780px)] w-full max-w-xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900">
-            <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-5 py-4 dark:border-slate-800 dark:bg-slate-950">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+          <div className="flex h-[min(92vh,760px)] w-full max-w-xl flex-col overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-5 py-4 dark:border-slate-800 dark:bg-slate-950">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                 Registrar Venda
               </h3>
               <button
@@ -660,7 +658,7 @@ export const SalesView = ({
                   <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">
                     Produto
                   </label>
-                  <div className="max-h-52 space-y-2 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-2.5 dark:border-slate-800 dark:bg-slate-950">
+                  <div className="max-h-52 space-y-2 overflow-y-auto rounded-lg border border-slate-200 bg-slate-50 p-2.5 dark:border-slate-800 dark:bg-slate-950">
                     {filteredProducts.length === 0 && (
                       <p className="px-2 py-3 text-sm text-slate-500 dark:text-slate-400">
                         Nenhum produto encontrado.
@@ -678,8 +676,8 @@ export const SalesView = ({
                           }}
                           className={`w-full rounded-lg border px-3 py-2 text-left transition-colors ${
                             isSelected
-                              ? 'border-blue-500 bg-blue-50 text-blue-800 dark:bg-blue-500/20 dark:text-blue-200'
-                              : 'border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-blue-50/40 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-blue-500/40 dark:hover:bg-blue-500/10'
+                              ? 'border-slate-400 bg-slate-100 text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100'
+                              : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-slate-700 dark:hover:bg-slate-950'
                           }`}
                         >
                           <p className="text-sm font-semibold">{product.name}</p>
@@ -720,7 +718,7 @@ export const SalesView = ({
                   <button
                     type="button"
                     onClick={addSelectedProduct}
-                    className="w-full rounded-xl bg-slate-800 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-700 dark:bg-slate-200 dark:text-slate-900 dark:hover:bg-slate-300"
+                    className="w-full rounded-lg bg-slate-900 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-slate-200"
                   >
                     Adicionar produto
                   </button>
@@ -747,7 +745,7 @@ export const SalesView = ({
                   </select>
                 </div>
               </div>
-              <div className="space-y-2 rounded-xl border border-slate-100 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950">
+              <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950">
                 <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
                   Itens da venda
                 </p>
@@ -792,7 +790,7 @@ export const SalesView = ({
                   })
                 )}
               </div>
-              <div className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-950">
+              <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-950">
                 <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
                   <CreditCard size={16} />
                   Total previsto
@@ -812,14 +810,14 @@ export const SalesView = ({
                     setFormData(EMPTY_FORM);
                     setIsModalOpen(false);
                   }}
-                  className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800"
+                  className="flex-1 rounded-lg border border-slate-200 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={isBusy}
-                  className="flex-1 rounded-xl bg-blue-600 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-100 transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="flex-1 rounded-lg bg-slate-900 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-slate-200"
                 >
                   Confirmar Venda
                 </button>

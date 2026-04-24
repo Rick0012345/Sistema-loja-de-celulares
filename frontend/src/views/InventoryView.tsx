@@ -4,9 +4,9 @@ import { cn, formatCurrency } from '../lib/utils';
 import { Product, ProductFormValues, Supplier } from '../types';
 
 const panelClass =
-  'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm';
+  'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800';
 const inputClass =
-  'w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500';
+  'w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-slate-400 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-slate-600';
 
 const EMPTY_PRODUCT_FORM: ProductFormValues = {
   name: '',
@@ -108,13 +108,13 @@ export const InventoryView = ({
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
             placeholder="Buscar por nome, marca, modelo ou SKU"
-            className={cn(inputClass, 'pl-10 pr-4 py-2 shadow-sm')}
+            className={cn(inputClass, 'pl-10 pr-4 py-2')}
           />
         </div>
         <button
           type="button"
           onClick={() => openModal()}
-          className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-blue-100 transition-colors hover:bg-blue-700 dark:bg-blue-500 dark:shadow-blue-950/40 dark:hover:bg-blue-400 disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
           disabled={isBusy}
         >
           <Plus size={20} />
@@ -122,7 +122,7 @@ export const InventoryView = ({
         </button>
       </div>
 
-      <div className={cn('overflow-hidden rounded-2xl', panelClass)}>
+      <div className={cn('overflow-hidden rounded-xl', panelClass)}>
         <div className="max-h-[min(60vh,640px)] overflow-auto">
           <table className="w-full border-collapse text-left">
           <thead className="sticky top-0 z-10">
@@ -165,7 +165,7 @@ export const InventoryView = ({
                   </div>
                 </td>
                 <td className="p-3.5 font-medium text-slate-600 dark:text-slate-300">{formatCurrency(product.costPrice)}</td>
-                <td className="p-3.5 font-bold text-blue-600">{formatCurrency(product.salePrice)}</td>
+                <td className="p-3.5 font-semibold text-slate-900 dark:text-slate-100">{formatCurrency(product.salePrice)}</td>
                 <td className="p-3.5">
                   <div className="flex items-center gap-2">
                     <span className={cn('font-bold', product.isLowStock ? 'text-rose-600' : 'text-slate-900 dark:text-slate-100')}>
@@ -201,9 +201,9 @@ export const InventoryView = ({
 
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900">
-            <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-5 py-4 dark:border-slate-800 dark:bg-slate-950">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+          <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-xl flex-col overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-5 py-4 dark:border-slate-800 dark:bg-slate-950">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                 {editingProduct ? 'Editar Produto' : 'Novo Produto'}
               </h3>
               <button
@@ -289,10 +289,10 @@ export const InventoryView = ({
                 </div>
               </div>
               <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 rounded-lg border border-slate-200 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800">
                   Cancelar
                 </button>
-                <button type="submit" className="flex-1 rounded-xl bg-blue-600 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-100 transition-colors hover:bg-blue-700">
+                <button type="submit" className="flex-1 rounded-lg bg-slate-900 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-slate-200">
                   Salvar
                 </button>
               </div>

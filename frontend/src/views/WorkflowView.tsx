@@ -42,7 +42,7 @@ type WorkflowViewProps = {
 };
 
 const metricCardClass =
-  'rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900';
+  'rounded-xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900';
 
 export const WorkflowView = ({
   services,
@@ -193,16 +193,16 @@ export const WorkflowView = ({
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className={metricCardClass}>
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
               OS em aberto
             </span>
-            <Activity size={18} className="text-blue-500" />
+            <Activity size={15} className="text-slate-500 dark:text-slate-400" />
           </div>
-          <div className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">
+          <div className="mt-1.5 text-[2rem] leading-none font-bold tabular-nums text-slate-900 dark:text-slate-100">
             {metrics.openOrders}
           </div>
         </div>
@@ -212,9 +212,9 @@ export const WorkflowView = ({
             <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
               Na bancada
             </span>
-            <ArrowRight size={18} className="text-amber-500" />
+            <ArrowRight size={15} className="text-slate-500 dark:text-slate-400" />
           </div>
-          <div className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">
+          <div className="mt-1.5 text-[2rem] leading-none font-bold tabular-nums text-slate-900 dark:text-slate-100">
             {metrics.inProgressOrders}
           </div>
         </div>
@@ -224,9 +224,9 @@ export const WorkflowView = ({
             <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
               Aguardando retirada
             </span>
-            <CheckCircle2 size={18} className="text-emerald-500" />
+            <CheckCircle2 size={15} className="text-slate-500 dark:text-slate-400" />
           </div>
-          <div className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">
+          <div className="mt-1.5 text-[2rem] leading-none font-bold tabular-nums text-slate-900 dark:text-slate-100">
             {metrics.readyOrders}
           </div>
         </div>
@@ -236,9 +236,9 @@ export const WorkflowView = ({
             <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
               Faturado nas entregas
             </span>
-            <CircleDollarSign size={18} className="text-indigo-500" />
+            <CircleDollarSign size={15} className="text-slate-500 dark:text-slate-400" />
           </div>
-          <div className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">
+          <div className="mt-1.5 text-[1.9rem] leading-none font-bold tabular-nums text-slate-900 dark:text-slate-100">
             {formatCurrency(metrics.deliveredRevenue)}
           </div>
         </div>
@@ -246,27 +246,27 @@ export const WorkflowView = ({
 
       {summary && summary.operationalQueue.length > 0 && (
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-          <div className="rounded-3xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-500/30 dark:bg-amber-500/10">
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-500/30 dark:bg-amber-500/10">
             <div className="text-sm font-semibold text-amber-800 dark:text-amber-200">
               OS prontas com saldo pendente
             </div>
-            <div className="mt-2 text-2xl font-black text-amber-900 dark:text-amber-100">
+            <div className="mt-1.5 text-[2rem] leading-none font-bold tabular-nums text-amber-900 dark:text-amber-100">
               {metrics.pendingBalances}
             </div>
           </div>
-          <div className="rounded-3xl border border-rose-200 bg-rose-50 p-4 dark:border-rose-500/30 dark:bg-rose-500/10">
+          <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 dark:border-rose-500/30 dark:bg-rose-500/10">
             <div className="text-sm font-semibold text-rose-800 dark:text-rose-200">
               Webhooks com falha
             </div>
-            <div className="mt-2 text-2xl font-black text-rose-900 dark:text-rose-100">
+            <div className="mt-1.5 text-[2rem] leading-none font-bold tabular-nums text-rose-900 dark:text-rose-100">
               {metrics.webhookFailures}
             </div>
           </div>
-          <div className="rounded-3xl border border-blue-200 bg-blue-50 p-4 dark:border-blue-500/30 dark:bg-blue-500/10">
+          <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 dark:border-blue-500/30 dark:bg-blue-500/10">
             <div className="text-sm font-semibold text-blue-800 dark:text-blue-200">
               OS aguardando fornecedor
             </div>
-            <div className="mt-2 text-2xl font-black text-blue-900 dark:text-blue-100">
+            <div className="mt-1.5 text-[2rem] leading-none font-bold tabular-nums text-blue-900 dark:text-blue-100">
               {
                 summary.operationalQueue.filter((item) => item.waitingSupplierItem)
                   .length
