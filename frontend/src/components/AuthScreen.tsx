@@ -52,7 +52,7 @@ export const AuthScreen = ({
           <div className="max-w-2xl space-y-6">
             <div className="space-y-3">
               <p className="text-4xl font-bold leading-tight text-slate-950 dark:text-white">
-                Controle a operacao da loja com mais confiabilidade e menos ruido visual.
+                Controle a operacao da loja com mais clareza, consistencia e confiabilidade.
               </p>
               <p className="max-w-xl text-base leading-7 text-slate-600 dark:text-slate-300">
                 Acompanhe atendimento, ordens de servico, estoque e vendas em um ambiente direto, legivel e preparado para uso continuo.

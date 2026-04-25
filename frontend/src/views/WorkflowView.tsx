@@ -9,7 +9,9 @@ import {
   Search,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { EmptyState, MetricCard, PageHeader } from '../components/ui/primitives';
 import { ServiceOrderDetailsModal } from '../components/ServiceOrderDetailsModal';
+import { useSessionStorageState } from '../hooks/useSessionStorageState';
 import { cn, formatCurrency } from '../lib/utils';
 import {
   getNextServiceAction,
@@ -41,9 +43,6 @@ type WorkflowViewProps = {
   onRetryWebhook: (serviceId: string) => Promise<void>;
 };
 
-const metricCardClass =
-  'rounded-xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900';
-
 export const WorkflowView = ({
   services,
   summary,
@@ -53,8 +52,11 @@ export const WorkflowView = ({
   onUpdateServiceStatus,
   onRetryWebhook,
 }: WorkflowViewProps) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [viewMode, setViewMode] = useState<'kanban' | 'lista'>('kanban');
+  const [searchTerm, setSearchTerm] = useSessionStorageState('workflow-search', '');
+  const [viewMode, setViewMode] = useSessionStorageState<'kanban' | 'lista'>(
+    'workflow-view-mode',
+    'kanban',
+  );
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
   const [selectedServiceDetails, setSelectedServiceDetails] = useState<ServiceOrder | null>(
     null,
@@ -194,54 +196,16 @@ export const WorkflowView = ({
 
   return (
     <div className="space-y-4">
+      <PageHeader
+        title="Workflow"
+        description="Acompanhe a fila de OS com busca persistente e alternância entre fluxo e lista."
+      />
+
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <div className={metricCardClass}>
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
-              OS em aberto
-            </span>
-            <Activity size={15} className="text-slate-500 dark:text-slate-400" />
-          </div>
-          <div className="mt-1.5 text-[2rem] leading-none font-bold tabular-nums text-slate-900 dark:text-slate-100">
-            {metrics.openOrders}
-          </div>
-        </div>
-
-        <div className={metricCardClass}>
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
-              Na bancada
-            </span>
-            <ArrowRight size={15} className="text-slate-500 dark:text-slate-400" />
-          </div>
-          <div className="mt-1.5 text-[2rem] leading-none font-bold tabular-nums text-slate-900 dark:text-slate-100">
-            {metrics.inProgressOrders}
-          </div>
-        </div>
-
-        <div className={metricCardClass}>
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
-              Aguardando retirada
-            </span>
-            <CheckCircle2 size={15} className="text-slate-500 dark:text-slate-400" />
-          </div>
-          <div className="mt-1.5 text-[2rem] leading-none font-bold tabular-nums text-slate-900 dark:text-slate-100">
-            {metrics.readyOrders}
-          </div>
-        </div>
-
-        <div className={metricCardClass}>
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
-              Faturado nas entregas
-            </span>
-            <CircleDollarSign size={15} className="text-slate-500 dark:text-slate-400" />
-          </div>
-          <div className="mt-1.5 text-[1.9rem] leading-none font-bold tabular-nums text-slate-900 dark:text-slate-100">
-            {formatCurrency(metrics.deliveredRevenue)}
-          </div>
-        </div>
+        <MetricCard label="OS em aberto" value={metrics.openOrders} icon={<Activity size={15} />} />
+        <MetricCard label="Na bancada" value={metrics.inProgressOrders} icon={<ArrowRight size={15} />} />
+        <MetricCard label="Aguardando retirada" value={metrics.readyOrders} icon={<CheckCircle2 size={15} />} />
+        <MetricCard label="Faturado nas entregas" value={formatCurrency(metrics.deliveredRevenue)} icon={<CircleDollarSign size={15} />} />
       </div>
 
       {summary && summary.operationalQueue.length > 0 && (
@@ -276,7 +240,7 @@ export const WorkflowView = ({
         </div>
       )}
 
-      <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
@@ -288,12 +252,12 @@ export const WorkflowView = ({
           </div>
 
           <div className="flex w-full flex-col gap-3 lg:w-auto lg:flex-row lg:items-center">
-            <div className="inline-flex rounded-2xl border border-slate-200 bg-slate-100 p-1 dark:border-slate-700 dark:bg-slate-800">
+            <div className="inline-flex rounded-lg border border-slate-200 bg-slate-100 p-1 dark:border-slate-700 dark:bg-slate-800">
               <button
                 type="button"
                 onClick={() => setViewMode('kanban')}
                 className={cn(
-                  'inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold transition-colors',
+                  'inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-semibold transition-colors',
                   viewMode === 'kanban'
                     ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-950 dark:text-slate-100'
                     : 'text-slate-500 hover:text-slate-700 dark:text-slate-300 dark:hover:text-slate-100',
@@ -306,7 +270,7 @@ export const WorkflowView = ({
                 type="button"
                 onClick={() => setViewMode('lista')}
                 className={cn(
-                  'inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold transition-colors',
+                  'inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-semibold transition-colors',
                   viewMode === 'lista'
                     ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-950 dark:text-slate-100'
                     : 'text-slate-500 hover:text-slate-700 dark:text-slate-300 dark:hover:text-slate-100',
@@ -326,9 +290,18 @@ export const WorkflowView = ({
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
                 placeholder="Buscar cliente, aparelho, defeito ou número da OS"
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-sm text-slate-700 outline-none transition-colors placeholder:text-slate-400 focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500"
+                className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-700 outline-none transition-colors placeholder:text-slate-400 focus:border-slate-400 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500"
               />
             </label>
+            {normalizedSearch.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm('')}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
+              >
+                Limpar busca
+              </button>
+            )}
           </div>
         </div>
         <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
@@ -353,11 +326,11 @@ export const WorkflowView = ({
             return (
               <section
                 key={column.id}
-                className="flex h-[min(72vh,680px)] min-h-[320px] flex-col rounded-3xl border border-slate-200 bg-gradient-to-b from-white to-slate-50/80 p-3.5 shadow-sm dark:border-slate-800 dark:from-slate-900 dark:to-slate-950"
+                className="flex h-[min(72vh,680px)] min-h-[320px] flex-col rounded-xl border border-slate-200 bg-white p-3.5 dark:border-slate-800 dark:bg-slate-900"
               >
                 <div className="mb-4 flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
-                    <div className="rounded-2xl bg-slate-100 p-2.5 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                    <div className="rounded-lg bg-slate-100 p-2.5 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
                       <Icon size={20} />
                     </div>
                     <div>
@@ -374,9 +347,10 @@ export const WorkflowView = ({
 
                 <div className="flex flex-1 flex-col gap-3 overflow-y-auto pr-1">
                   {columnServices.length === 0 && (
-                    <div className="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50/80 p-5 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400">
-                      Nenhuma OS nesta etapa.
-                    </div>
+                    <EmptyState
+                      title="Sem OS nesta etapa"
+                      description="As novas ordens entram aqui conforme o avanço do fluxo."
+                    />
                   )}
 
                   {columnServices.map((service) => (
@@ -385,7 +359,7 @@ export const WorkflowView = ({
                       type="button"
                       onClick={() => openServiceDetails(service.id)}
                       aria-haspopup="dialog"
-                      className="rounded-2xl border border-slate-200 bg-white p-3 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md dark:border-slate-800 dark:bg-slate-950/80 dark:hover:border-blue-500/30"
+                      className="rounded-lg border border-slate-200 bg-white p-3 text-left transition hover:border-slate-300 dark:border-slate-800 dark:bg-slate-950/80 dark:hover:border-slate-700"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
@@ -398,7 +372,7 @@ export const WorkflowView = ({
                         </div>
                         <span
                           className={cn(
-                            'rounded-full px-2.5 py-1 text-[11px] font-bold',
+                            'rounded-md px-2.5 py-1 text-[11px] font-bold',
                             serviceStatusBadgeClass[service.status],
                           )}
                         >
@@ -426,7 +400,7 @@ export const WorkflowView = ({
                         </div>
 
                         <div className="flex flex-col items-end gap-2">
-                          <span className="inline-flex items-center gap-1 font-semibold text-blue-600 dark:text-blue-300">
+                          <span className="inline-flex items-center gap-1 font-semibold text-slate-600 dark:text-slate-300">
                             Abrir
                             <ChevronRight size={15} />
                           </span>
@@ -453,8 +427,8 @@ export const WorkflowView = ({
           })}
         </div>
       ) : (
-        <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <div className="hidden grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_180px_150px_130px_minmax(240px,1fr)] gap-4 border-b border-slate-200 bg-slate-50 px-5 py-3 text-xs font-bold uppercase tracking-[0.16em] text-slate-500 dark:border-slate-800 dark:bg-slate-950/80 dark:text-slate-400 lg:grid">
+        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+          <div className="hidden grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_180px_150px_130px_minmax(240px,1fr)] gap-4 border-b border-slate-200 bg-slate-50 px-5 py-3 text-xs font-semibold text-slate-500 dark:border-slate-800 dark:bg-slate-950/80 dark:text-slate-400 lg:grid">
             <span>Cliente</span>
             <span>Aparelho e defeito</span>
             <span>Status</span>
@@ -529,7 +503,7 @@ export const WorkflowView = ({
                       </div>
                     </div>
 
-                    <div className="text-sm font-black text-slate-900 dark:text-slate-100">
+                    <div className="text-sm font-semibold tabular-nums text-slate-900 dark:text-slate-100">
                       {formatCurrency(service.totalPrice)}
                       {service.pendingBalance > 0 && (
                         <div className="mt-1 text-xs font-semibold text-amber-600">
@@ -552,7 +526,7 @@ export const WorkflowView = ({
                             Reenviar webhook
                           </button>
                         )}
-                      <span className="inline-flex items-center gap-1 text-sm font-semibold text-blue-600 dark:text-blue-300">
+                      <span className="inline-flex items-center gap-1 text-sm font-semibold text-slate-600 dark:text-slate-300">
                         Ver detalhes
                         <ChevronRight size={16} />
                       </span>

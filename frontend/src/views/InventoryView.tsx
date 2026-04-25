@@ -1,5 +1,15 @@
 import { type FormEvent, useMemo, useState } from 'react';
-import { AlertTriangle, Edit2, Plus, Search, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Edit2, Plus, Search, Trash2 } from 'lucide-react';
+import {
+  ActionButton,
+  DataTable,
+  EmptyState,
+  FormModal,
+  PageHeader,
+  StatusBadge,
+  Toolbar,
+} from '../components/ui/primitives';
+import { useSessionStorageState } from '../hooks/useSessionStorageState';
 import { cn, formatCurrency } from '../lib/utils';
 import { Product, ProductFormValues, Supplier } from '../types';
 
@@ -43,23 +53,33 @@ export const InventoryView = ({
 }: InventoryViewProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useSessionStorageState(
+    `inventory-search-${appMode}`,
+    '',
+  );
+  const [stockFilter, setStockFilter] = useSessionStorageState<
+    'all' | 'low_stock'
+  >(`inventory-stock-filter-${appMode}`, 'all');
   const [formData, setFormData] = useState<ProductFormValues>(EMPTY_PRODUCT_FORM);
 
   const filteredProducts = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
 
     return products.filter((product) => {
-      if (!normalizedSearch) return true;
+      const matchesStock =
+        stockFilter === 'all' ? true : product.stock <= product.minStock;
+      if (!normalizedSearch) return matchesStock;
 
-      return [
+      const matchesSearch = [
         product.name,
         product.brand,
         product.compatibleModel,
         product.sku,
       ].some((value) => value.toLowerCase().includes(normalizedSearch));
+
+      return matchesStock && matchesSearch;
     });
-  }, [products, searchTerm]);
+  }, [products, searchTerm, stockFilter]);
 
   const openModal = (product?: Product) => {
     if (product) {
@@ -100,8 +120,14 @@ export const InventoryView = ({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div className="relative w-full max-w-md">
+      <PageHeader
+        title="Estoque"
+        description="Controle produtos, fornecedores e itens críticos com leitura mais direta para reposição e cadastro."
+      />
+
+      <Toolbar>
+        <div className="flex w-full flex-col gap-3 lg:flex-row lg:items-center">
+          <div className="relative w-full max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" size={18} />
           <input
             type="text"
@@ -111,18 +137,34 @@ export const InventoryView = ({
             className={cn(inputClass, 'pl-10 pr-4 py-2')}
           />
         </div>
-        <button
-          type="button"
-          onClick={() => openModal()}
-          className="flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
-          disabled={isBusy}
-        >
-          <Plus size={20} />
-          Novo Produto
-        </button>
-      </div>
+          <select
+            value={stockFilter}
+            onChange={(event) =>
+              setStockFilter(event.target.value as 'all' | 'low_stock')
+            }
+            className={cn(inputClass, 'w-full lg:w-44')}
+          >
+            <option value="all">Todo o estoque</option>
+            <option value="low_stock">Somente críticos</option>
+          </select>
+          {(searchTerm || stockFilter !== 'all') && (
+            <ActionButton
+              onClick={() => {
+                setSearchTerm('');
+                setStockFilter('all');
+              }}
+            >
+              Limpar filtros
+            </ActionButton>
+          )}
+        </div>
+        <ActionButton onClick={() => openModal()} variant="primary" disabled={isBusy}>
+          <Plus size={16} />
+          Novo produto
+        </ActionButton>
+      </Toolbar>
 
-      <div className={cn('overflow-hidden rounded-xl', panelClass)}>
+      <DataTable className={panelClass}>
         <div className="max-h-[min(60vh,640px)] overflow-auto">
           <table className="w-full border-collapse text-left">
           <thead className="sticky top-0 z-10">
@@ -139,8 +181,17 @@ export const InventoryView = ({
           <tbody>
             {filteredProducts.length === 0 && (
               <tr>
-                <td colSpan={7} className="p-5 text-center text-slate-500 dark:text-slate-400">
-                  Nenhum produto encontrado com os filtros atuais.
+                <td colSpan={7} className="p-5">
+                  <EmptyState
+                    title="Nenhum produto encontrado"
+                    description="Ajuste os filtros atuais ou cadastre um novo item para continuar."
+                    action={
+                      <ActionButton onClick={() => openModal()} variant="primary">
+                        <Plus size={16} />
+                        Novo produto
+                      </ActionButton>
+                    }
+                  />
                 </td>
               </tr>
             )}
@@ -168,28 +219,25 @@ export const InventoryView = ({
                 <td className="p-3.5 font-semibold text-slate-900 dark:text-slate-100">{formatCurrency(product.salePrice)}</td>
                 <td className="p-3.5">
                   <div className="flex items-center gap-2">
-                    <span className={cn('font-bold', product.isLowStock ? 'text-rose-600' : 'text-slate-900 dark:text-slate-100')}>
+                    <span className={cn('font-bold tabular-nums', product.isLowStock ? 'text-rose-600' : 'text-slate-900 dark:text-slate-100')}>
                       {product.stock}
                     </span>
                     {product.isLowStock && <AlertTriangle size={14} className="text-rose-500" />}
+                    {product.isLowStock && <StatusBadge tone="danger">Abaixo do minimo</StatusBadge>}
                   </div>
                 </td>
                 <td className="p-3.5 text-right">
-                  <div className="flex justify-end gap-2 opacity-0 transition-opacity group-hover:opacity-100">
-                    <button
-                      type="button"
-                      onClick={() => openModal(product)}
-                      className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-blue-50 hover:text-blue-600 dark:text-slate-500 dark:hover:bg-blue-500/10 dark:hover:text-blue-300"
-                    >
+                  <div className="flex justify-end gap-2">
+                    <ActionButton onClick={() => openModal(product)} className="px-2.5 py-2">
                       <Edit2 size={18} />
-                    </button>
-                    <button
-                      type="button"
+                    </ActionButton>
+                    <ActionButton
                       onClick={() => void onDeleteProduct(product)}
-                      className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600 dark:text-slate-500 dark:hover:bg-rose-500/10"
+                      variant="danger"
+                      className="px-2.5 py-2"
                     >
                       <Trash2 size={18} />
-                    </button>
+                    </ActionButton>
                   </div>
                 </td>
               </tr>
@@ -197,24 +245,26 @@ export const InventoryView = ({
           </tbody>
           </table>
         </div>
-      </div>
+      </DataTable>
 
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-xl flex-col overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-            <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-5 py-4 dark:border-slate-800 dark:bg-slate-950">
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                {editingProduct ? 'Editar Produto' : 'Novo Produto'}
-              </h3>
-              <button
-                type="button"
-                onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 transition-colors hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-200"
-              >
-                <X size={24} />
-              </button>
-            </div>
-            <form onSubmit={(event) => void handleSubmit(event)} className="space-y-5 overflow-y-auto p-5">
+      <FormModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={editingProduct ? 'Editar produto' : 'Novo produto'}
+        description="Preencha os dados principais de compra, venda e estoque para manter o cadastro consistente."
+        maxWidthClassName="max-w-xl"
+        footer={
+          <div className="flex justify-end gap-2">
+            <ActionButton onClick={() => setIsModalOpen(false)} variant="secondary">
+              Cancelar
+            </ActionButton>
+            <ActionButton type="submit" form="inventory-form" variant="primary">
+              Salvar produto
+            </ActionButton>
+          </div>
+        }
+      >
+            <form id="inventory-form" onSubmit={(event) => void handleSubmit(event)} className="space-y-5">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-1 sm:col-span-2">
                   <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">Nome do Produto</label>
@@ -288,18 +338,8 @@ export const InventoryView = ({
                   <input required type="number" step="0.01" min="0" value={formData.salePrice} onChange={(event) => setFormData((current) => ({ ...current, salePrice: event.target.value }))} className={inputClass} />
                 </div>
               </div>
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 rounded-lg border border-slate-200 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800">
-                  Cancelar
-                </button>
-                <button type="submit" className="flex-1 rounded-lg bg-slate-900 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-slate-200">
-                  Salvar
-                </button>
-              </div>
             </form>
-          </div>
-        </div>
-      )}
+      </FormModal>
     </div>
   );
 };

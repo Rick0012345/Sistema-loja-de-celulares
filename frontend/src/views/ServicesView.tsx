@@ -1,5 +1,7 @@
 import { type FormEvent, useMemo, useState } from 'react';
 import { CheckCircle, Clock, Pencil, Plus, Search, Smartphone, Trash2, X } from 'lucide-react';
+import { ActionButton, EmptyState, PageHeader, Toolbar } from '../components/ui/primitives';
+import { useSessionStorageState } from '../hooks/useSessionStorageState';
 import {
   getNextServiceAction,
   serviceStatusBadgeClass,
@@ -105,8 +107,11 @@ export const ServicesView = ({
 }: ServicesViewProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<'all' | ServiceStatus>('all');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useSessionStorageState<'all' | ServiceStatus>(
+    'services-status-filter',
+    'all',
+  );
+  const [searchTerm, setSearchTerm] = useSessionStorageState('services-search', '');
   const [formData, setFormData] = useState<ServiceFormValues>(EMPTY_SERVICE_FORM);
   const [partSearchTerm, setPartSearchTerm] = useState('');
   const [partSelectionError, setPartSelectionError] = useState('');
@@ -380,7 +385,12 @@ export const ServicesView = ({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <PageHeader
+        title="Ordens de servico"
+        description="Mantenha busca, triagem e entrega no mesmo ritmo, com filtros persistentes entre as consultas."
+      />
+
+      <Toolbar>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center lg:ml-auto">
           <select
             value={statusFilter}
@@ -406,34 +416,34 @@ export const ServicesView = ({
             />
           </label>
           {(statusFilter !== 'all' || normalizedSearch.length > 0) && (
-            <button
-              type="button"
+            <ActionButton
               onClick={() => {
                 setStatusFilter('all');
                 setSearchTerm('');
               }}
-              className={secondaryButtonClass}
             >
               Limpar filtros
-            </button>
+            </ActionButton>
           )}
         </div>
-        <button
-          type="button"
-          onClick={openCreateModal}
-          className="flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
-          disabled={isBusy}
-        >
-          <Plus size={20} />
-          Nova Ordem de Servico
-        </button>
-      </div>
+        <ActionButton type="button" onClick={openCreateModal} variant="primary" disabled={isBusy}>
+          <Plus size={16} />
+          Nova OS
+        </ActionButton>
+      </Toolbar>
 
       <div className="grid grid-cols-1 gap-4">
         {filteredServices.length === 0 && (
-          <div className="rounded-xl border border-dashed border-slate-300 bg-white p-5 text-center text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
-            Nenhuma ordem de servico encontrada com os filtros atuais.
-          </div>
+          <EmptyState
+            title="Nenhuma ordem encontrada"
+            description="Ajuste os filtros atuais ou abra uma nova OS para continuar o atendimento."
+            action={
+              <ActionButton type="button" onClick={openCreateModal} variant="primary">
+                <Plus size={16} />
+                Nova OS
+              </ActionButton>
+            }
+          />
         )}
 
         {filteredServices.length > 0 && (

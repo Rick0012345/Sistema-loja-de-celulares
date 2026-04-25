@@ -24,6 +24,8 @@ import {
   YAxis,
 } from 'recharts';
 import { StatCard } from '../components/StatCard';
+import { ActionButton, EmptyState, PageHeader, Toolbar } from '../components/ui/primitives';
+import { useSessionStorageState } from '../hooks/useSessionStorageState';
 import { PAYMENT_METHOD_LABELS } from '../lib/paymentMethods';
 import { emitReceiptPdf } from '../lib/receiptPdf';
 import { formatCurrency } from '../lib/utils';
@@ -59,6 +61,13 @@ export const SalesView = ({
   const [productSelectionError, setProductSelectionError] = useState('');
   const [selectedProductId, setSelectedProductId] = useState('');
   const [selectedQuantity, setSelectedQuantity] = useState('1');
+  const [historySearchTerm, setHistorySearchTerm] = useSessionStorageState(
+    'sales-history-search',
+    '',
+  );
+  const [paymentFilter, setPaymentFilter] = useSessionStorageState<
+    'all' | PaymentMethod
+  >('sales-payment-filter', 'all');
 
   const selectedProduct = useMemo(
     () => products.find((product) => product.id === selectedProductId),
@@ -209,6 +218,24 @@ export const SalesView = ({
     };
   }, [products, sales]);
 
+  const filteredSales = useMemo(() => {
+    const normalizedSearch = historySearchTerm.trim().toLowerCase();
+
+    return sales.filter((sale) => {
+      const matchesPayment =
+        paymentFilter === 'all' ? true : sale.paymentMethod === paymentFilter;
+      const matchesSearch =
+        normalizedSearch.length === 0
+          ? true
+          : [sale.reference, sale.customerName, ...sale.items.map((item) => item.productName)]
+              .join(' ')
+              .toLowerCase()
+              .includes(normalizedSearch);
+
+      return matchesPayment && matchesSearch;
+    });
+  }, [historySearchTerm, paymentFilter, sales]);
+
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     if (!formData.items.length) {
@@ -315,25 +342,52 @@ export const SalesView = ({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-            Vendas
-          </h3>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            Resumo comercial, meios de pagamento e historico recente.
-          </p>
+      <PageHeader
+        title="Vendas"
+        description="Consulte indicadores, filtre o histórico e registre vendas com menos atrito."
+      />
+
+      <Toolbar>
+        <div className="flex w-full flex-col gap-3 lg:flex-row lg:items-center">
+          <input
+            value={historySearchTerm}
+            onChange={(event) => setHistorySearchTerm(event.target.value)}
+            placeholder="Buscar por cliente, referência ou produto"
+            className="min-w-[280px] rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-slate-400 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-slate-600"
+          />
+          <select
+            value={paymentFilter}
+            onChange={(event) => setPaymentFilter(event.target.value as 'all' | PaymentMethod)}
+            className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition-colors focus:border-slate-400 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+          >
+            <option value="all">Todos os pagamentos</option>
+            {Object.entries(PAYMENT_METHOD_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+          {(historySearchTerm || paymentFilter !== 'all') && (
+            <ActionButton
+              onClick={() => {
+                setHistorySearchTerm('');
+                setPaymentFilter('all');
+              }}
+            >
+              Limpar filtros
+            </ActionButton>
+          )}
         </div>
-        <button
+        <ActionButton
           type="button"
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
+          variant="primary"
           disabled={isBusy}
         >
           <Plus size={16} />
-          Registrar Venda
-        </button>
-      </div>
+          Registrar venda
+        </ActionButton>
+      </Toolbar>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
@@ -524,17 +578,24 @@ export const SalesView = ({
       </div>
 
       <div className="grid grid-cols-1 gap-4">
-        {sales.length === 0 && (
-          <div className="rounded-xl border border-dashed border-slate-300 bg-white p-5 text-center text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
-            Nenhuma venda registrada ainda.
-          </div>
+        {filteredSales.length === 0 && (
+          <EmptyState
+            title="Nenhuma venda encontrada"
+            description="Ajuste os filtros atuais ou registre uma nova venda para continuar."
+            action={
+              <ActionButton onClick={() => setIsModalOpen(true)} variant="primary">
+                <Plus size={16} />
+                Registrar venda
+              </ActionButton>
+            }
+          />
         )}
-        {sales.length > 0 && (
+        {filteredSales.length > 0 && (
           <div className="max-h-[min(60vh,720px)] space-y-4 overflow-y-auto pr-1">
             <div className="sticky top-0 z-10 flex items-center justify-between rounded-xl border border-slate-200 bg-white/95 px-4 py-3 text-sm backdrop-blur dark:border-slate-800 dark:bg-slate-900/95">
               <div>
                 <p className="font-semibold text-slate-900 dark:text-slate-100">
-                  {sales.length} vendas registradas
+                  {filteredSales.length} vendas encontradas
                 </p>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
                   Histórico pronto para consulta rápida e emissão de recibo.
@@ -544,7 +605,7 @@ export const SalesView = ({
                 Ticket médio: {formatCurrency(salesDashboard.avgTicket)}
               </span>
             </div>
-            {sales.map((sale) => (
+            {filteredSales.map((sale) => (
               <div
                 key={sale.id}
                 className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900"
@@ -560,7 +621,7 @@ export const SalesView = ({
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                   {PAYMENT_METHOD_LABELS[sale.paymentMethod]}
                 </p>
                 <p className="text-lg font-bold text-slate-900 dark:text-slate-100">

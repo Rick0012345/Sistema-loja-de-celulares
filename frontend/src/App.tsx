@@ -1,19 +1,56 @@
-import { useCallback, useRef, useState } from 'react';
+import { Suspense, lazy, useCallback, useMemo, useRef, useState } from 'react';
 import { AuthScreen } from './components/AuthScreen';
 import { AppMode, AppShell, NavItemId } from './components/AppShell';
-import { PaymentMethodModal } from './components/PaymentMethodModal';
-import { DashboardView } from './views/DashboardView';
-import { InventoryView } from './views/InventoryView';
-import { ProfitAnalysisView } from './views/ProfitAnalysisView';
-import { SalesView } from './views/SalesView';
-import { SettingsView } from './views/SettingsView';
-import { ServicesView } from './views/ServicesView';
-import { SuppliersView } from './views/SuppliersView';
-import { WorkflowView } from './views/WorkflowView';
 import { useAuthSession } from './hooks/useAuthSession';
 import { useBackofficeData } from './hooks/useBackofficeData';
 import { useThemeMode } from './hooks/useThemeMode';
 import { PaymentMethod } from './types';
+
+const PaymentMethodModal = lazy(() =>
+  import('./components/PaymentMethodModal').then((module) => ({
+    default: module.PaymentMethodModal,
+  })),
+);
+const DashboardView = lazy(() =>
+  import('./views/DashboardView').then((module) => ({
+    default: module.DashboardView,
+  })),
+);
+const InventoryView = lazy(() =>
+  import('./views/InventoryView').then((module) => ({
+    default: module.InventoryView,
+  })),
+);
+const ProfitAnalysisView = lazy(() =>
+  import('./views/ProfitAnalysisView').then((module) => ({
+    default: module.ProfitAnalysisView,
+  })),
+);
+const SalesView = lazy(() =>
+  import('./views/SalesView').then((module) => ({
+    default: module.SalesView,
+  })),
+);
+const SettingsView = lazy(() =>
+  import('./views/SettingsView').then((module) => ({
+    default: module.SettingsView,
+  })),
+);
+const ServicesView = lazy(() =>
+  import('./views/ServicesView').then((module) => ({
+    default: module.ServicesView,
+  })),
+);
+const SuppliersView = lazy(() =>
+  import('./views/SuppliersView').then((module) => ({
+    default: module.SuppliersView,
+  })),
+);
+const WorkflowView = lazy(() =>
+  import('./views/WorkflowView').then((module) => ({
+    default: module.WorkflowView,
+  })),
+);
 
 type PaymentMethodRequestState = {
   title: string;
@@ -99,6 +136,132 @@ export default function App() {
   const salesProducts = backoffice.products.filter(
     (product) => product.inventoryType === 'sales',
   );
+  const contentFallback = (
+    <div className="rounded-xl border border-slate-200 bg-white p-10 text-center text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
+      Carregando modulo...
+    </div>
+  );
+
+  const activeView = useMemo(() => {
+    if (appMode === 'repair' && activeTab === 'dashboard') {
+      return (
+        <DashboardView
+          stats={backoffice.stats}
+          services={backoffice.services}
+          theme={theme}
+          summary={backoffice.dashboardSummary}
+          professionalOperation={backoffice.professionalOperation}
+        />
+      );
+    }
+
+    if (activeTab === 'inventory') {
+      return (
+        <InventoryView
+          appMode={appMode}
+          products={appMode === 'repair' ? repairInventoryProducts : salesProducts}
+          suppliers={backoffice.suppliers}
+          isBusy={backoffice.isMutating}
+          onDeleteProduct={backoffice.deleteProduct}
+          onSaveProduct={backoffice.saveProduct}
+        />
+      );
+    }
+
+    if (appMode === 'repair' && activeTab === 'suppliers') {
+      return (
+        <SuppliersView
+          suppliers={backoffice.suppliers}
+          isBusy={backoffice.isMutating}
+          onDeleteSupplier={backoffice.deleteSupplier}
+          onSaveSupplier={backoffice.saveSupplier}
+        />
+      );
+    }
+
+    if (appMode === 'sales' && activeTab === 'sales') {
+      return (
+        <SalesView
+          products={salesProducts}
+          sales={backoffice.sales}
+          isBusy={backoffice.isMutating}
+          onCreateSale={backoffice.createSale}
+        />
+      );
+    }
+
+    if (appMode === 'repair' && activeTab === 'services') {
+      return (
+        <ServicesView
+          products={repairProducts}
+          services={backoffice.services}
+          isBusy={backoffice.isMutating}
+          onCreateService={backoffice.createService}
+          onUpdateService={backoffice.updateService}
+          onUpdateServiceStatus={backoffice.updateServiceStatus}
+          onRequestPaymentMethod={requestPaymentMethod}
+        />
+      );
+    }
+
+    if (appMode === 'repair' && activeTab === 'workflow') {
+      return (
+        <WorkflowView
+          services={backoffice.services}
+          summary={backoffice.dashboardSummary}
+          isBusy={backoffice.isMutating}
+          onLoadServiceDetails={backoffice.getServiceDetails}
+          onUpdateServiceStatus={backoffice.updateServiceStatus}
+          onRequestPaymentMethod={requestPaymentMethod}
+          onRetryWebhook={backoffice.retryWebhook}
+        />
+      );
+    }
+
+    if (appMode === 'sales' && activeTab === 'profit') {
+      return (
+        <ProfitAnalysisView
+          report={backoffice.financialReport}
+          onRefreshReport={backoffice.refreshFinancialReport}
+        />
+      );
+    }
+
+    if (activeTab === 'settings') {
+      return <SettingsView currentUser={auth.session} />;
+    }
+
+    return null;
+  }, [
+    activeTab,
+    appMode,
+    auth.session,
+    backoffice.createSale,
+    backoffice.createService,
+    backoffice.dashboardSummary,
+    backoffice.deleteProduct,
+    backoffice.deleteSupplier,
+    backoffice.financialReport,
+    backoffice.getServiceDetails,
+    backoffice.isMutating,
+    backoffice.products,
+    backoffice.professionalOperation,
+    backoffice.refreshFinancialReport,
+    backoffice.retryWebhook,
+    backoffice.sales,
+    backoffice.saveProduct,
+    backoffice.saveSupplier,
+    backoffice.services,
+    backoffice.stats,
+    backoffice.suppliers,
+    backoffice.updateService,
+    backoffice.updateServiceStatus,
+    repairInventoryProducts,
+    repairProducts,
+    requestPaymentMethod,
+    salesProducts,
+    theme,
+  ]);
 
   if (auth.isCheckingAuth) {
     return (
@@ -145,84 +308,21 @@ export default function App() {
           Carregando dados do sistema...
         </div>
       ) : (
-        <>
-          {appMode === 'repair' && activeTab === 'dashboard' && (
-            <DashboardView
-              stats={backoffice.stats}
-              services={backoffice.services}
-              theme={theme}
-              summary={backoffice.dashboardSummary}
-              professionalOperation={backoffice.professionalOperation}
-            />
-          )}
-          {activeTab === 'inventory' && (
-            <InventoryView
-              appMode={appMode}
-              products={appMode === 'repair' ? repairInventoryProducts : salesProducts}
-              suppliers={backoffice.suppliers}
-              isBusy={backoffice.isMutating}
-              onDeleteProduct={backoffice.deleteProduct}
-              onSaveProduct={backoffice.saveProduct}
-            />
-          )}
-          {appMode === 'repair' && activeTab === 'suppliers' && (
-            <SuppliersView
-              suppliers={backoffice.suppliers}
-              isBusy={backoffice.isMutating}
-              onDeleteSupplier={backoffice.deleteSupplier}
-              onSaveSupplier={backoffice.saveSupplier}
-            />
-          )}
-          {appMode === 'sales' && activeTab === 'sales' && (
-            <SalesView
-              products={salesProducts}
-              sales={backoffice.sales}
-              isBusy={backoffice.isMutating}
-              onCreateSale={backoffice.createSale}
-            />
-          )}
-          {appMode === 'repair' && activeTab === 'services' && (
-            <ServicesView
-              products={repairProducts}
-              services={backoffice.services}
-              isBusy={backoffice.isMutating}
-              onCreateService={backoffice.createService}
-              onUpdateService={backoffice.updateService}
-              onUpdateServiceStatus={backoffice.updateServiceStatus}
-              onRequestPaymentMethod={requestPaymentMethod}
-            />
-          )}
-          {appMode === 'repair' && activeTab === 'workflow' && (
-            <WorkflowView
-              services={backoffice.services}
-              summary={backoffice.dashboardSummary}
-              isBusy={backoffice.isMutating}
-              onLoadServiceDetails={backoffice.getServiceDetails}
-              onUpdateServiceStatus={backoffice.updateServiceStatus}
-              onRequestPaymentMethod={requestPaymentMethod}
-              onRetryWebhook={backoffice.retryWebhook}
-            />
-          )}
-          {appMode === 'sales' && activeTab === 'profit' && (
-            <ProfitAnalysisView
-              report={backoffice.financialReport}
-              onRefreshReport={backoffice.refreshFinancialReport}
-            />
-          )}
-          {activeTab === 'settings' && <SettingsView currentUser={auth.session} />}
-        </>
+        <Suspense fallback={contentFallback}>{activeView}</Suspense>
       )}
-      <PaymentMethodModal
-        isOpen={Boolean(paymentRequest)}
-        title={paymentRequest?.title ?? 'Registrar pagamento'}
-        description={paymentRequest?.description ?? 'Selecione a forma de pagamento.'}
-        amount={paymentRequest?.amount}
-        defaultValue={paymentRequest?.defaultValue}
-        confirmLabel={paymentRequest?.confirmLabel}
-        isBusy={backoffice.isMutating}
-        onClose={() => closePaymentMethodModal(null)}
-        onConfirm={(value) => closePaymentMethodModal(value)}
-      />
+      <Suspense fallback={null}>
+        <PaymentMethodModal
+          isOpen={Boolean(paymentRequest)}
+          title={paymentRequest?.title ?? 'Registrar pagamento'}
+          description={paymentRequest?.description ?? 'Selecione a forma de pagamento.'}
+          amount={paymentRequest?.amount}
+          defaultValue={paymentRequest?.defaultValue}
+          confirmLabel={paymentRequest?.confirmLabel}
+          isBusy={backoffice.isMutating}
+          onClose={() => closePaymentMethodModal(null)}
+          onConfirm={(value) => closePaymentMethodModal(value)}
+        />
+      </Suspense>
     </AppShell>
   );
 }

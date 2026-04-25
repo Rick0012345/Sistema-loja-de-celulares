@@ -271,7 +271,7 @@ export const AppShell = ({
                       {currentLabel}
                     </h2>
                     <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                      Interface focada em leitura rapida, controle operacional e atendimento sem friccao.
+                      Painel operacional com leitura rapida, foco em controle e acoes frequentes.
                     </p>
                   </div>
                 </div>
