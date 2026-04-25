@@ -101,7 +101,7 @@ export const AppShell = ({
   );
   const currentModeLabel =
     appMode === 'repair' ? 'Assistencia tecnica' : 'Operacao de vendas';
-  const sidebarWidthClass = isSidebarOpen ? 'lg:w-64' : 'lg:w-20';
+  const sidebarWidthClass = isSidebarOpen ? 'lg:w-64' : 'lg:w-auto';
 
   const getNotificationStyle = (severity: NotificationItem['severity']) => {
     const styles = {
@@ -171,9 +171,9 @@ export const AppShell = ({
                 type="button"
                 onClick={onToggleSidebar}
                 aria-label={isSidebarOpen ? 'Recolher menu' : 'Expandir menu'}
-                className="inline-flex size-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-100"
+                className="hidden size-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-100 lg:inline-flex"
               >
-                {isSidebarOpen ? <X size={16} /> : <Menu size={16} />}
+                <Menu size={16} />
               </button>
             </div>
 
@@ -251,7 +251,7 @@ export const AppShell = ({
                     type="button"
                     onClick={onToggleSidebar}
                     aria-label="Abrir menu lateral"
-                    className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition-colors hover:bg-slate-100 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-900"
+                    className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition-colors hover:bg-slate-100 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-900 lg:hidden"
                   >
                     <Menu size={16} />
                   </button>
