@@ -432,6 +432,8 @@ export class OrdensServicoService {
     await this.notificacoesService.notifyOrderStatusChanged({
       ordemId: updated.id,
       clienteNome: updated.clientes?.nome ?? 'Cliente nao informado',
+      aparelhoMarca: updated.aparelho_marca,
+      aparelhoModelo: updated.aparelho_modelo,
       status: updated.status,
     });
 
@@ -518,13 +520,12 @@ export class OrdensServicoService {
       }>;
     };
 
-    const saldoPendente =
-      Array.isArray(ordemComPagamentos.pagamentos_os)
-        ? this.getSaldoPendente({
-            valor_total: ordemComPagamentos.valor_total,
-            pagamentos_os: ordemComPagamentos.pagamentos_os,
-          })
-        : 0;
+    const saldoPendente = Array.isArray(ordemComPagamentos.pagamentos_os)
+      ? this.getSaldoPendente({
+          valor_total: ordemComPagamentos.valor_total,
+          pagamentos_os: ordemComPagamentos.pagamentos_os,
+        })
+      : 0;
 
     return {
       ...ordem,

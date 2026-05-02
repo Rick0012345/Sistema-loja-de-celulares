@@ -175,6 +175,15 @@ export const ServicesView = ({
   const isPhoneValid =
     formData.customerPhone.trim().length === 0 ||
     hasValidPhoneDigits(formData.customerPhone);
+  const openServicesCount = services.filter(
+    (service) => service.status !== 'entregue' && service.status !== 'cancelada',
+  ).length;
+  const readyServicesCount = services.filter(
+    (service) => service.status === 'pronto_para_retirada',
+  ).length;
+  const pendingBalanceCount = services.filter(
+    (service) => service.pendingBalance > 0,
+  ).length;
 
   const closeModal = () => {
     setIsModalOpen(false);
@@ -253,7 +262,7 @@ export const ServicesView = ({
     );
 
     if (!selectedProduct) {
-      setPartSelectionError('Produto selecionado nao encontrado no estoque de conserto.');
+      setPartSelectionError('Produto selecionado não encontrado no estoque de conserto.');
       return;
     }
 
@@ -346,7 +355,7 @@ export const ServicesView = ({
         deviceBrand: service.deviceBrand,
         deviceModel: service.deviceModel,
         deliveryTypeLabel:
-          service.deliveryType === 'delivery' ? 'Entrega em endereco' : 'Retirada na loja',
+          service.deliveryType === 'delivery' ? 'Entrega em endereço' : 'Retirada na loja',
         statusLabel: serviceStatusLabel[service.status],
         issueDescription: service.issueDescription,
         laborCost: service.laborCost,
@@ -363,7 +372,7 @@ export const ServicesView = ({
       const message =
         error instanceof Error
           ? error.message
-          : 'Nao foi possivel emitir o recibo desta ordem de servico.';
+          : 'Não foi possível emitir o recibo desta ordem de serviço.';
       window.alert(message);
     }
   };
@@ -386,12 +395,18 @@ export const ServicesView = ({
   return (
     <div className="space-y-4">
       <PageHeader
-        title="Ordens de servico"
-        description="Mantenha busca, triagem e entrega no mesmo ritmo, com filtros persistentes entre as consultas."
+        title="Ordens de serviço"
+        eyebrow="Fila da assistência"
+        description="Acompanhe triagem, conserto, cobrança e entrega em uma fila pensada para uso contínuo no balcão."
+        metrics={[
+          { label: 'Abertas', value: openServicesCount },
+          { label: 'Prontas', value: readyServicesCount },
+          { label: 'Com saldo', value: pendingBalanceCount },
+        ]}
       />
 
       <Toolbar>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center lg:ml-auto">
+        <div className="grid w-full gap-3 lg:grid-cols-[220px_minmax(280px,420px)_auto] lg:items-center">
           <select
             value={statusFilter}
             onChange={(event) =>
@@ -412,7 +427,7 @@ export const ServicesView = ({
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
               placeholder="Buscar por cliente, aparelho ou OS"
-              className="min-w-[280px] rounded-lg border border-slate-200 bg-white py-2 pl-10 pr-3 text-sm text-slate-700 outline-none transition-colors placeholder:text-slate-400 focus:border-slate-400 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-slate-600"
+              className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-10 pr-3 text-sm text-slate-700 outline-none transition-colors placeholder:text-slate-400 focus:border-slate-400 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-slate-600"
             />
           </label>
           {(statusFilter !== 'all' || normalizedSearch.length > 0) && (
@@ -426,7 +441,7 @@ export const ServicesView = ({
             </ActionButton>
           )}
         </div>
-        <ActionButton type="button" onClick={openCreateModal} variant="primary" disabled={isBusy}>
+        <ActionButton type="button" onClick={openCreateModal} variant="primary" disabled={isBusy} className="lg:ml-auto">
           <Plus size={16} />
           Nova OS
         </ActionButton>
@@ -447,8 +462,8 @@ export const ServicesView = ({
         )}
 
         {filteredServices.length > 0 && (
-          <div className="max-h-[min(62vh,760px)] space-y-4 overflow-y-auto pr-1">
-            <div className="sticky top-0 z-10 flex items-center justify-between rounded-xl border border-slate-200 bg-white/95 px-4 py-3 text-sm backdrop-blur dark:border-slate-800 dark:bg-slate-900/95">
+          <div className="max-h-[min(66vh,820px)] space-y-3 overflow-y-auto pr-1">
+            <div className="sticky top-0 z-10 flex items-center justify-between rounded-lg border border-slate-200 bg-white/95 px-4 py-3 text-sm backdrop-blur dark:border-slate-800 dark:bg-slate-900/95">
               <div>
                 <p className="font-semibold text-slate-900 dark:text-slate-100">
                   {filteredServices.length} ordens encontradas
@@ -470,7 +485,8 @@ export const ServicesView = ({
               const nextAction = getNextServiceAction(service.status);
 
               return (
-                <div key={service.id} className="group rounded-xl border border-slate-200 bg-white p-4 transition-colors hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700">
+                <div key={service.id} className="group overflow-hidden rounded-lg border border-slate-200 bg-white transition-colors hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700">
+              <div className="border-l-4 border-slate-300 p-4 dark:border-slate-700">
               <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                 <div className="flex gap-4">
                   <div className="flex h-11 w-11 shrink-0 items-center justify-center self-start rounded-lg bg-slate-50 p-3 text-slate-400 dark:bg-slate-950 dark:text-slate-500">
@@ -532,6 +548,7 @@ export const ServicesView = ({
                     <button
                       type="button"
                       onClick={() => openEditModal(service)}
+                      aria-label={`Editar OS de ${service.customerName}`}
                       className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
                     >
                       <span className="flex items-center gap-1.5">
@@ -571,6 +588,7 @@ export const ServicesView = ({
                       <button
                         type="button"
                         onClick={() => void handleStatusUpdate(service, 'cancelada')}
+                        aria-label={`Cancelar OS de ${service.customerName}`}
                         className="rounded-lg bg-rose-50 px-4 py-2 text-xs font-semibold text-rose-600 transition-colors hover:bg-rose-100 dark:bg-rose-500/15 dark:text-rose-300 dark:hover:bg-rose-500/20"
                       >
                         Cancelar OS
@@ -593,9 +611,10 @@ export const ServicesView = ({
                 </div>
               </div>
 
-              <div className="mt-4 -mx-4 -mb-4 flex items-center justify-between rounded-b-xl border-t border-slate-200 bg-slate-50/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-950/70">
+              <div className="mt-4 -mx-4 -mb-4 flex items-center justify-between border-t border-slate-200 bg-slate-50/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-950/70">
                 <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
                   OS {service.id}
+              </div>
                 </div>
                 {service.status === 'pronto_para_retirada' && (
                   <div className="flex items-center gap-2 text-xs font-bold text-emerald-600">
@@ -618,7 +637,7 @@ export const ServicesView = ({
           <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-xl flex-col overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
             <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-5 py-4 dark:border-slate-800 dark:bg-slate-950">
               <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                {editingServiceId ? 'Editar Ordem de Servico' : 'Nova Ordem de Servico'}
+                {editingServiceId ? 'Editar ordem de serviço' : 'Nova ordem de serviço'}
               </h3>
               <button
                 type="button"
@@ -649,7 +668,7 @@ export const ServicesView = ({
                     inputMode="numeric"
                     autoComplete="tel"
                     placeholder="(00) 00000-0000"
-                    title="Use o formato (XX) 0000-0000 até (XX) 00000000-0000"
+                    title="Use o formato (XX) 0000-0000 ou (XX) 00000-0000"
                     maxLength={15}
                     className={inputClass}
                   />
@@ -668,18 +687,18 @@ export const ServicesView = ({
                   <input required value={formData.deviceModel} onChange={(event) => setFormData((current) => ({ ...current, deviceModel: event.target.value }))} className={inputClass} />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">Mao de Obra (R$)</label>
+                  <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">Mão de obra (R$)</label>
                   <input required type="number" step="0.01" min="0" value={formData.laborCost} onChange={(event) => setFormData((current) => ({ ...current, laborCost: event.target.value }))} className={inputClass} />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">Devolucao</label>
+                  <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">Devolução</label>
                   <select value={formData.deliveryType} onChange={(event) => setFormData((current) => ({ ...current, deliveryType: event.target.value as ServiceFormValues['deliveryType'] }))} className={inputClass}>
                     <option value="store_pickup">Retirada na loja</option>
                     <option value="delivery">Entrega</option>
                   </select>
                 </div>
                 <div className="space-y-1 sm:col-span-2">
-                  <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">Descricao do Problema</label>
+                  <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">Descrição do problema</label>
                   <textarea required rows={2} value={formData.issueDescription} onChange={(event) => setFormData((current) => ({ ...current, issueDescription: event.target.value }))} className={inputClass} />
                 </div>
                 <div className="space-y-1 sm:col-span-2">
@@ -895,7 +914,7 @@ export const ServicesView = ({
                   Cancelar
                 </button>
                 <button type="submit" className="flex-1 rounded-lg bg-slate-900 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-slate-200">
-                  {editingServiceId ? 'Salvar alteracoes' : 'Gerar OS'}
+                  {editingServiceId ? 'Salvar alterações' : 'Gerar OS'}
                 </button>
               </div>
             </form>

@@ -15,6 +15,7 @@ import { format, subDays } from 'date-fns';
 import { serviceStatusLabel } from '../lib/serviceStatus';
 import { cn, formatCurrency, formatDateTime } from '../lib/utils';
 import { StatCard } from '../components/StatCard';
+import { Panel, SectionTitle } from '../components/ui/primitives';
 import {
   DashboardSummary,
   ProfessionalOperationPanel,
@@ -22,8 +23,6 @@ import {
   ServiceStatus,
   ThemeMode,
 } from '../types';
-
-const panelClass = 'rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900';
 
 type DashboardViewProps = {
   stats: {
@@ -115,6 +114,9 @@ export const DashboardView = ({
     totalOrdensAbertas: stats.pendingServices,
     totalProdutosBaixoEstoque: stats.lowStockItems,
   };
+  const criticalQueue = summary?.operationalQueue.slice(0, 5) ?? [];
+  const readyOrders = services.filter((service) => service.status === 'pronto_para_retirada').length;
+  const pendingBalances = services.filter((service) => service.pendingBalance > 0).length;
 
   const chartTheme =
     theme === 'dark'
@@ -143,42 +145,78 @@ export const DashboardView = ({
 
   return (
     <div className="space-y-4">
-      <section className={cn(panelClass, 'p-5 lg:p-6')}>
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <Panel className="p-4 lg:p-5">
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
           <div>
-            <p className="text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400">
-              Visao geral
+            <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
+              Visão de hoje
             </p>
-            <h3 className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">
-              Panorama operacional
+            <h3 className="mt-1 text-2xl font-semibold text-balance text-slate-950 dark:text-white">
+              Central de operação da assistência
             </h3>
-            <p className="mt-2 max-w-2xl text-sm text-slate-500 dark:text-slate-400">
-              Resumo do faturamento, volume de ordens e pontos que exigem atencao da equipe.
+            <p className="mt-2 max-w-3xl text-sm text-pretty text-slate-500 dark:text-slate-400">
+              Priorize ordens paradas, retiradas prontas, saldos pendentes e reposição de peças
+              sem sair da primeira tela.
             </p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 dark:border-slate-800 dark:bg-slate-950">
+                <p className="text-xs text-slate-500 dark:text-slate-400">Prontas</p>
+                <p className="mt-1 text-xl font-semibold tabular-nums text-emerald-700 dark:text-emerald-300">
+                  {readyOrders}
+                </p>
+              </div>
+              <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 dark:border-slate-800 dark:bg-slate-950">
+                <p className="text-xs text-slate-500 dark:text-slate-400">Com saldo</p>
+                <p className="mt-1 text-xl font-semibold tabular-nums text-amber-700 dark:text-amber-300">
+                  {pendingBalances}
+                </p>
+              </div>
+              <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 dark:border-slate-800 dark:bg-slate-950">
+                <p className="text-xs text-slate-500 dark:text-slate-400">Estoque baixo</p>
+                <p className="mt-1 text-xl font-semibold tabular-nums text-rose-700 dark:text-rose-300">
+                  {overview.totalProdutosBaixoEstoque}
+                </p>
+              </div>
+            </div>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-            <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-950">
-              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                Receita acumulada
-              </p>
-              <p className="mt-1 text-xl font-bold tabular-nums text-slate-950 dark:text-white">
-                {formatCurrency(overview.faturamentoMes)}
-              </p>
-            </div>
-            <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-950">
-              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                Itens com atencao
-              </p>
-              <p className="mt-1 text-sm font-semibold text-slate-950 dark:text-white">
-                {overview.totalProdutosBaixoEstoque > 0
-                  ? `${overview.totalProdutosBaixoEstoque} produtos com estoque baixo`
-                  : 'Sem alerta de estoque no momento'}
-              </p>
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950">
+            <SectionTitle
+              title="Fila que pede ação"
+              description="Itens com maior chance de travar atendimento, entrega ou cobrança."
+            />
+            <div className="mt-3 space-y-2">
+              {criticalQueue.length === 0 && (
+                <p className="rounded-md border border-dashed border-slate-300 px-3 py-4 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                  Nenhuma prioridade crítica no momento.
+                </p>
+              )}
+              {criticalQueue.map((item) => (
+                <div
+                  key={item.id}
+                  className="rounded-md border border-slate-200 bg-white px-3 py-2 dark:border-slate-800 dark:bg-slate-900"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-slate-950 dark:text-white">
+                        {item.customerName}
+                      </p>
+                      <p className="truncate text-xs text-slate-500 dark:text-slate-400">
+                        {item.deviceLabel} · {serviceStatusLabel[item.status]}
+                      </p>
+                    </div>
+                    {item.pendingBalance > 0 && (
+                      <span className="shrink-0 rounded-md bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
+                        {formatCurrency(item.pendingBalance)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
-      </section>
+      </Panel>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
@@ -194,7 +232,7 @@ export const DashboardView = ({
           color="emerald"
         />
         <StatCard
-          title="Servicos em aberto"
+          title="Serviços em aberto"
           value={overview.totalOrdensAbertas.toString()}
           icon={Clock}
           color="amber"
@@ -209,13 +247,13 @@ export const DashboardView = ({
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className={cn(panelClass, 'lg:col-span-2')}>
+        <Panel className="lg:col-span-2">
           <div className="mb-4 flex items-center justify-between gap-3">
             <h3 className="text-base font-semibold text-slate-950 dark:text-white">
-              Valor de OS entregues nos ultimos 7 dias
+              Valor de OS entregues nos últimos 7 dias
             </h3>
             <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-              Atualizacao diaria
+              Atualização diária
             </span>
           </div>
           <div className="h-72 w-full">
@@ -242,11 +280,11 @@ export const DashboardView = ({
               </BarChart>
             </ResponsiveContainer>
           </div>
-        </div>
+        </Panel>
 
-        <div className={cn(panelClass)}>
+        <Panel>
           <h3 className="mb-4 text-base font-semibold text-slate-950 dark:text-white">
-            Status dos servicos
+            Status dos serviços
           </h3>
           <div className="h-60 w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -277,12 +315,12 @@ export const DashboardView = ({
               </div>
             ))}
           </div>
-        </div>
+        </Panel>
       </div>
 
       {summary && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <div className={cn(panelClass)}>
+          <Panel>
             <div className="mb-4 flex items-center justify-between gap-3">
               <h3 className="text-base font-semibold text-slate-950 dark:text-white">
                 Ordens recentes
@@ -324,9 +362,9 @@ export const DashboardView = ({
                 </div>
               ))}
             </div>
-          </div>
+          </Panel>
 
-          <div className={cn(panelClass)}>
+          <Panel>
             <div className="mb-4 flex items-center justify-between gap-3">
               <h3 className="text-base font-semibold text-slate-950 dark:text-white">
                 Produtos com estoque baixo
@@ -349,7 +387,7 @@ export const DashboardView = ({
                   <div>
                     <p className="font-medium text-slate-950 dark:text-white">{product.name}</p>
                     <p className="text-sm text-slate-500 dark:text-slate-400">
-                      Minimo recomendado: {product.minStock}
+                      Mínimo recomendado: {product.minStock}
                     </p>
                     {product.supplierName && (
                       <p className="text-xs text-slate-400 dark:text-slate-500">
@@ -363,15 +401,15 @@ export const DashboardView = ({
                 </div>
               ))}
             </div>
-          </div>
+          </Panel>
         </div>
       )}
 
       {summary && summary.operationalQueue.length > 0 && (
-        <div className={cn(panelClass)}>
+        <Panel>
           <div className="mb-4 flex items-center justify-between gap-3">
             <h3 className="text-base font-semibold text-slate-950 dark:text-white">
-              Fila operacional critica
+              Fila operacional crítica
             </h3>
             <span className="rounded-md bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
               {summary.operationalQueue.length} em acompanhamento
@@ -414,19 +452,19 @@ export const DashboardView = ({
               </div>
             ))}
           </div>
-        </div>
+        </Panel>
       )}
 
       {professionalOperation && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <div className={cn(panelClass)}>
+          <Panel>
             <h3 className="mb-4 text-base font-semibold text-slate-950 dark:text-white">
               Alertas operacionais
             </h3>
             <div className="space-y-4 text-sm">
               <div>
                 <p className="font-medium text-slate-950 dark:text-white">
-                  OS paradas ha dias: {professionalOperation.alerts.stalledOrders.length}
+                  OS paradas há dias: {professionalOperation.alerts.stalledOrders.length}
                 </p>
                 {professionalOperation.alerts.stalledOrders.slice(0, 3).map((item) => (
                   <p key={item.id} className="mt-1 text-slate-500 dark:text-slate-400">
@@ -436,7 +474,7 @@ export const DashboardView = ({
               </div>
               <div>
                 <p className="font-medium text-slate-950 dark:text-white">
-                  Integracoes falhando: {professionalOperation.alerts.failingIntegrations.length}
+                  Integrações falhando: {professionalOperation.alerts.failingIntegrations.length}
                 </p>
                 {professionalOperation.alerts.failingIntegrations.slice(0, 3).map((item) => (
                   <p key={item.orderId} className="mt-1 text-slate-500 dark:text-slate-400">
@@ -445,9 +483,9 @@ export const DashboardView = ({
                 ))}
               </div>
             </div>
-          </div>
+          </Panel>
 
-          <div className={cn(panelClass)}>
+          <Panel>
             <h3 className="mb-4 text-base font-semibold text-slate-950 dark:text-white">
               Painel operacional
             </h3>
@@ -477,7 +515,7 @@ export const DashboardView = ({
                 ))}
               </div>
             </div>
-          </div>
+          </Panel>
         </div>
       )}
     </div>

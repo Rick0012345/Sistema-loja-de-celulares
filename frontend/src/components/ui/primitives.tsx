@@ -6,26 +6,55 @@ type PageHeaderProps = {
   title: string;
   description?: string;
   actions?: ReactNode;
+  eyebrow?: string;
+  metrics?: Array<{
+    label: string;
+    value: ReactNode;
+  }>;
 };
 
 export function PageHeader({
   title,
   description,
   actions,
+  eyebrow,
+  metrics,
 }: PageHeaderProps) {
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900 lg:flex-row lg:items-end lg:justify-between">
+    <div className="flex flex-col gap-4 border-b border-slate-200 pb-4 dark:border-slate-800 lg:flex-row lg:items-end lg:justify-between">
       <div className="min-w-0">
-        <h2 className="text-lg font-semibold text-balance text-slate-950 dark:text-slate-50">
+        {eyebrow ? (
+          <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
+            {eyebrow}
+          </p>
+        ) : null}
+        <h2 className="text-xl font-semibold text-balance text-slate-950 dark:text-slate-50">
           {title}
         </h2>
         {description ? (
-          <p className="mt-1 text-sm text-pretty text-slate-500 dark:text-slate-400">
+          <p className="mt-1 max-w-3xl text-sm text-pretty text-slate-500 dark:text-slate-400">
             {description}
           </p>
         ) : null}
       </div>
-      {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        {metrics && metrics.length > 0 ? (
+          <div className="grid grid-cols-2 gap-2 sm:flex">
+            {metrics.map((metric) => (
+              <div
+                key={metric.label}
+                className="min-w-24 rounded-md border border-slate-200 bg-white px-3 py-2 dark:border-slate-800 dark:bg-slate-900"
+              >
+                <p className="text-xs text-slate-500 dark:text-slate-400">{metric.label}</p>
+                <p className="text-sm font-semibold tabular-nums text-slate-950 dark:text-slate-50">
+                  {metric.value}
+                </p>
+              </div>
+            ))}
+          </div>
+        ) : null}
+        {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
+      </div>
     </div>
   );
 }
@@ -40,7 +69,7 @@ export function Panel({ children, className, compact = false }: PanelProps) {
   return (
     <section
       className={cn(
-        'rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900',
+        'rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900',
         compact ? 'p-4' : 'p-5',
         className,
       )}
@@ -59,7 +88,7 @@ export function Toolbar({ children, className }: ToolbarProps) {
   return (
     <div
       className={cn(
-        'flex flex-col gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900 lg:flex-row lg:items-center lg:justify-between',
+        'flex flex-col gap-3 rounded-lg border border-slate-200 bg-white px-3 py-3 shadow-sm dark:border-slate-800 dark:bg-slate-900 lg:flex-row lg:items-center lg:justify-between',
         className,
       )}
     >
@@ -191,7 +220,7 @@ type EmptyStateProps = {
 
 export function EmptyState({ title, description, action }: EmptyStateProps) {
   return (
-    <div className="rounded-xl border border-dashed border-slate-300 px-4 py-6 text-center dark:border-slate-700">
+    <div className="rounded-lg border border-dashed border-slate-300 px-4 py-6 text-center dark:border-slate-700">
       <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">
         {title}
       </div>
@@ -280,11 +309,78 @@ export function DataTable({ children, className }: DataTableProps) {
   return (
     <div
       className={cn(
-        'overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900',
+        'overflow-hidden rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900',
         className,
       )}
     >
       {children}
     </div>
+  );
+}
+
+export const inputClassName =
+  'w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-slate-400 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-slate-600';
+
+type FieldProps = {
+  label: string;
+  children: ReactNode;
+  className?: string;
+  hint?: ReactNode;
+};
+
+export function Field({ label, children, className, hint }: FieldProps) {
+  return (
+    <label className={cn('block space-y-1.5', className)}>
+      <span className="text-sm font-semibold text-slate-600 dark:text-slate-300">
+        {label}
+      </span>
+      {children}
+      {hint ? (
+        <span className="block text-xs text-slate-500 dark:text-slate-400">{hint}</span>
+      ) : null}
+    </label>
+  );
+}
+
+type SectionTitleProps = {
+  title: string;
+  description?: string;
+  action?: ReactNode;
+};
+
+export function SectionTitle({ title, description, action }: SectionTitleProps) {
+  return (
+    <div className="flex items-start justify-between gap-3">
+      <div>
+        <h3 className="text-base font-semibold text-balance text-slate-950 dark:text-slate-50">
+          {title}
+        </h3>
+        {description ? (
+          <p className="mt-1 text-sm text-pretty text-slate-500 dark:text-slate-400">
+            {description}
+          </p>
+        ) : null}
+      </div>
+      {action ? <div className="shrink-0">{action}</div> : null}
+    </div>
+  );
+}
+
+export function TableHeaderCell({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <th
+      className={cn(
+        'whitespace-nowrap px-3 py-3 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400',
+        className,
+      )}
+    >
+      {children}
+    </th>
   );
 }

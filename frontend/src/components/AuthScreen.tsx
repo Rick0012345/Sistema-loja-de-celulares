@@ -1,5 +1,5 @@
 import { FormEvent, useState } from 'react';
-import { LockKeyhole, Moon, ShieldCheck, Sun } from 'lucide-react';
+import { LockKeyhole, Moon, PackageCheck, ShieldCheck, Sun, Wrench } from 'lucide-react';
 import { motion } from 'motion/react';
 import { ThemeMode } from '../types';
 
@@ -33,17 +33,17 @@ export const AuthScreen = ({
 
   return (
     <div className="flex min-h-dvh bg-slate-100 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
-      <div className="hidden flex-1 border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950 lg:flex">
+      <div className="hidden flex-1 border-r border-slate-800 bg-slate-950 text-white lg:flex">
         <div className="flex w-full flex-col justify-between px-10 py-10 xl:px-14">
           <div className="flex items-center gap-3">
-            <div className="flex size-11 items-center justify-center rounded-lg bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-950">
+            <div className="flex size-11 items-center justify-center rounded-lg bg-white text-slate-950">
               <ShieldCheck size={20} />
             </div>
             <div>
-              <p className="text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400">
-                Sistema de gestao
+              <p className="text-[11px] font-semibold uppercase text-slate-400">
+                Sistema de gestão
               </p>
-              <h1 className="text-2xl font-bold text-slate-950 dark:text-white">
+              <h1 className="text-2xl font-bold text-white">
                 ConsertaSmart
               </h1>
             </div>
@@ -51,50 +51,63 @@ export const AuthScreen = ({
 
           <div className="max-w-2xl space-y-6">
             <div className="space-y-3">
-              <p className="text-4xl font-bold leading-tight text-slate-950 dark:text-white">
-                Controle a operacao da loja com mais clareza, consistencia e confiabilidade.
+              <div className="inline-flex rounded-md border border-slate-700 px-3 py-1 text-xs font-semibold uppercase text-slate-300">
+                Oficina, estoque e vendas no mesmo balcão
+              </div>
+              <p className="text-4xl font-semibold leading-tight text-balance text-white">
+                Abra a loja já vendo o que precisa de atenção.
               </p>
-              <p className="max-w-xl text-base leading-7 text-slate-600 dark:text-slate-300">
-                Acompanhe atendimento, ordens de servico, estoque e vendas em um ambiente direto, legivel e preparado para uso continuo.
+              <p className="max-w-xl text-base leading-7 text-pretty text-slate-300">
+                Acompanhe ordens de serviço, peças críticas, vendas e entregas em uma interface
+                feita para rotina de balcão, não para apresentação bonita.
               </p>
             </div>
 
             <div className="grid gap-3 md:grid-cols-3">
-              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900">
-                <p className="text-sm font-semibold text-slate-950 dark:text-white">
-                  Confiabilidade
+              <div className="rounded-lg border border-slate-800 bg-slate-900 p-4">
+                <div className="mb-3 flex size-9 items-center justify-center rounded-md bg-slate-800 text-slate-200">
+                  <Wrench size={16} />
+                </div>
+                <p className="text-sm font-semibold text-white">
+                  Oficina
                 </p>
-                <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                  Informacoes mais claras para reduzir erro operacional.
+                <p className="mt-2 text-sm text-slate-400">
+                  Fila de OS, status, peças usadas e entrega.
                 </p>
               </div>
-              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900">
-                <p className="text-sm font-semibold text-slate-950 dark:text-white">
+              <div className="rounded-lg border border-slate-800 bg-slate-900 p-4">
+                <div className="mb-3 flex size-9 items-center justify-center rounded-md bg-slate-800 text-slate-200">
+                  <PackageCheck size={16} />
+                </div>
+                <p className="text-sm font-semibold text-white">
+                  Estoque
+                </p>
+                <p className="mt-2 text-sm text-slate-400">
+                  Reposição, fornecedor e itens abaixo do mínimo.
+                </p>
+              </div>
+              <div className="rounded-lg border border-slate-800 bg-slate-900 p-4">
+                <div className="mb-3 flex size-9 items-center justify-center rounded-md bg-slate-800 text-slate-200">
+                  <ShieldCheck size={16} />
+                </div>
+                <p className="text-sm font-semibold text-white">
                   Controle
                 </p>
-                <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                  Leitura rapida do que precisa de acao imediata.
-                </p>
-              </div>
-              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900">
-                <p className="text-sm font-semibold text-slate-950 dark:text-white">
-                  Atendimento
-                </p>
-                <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                  Menos friccao para responder e concluir servicos.
+                <p className="mt-2 text-sm text-slate-400">
+                  Leitura rápida para decidir a próxima ação.
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
-            <span className="rounded-md border border-slate-200 px-2.5 py-1 dark:border-slate-800">
-              Ordens de servico
+          <div className="flex flex-wrap gap-2 text-xs font-medium text-slate-400">
+            <span className="rounded-md border border-slate-700 px-2.5 py-1">
+              Ordens de serviço
             </span>
-            <span className="rounded-md border border-slate-200 px-2.5 py-1 dark:border-slate-800">
+            <span className="rounded-md border border-slate-700 px-2.5 py-1">
               Estoque
             </span>
-            <span className="rounded-md border border-slate-200 px-2.5 py-1 dark:border-slate-800">
+            <span className="rounded-md border border-slate-700 px-2.5 py-1">
               Vendas
             </span>
           </div>
@@ -106,7 +119,7 @@ export const AuthScreen = ({
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.18, ease: 'easeOut' }}
-          className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900"
+          className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900"
         >
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -117,7 +130,7 @@ export const AuthScreen = ({
                 Entrar no sistema
               </h2>
               <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                Use suas credenciais para acessar a operacao.
+                Use suas credenciais para acessar a operação.
               </p>
             </div>
 
@@ -148,7 +161,7 @@ export const AuthScreen = ({
                     Login seguro
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Acesso individual por usuario.
+                    Acesso individual por usuário.
                   </p>
                 </div>
               </div>
